@@ -29,31 +29,86 @@ public class HealthBarUI : MonoBehaviour
     private float targetFillAmount;  // 目標填充量
     private float currentFillAmount; // 當前填充量
     private Coroutine flashCoroutine; // 閃爍協程
+    private int lastKnownHealth = -1; // 記錄上次的血量（用於檢測是否受傷）
+    private bool isInitialized = false; // 是否已經初始化
 
     void Start()
     {
-        // 初始化血條為滿血狀態
-        if (healthBarFill != null)
+        // === 修改：延遲初始化，等待玩家載入 ===
+        StartCoroutine(InitializeHealthBar());
+    }
+
+    // === 新增：初始化協程 ===
+    IEnumerator InitializeHealthBar()
+    {
+        // 等待一幀，確保玩家控制器已經初始化
+        yield return new WaitForEndOfFrame();
+
+        // 尋找玩家控制器
+        PlayerController2D player = FindObjectOfType<PlayerController2D>();
+
+        // 等待玩家載入
+        int attempts = 0;
+        while (player == null && attempts < 100) // 最多等待100幀
         {
-            currentFillAmount = 1f;  // 當前填充量為100%
-            targetFillAmount = 1f;   // 目標填充量為100%
-            healthBarFill.fillAmount = 1f; // 設置血條為滿血
+            yield return new WaitForEndOfFrame();
+            player = FindObjectOfType<PlayerController2D>();
+            attempts++;
+        }
 
-            // 強制設置初始顏色為白色，然後再設為綠色
-            healthBarFill.color = Color.white; // 先設為白色確保能看到顏色變化
-            healthBarFill.color = fullHealthColor; // 再設為綠色
+        if (player != null)
+        {
+            // === 修改：根據玩家的實際血量初始化血條 ===
+            int currentHealth = player.GetCurrentHealth();
+            int maxHealth = player.GetMaxHealth();
 
-            Debug.Log($"血條UI初始化完成，設置顏色為: {fullHealthColor}");
-            Debug.Log($"當前血條顏色為: {healthBarFill.color}");
+            Debug.Log($"[血條初始化] 載入玩家血量: {currentHealth}/{maxHealth}");
+
+            // 計算血量百分比
+            float healthPercentage = (float)currentHealth / maxHealth;
+
+            // 設置血條
+            currentFillAmount = healthPercentage;
+            targetFillAmount = healthPercentage;
+
+            if (healthBarFill != null)
+            {
+                healthBarFill.fillAmount = healthPercentage;
+                UpdateHealthBarColor(healthPercentage);
+                Debug.Log($"血條初始化完成 - 血量: {currentHealth}/{maxHealth} ({healthPercentage:P0})");
+            }
+
+            // 更新血量文字
+            UpdateHealthText(currentHealth, maxHealth);
+
+            // 記錄初始血量
+            lastKnownHealth = currentHealth;
+            isInitialized = true;
         }
         else
         {
-            Debug.LogError("找不到血條填充圖片！請確認Health Bar Fill有正確設置。");
+            Debug.LogError("找不到玩家控制器！血條無法正確初始化。");
+
+            // === 備用方案：設為滿血 ===
+            if (healthBarFill != null)
+            {
+                currentFillAmount = 1f;
+                targetFillAmount = 1f;
+                healthBarFill.fillAmount = 1f;
+                healthBarFill.color = fullHealthColor;
+                Debug.Log("使用備用初始化方案，設置血條為滿血");
+            }
         }
     }
 
     void Update()
     {
+        // === 新增：自動同步血量（防止不同步） ===
+        if (isInitialized)
+        {
+            AutoSyncWithPlayer();
+        }
+
         // 平滑過渡動畫：讓血條慢慢變化而不是瞬間變化
         if (smoothTransition && healthBarFill != null)
         {
@@ -74,6 +129,25 @@ public class HealthBarUI : MonoBehaviour
         }
     }
 
+    // === 新增：自動同步玩家血量 ===
+    void AutoSyncWithPlayer()
+    {
+        PlayerController2D player = FindObjectOfType<PlayerController2D>();
+        if (player != null)
+        {
+            int currentHealth = player.GetCurrentHealth();
+
+            // 如果血量有變化，自動更新血條
+            if (currentHealth != lastKnownHealth)
+            {
+                int maxHealth = player.GetMaxHealth();
+                Debug.Log($"[自動同步] 檢測到血量變化: {lastKnownHealth} → {currentHealth}");
+                UpdateHealthBar(currentHealth, maxHealth);
+                lastKnownHealth = currentHealth;
+            }
+        }
+    }
+
     // === 主要功能：更新血條 ===
     public void UpdateHealthBar(int currentHealth, int maxHealth)
     {
@@ -88,6 +162,9 @@ public class HealthBarUI : MonoBehaviour
         // 計算血量百分比（0.0 到 1.0）
         float healthPercentage = (float)currentHealth / maxHealth;
         Debug.Log($"血量百分比: {healthPercentage:F2} ({healthPercentage:P0})");
+
+        // === 新增：檢測是否受傷（用於閃爍效果） ===
+        bool tookDamage = (lastKnownHealth > 0 && currentHealth < lastKnownHealth);
 
         // 設置目標填充量
         targetFillAmount = healthPercentage;
@@ -120,10 +197,20 @@ public class HealthBarUI : MonoBehaviour
         // 更新血量文字
         UpdateHealthText(currentHealth, maxHealth);
 
-        // 播放受傷閃爍效果（如果血量下降）
-        if (enableDamageFlash && healthPercentage < 1f)
+        // === 修改：只有受傷時才播放閃爍效果 ===
+        if (enableDamageFlash && tookDamage)
         {
             PlayDamageFlash();
+            Debug.Log($"檢測到受傷，播放閃爍效果 ({lastKnownHealth} → {currentHealth})");
+        }
+
+        // 更新記錄的血量
+        lastKnownHealth = currentHealth;
+
+        // 標記為已初始化
+        if (!isInitialized)
+        {
+            isInitialized = true;
         }
     }
 
@@ -161,8 +248,6 @@ public class HealthBarUI : MonoBehaviour
         healthBarFill.color = targetColor;
 
         Debug.Log($"血條顏色變更為：{colorName} (血量百分比: {healthPercentage:P0})");
-        Debug.Log($"設置的顏色值: R={targetColor.r:F2}, G={targetColor.g:F2}, B={targetColor.b:F2}, A={targetColor.a:F2}");
-        Debug.Log($"實際血條顏色: R={healthBarFill.color.r:F2}, G={healthBarFill.color.g:F2}, B={healthBarFill.color.b:F2}, A={healthBarFill.color.a:F2}");
     }
 
     // === 更新血量文字 ===
@@ -252,27 +337,73 @@ public class HealthBarUI : MonoBehaviour
         gameObject.SetActive(visible);
     }
 
-    // === 工具函數：重置血條到滿血狀態 ===
+    // === 修改：血條重置（配合跨關卡血量系統） ===
     public void ResetHealthBar()
     {
+        PlayerController2D player = FindObjectOfType<PlayerController2D>();
+
+        if (player != null)
+        {
+            // === 使用玩家的實際血量，而不是強制滿血 ===
+            int currentHealth = player.GetCurrentHealth();
+            int maxHealth = player.GetMaxHealth();
+
+            Debug.Log($"[血條重置] 重置為玩家當前血量: {currentHealth}/{maxHealth}");
+            UpdateHealthBar(currentHealth, maxHealth);
+        }
+        else
+        {
+            // === 備用方案：設為滿血 ===
+            if (healthBarFill != null)
+            {
+                currentFillAmount = 1f;
+                targetFillAmount = 1f;
+                healthBarFill.fillAmount = 1f;
+                UpdateHealthBarColor(1f);
+            }
+
+            if (healthText != null)
+            {
+                healthText.text = "100/100"; // 預設值
+            }
+
+            Debug.Log("血條重置為預設滿血狀態（找不到玩家）");
+        }
+
+        // 重置狀態
+        lastKnownHealth = -1;
+        isInitialized = false;
+
+        // 重新初始化
+        StartCoroutine(InitializeHealthBar());
+    }
+
+    // === 新增：強制同步血量（供外部呼叫） ===
+    public void ForceSync()
+    {
+        PlayerController2D player = FindObjectOfType<PlayerController2D>();
+        if (player != null)
+        {
+            int currentHealth = player.GetCurrentHealth();
+            int maxHealth = player.GetMaxHealth();
+
+            Debug.Log($"[強制同步] 同步血量: {currentHealth}/{maxHealth}");
+            UpdateHealthBar(currentHealth, maxHealth);
+        }
+    }
+
+    // === 新增：獲取血條狀態（除錯用） ===
+    public void LogHealthBarStatus()
+    {
+        Debug.Log($"[血條狀態] 已初始化: {isInitialized}");
+        Debug.Log($"[血條狀態] 上次血量: {lastKnownHealth}");
+        Debug.Log($"[血條狀態] 當前填充: {currentFillAmount:F2}");
+        Debug.Log($"[血條狀態] 目標填充: {targetFillAmount:F2}");
+
         if (healthBarFill != null)
         {
-            currentFillAmount = 1f;
-            targetFillAmount = 1f;
-            healthBarFill.fillAmount = 1f;
-            UpdateHealthBarColor(1f);
+            Debug.Log($"[血條狀態] 實際填充: {healthBarFill.fillAmount:F2}");
+            Debug.Log($"[血條狀態] 血條顏色: {healthBarFill.color}");
         }
-
-        if (healthText != null)
-        {
-            PlayerController2D player = FindObjectOfType<PlayerController2D>();
-            if (player != null)
-            {
-                int maxHealth = player.GetMaxHealth();
-                healthText.text = $"{maxHealth}/{maxHealth}";
-            }
-        }
-
-        Debug.Log("血條重置為滿血狀態");
     }
 }

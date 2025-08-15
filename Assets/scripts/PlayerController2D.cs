@@ -18,9 +18,14 @@ public class PlayerController2D : MonoBehaviour
     private bool isGrounded;
     public bool canControl = true;
 
-    // === 新增：血量系統 ===
+    // === 修改：跨關卡血量系統 ===
     [Header("Health System 血量系統")]
     public int maxHealth = 100;              // 最大血量
+
+    // === 新增：靜態血量變數（跨場景保持） ===
+    private static int persistentHealth = -1; // -1 表示尚未初始化
+    private static bool isFirstTimePlay = true; // 是否第一次遊戲
+
     private int currentHealth;               // 當前血量
     public int enemyDamage = 15;             // Enemy造成的傷害
     private float damageInvulnerabilityTime = 1f; // 受傷無敵時間（防止連續扣血）
@@ -48,19 +53,59 @@ public class PlayerController2D : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
 
-        // === 新增：初始化血量 ===
-        currentHealth = maxHealth; // 設置血量為滿血
+        // === 修改：血量初始化邏輯 ===
+        InitializeHealth();
 
         Time.timeScale = 1f;
-        Debug.Log("Game Start. 遊戲開始");
+        Debug.Log($"Game Start. 遊戲開始 - 血量: {currentHealth}/{maxHealth}");
 
-        // === 新增：更新血條UI ===
+        // === 更新血條UI ===
         UpdateHealthUI();
+    }
+
+    // === 新增：血量初始化方法 ===
+    void InitializeHealth()
+    {
+        // 如果是第一次遊戲，設置滿血
+        if (isFirstTimePlay || persistentHealth <= 0)
+        {
+            currentHealth = maxHealth;
+            persistentHealth = maxHealth;
+            isFirstTimePlay = false;
+            Debug.Log("[血量系統] 第一次遊戲，血量設為滿血");
+        }
+        // 否則使用保存的血量
+        else
+        {
+            currentHealth = persistentHealth;
+            Debug.Log($"[血量系統] 載入保存的血量: {currentHealth}/{maxHealth}");
+        }
+    }
+
+    // === 新增：保存血量方法 ===
+    void SaveHealth()
+    {
+        persistentHealth = currentHealth;
+        Debug.Log($"[血量系統] 血量已保存: {persistentHealth}");
+    }
+
+    // === 新增：重置血量系統（用於重新開始遊戲） ===
+    public static void ResetHealthSystem()
+    {
+        persistentHealth = -1;
+        isFirstTimePlay = true;
+        Debug.Log("[血量系統] 血量系統已重置");
     }
 
     void Update()
     {
         if (!canControl) return;
+
+        // === 新增：測試按鍵 ===
+        if (Input.GetKeyDown(KeyCode.R))
+        {
+            Debug.Log($"[測試] 當前血量: {currentHealth}/{maxHealth}, 保存血量: {persistentHealth}");
+        }
 
         // 原有的遊戲邏輯
         Move();
@@ -72,6 +117,15 @@ public class PlayerController2D : MonoBehaviour
         if (transform.position.y < fall)
         {
             Fall();
+        }
+    }
+
+    // === 新增：場景切換時保存血量 ===
+    void OnDestroy()
+    {
+        if (!isDead && currentHealth > 0)
+        {
+            SaveHealth();
         }
     }
 
@@ -164,7 +218,7 @@ public class PlayerController2D : MonoBehaviour
         Debug.DrawRay(wallCheck.position, checkRight * wallCheckDistance, Color.red);
     }
 
-    // === 修改：碰撞檢測（加入血量系統） ===
+    // === 碰撞檢測（原有邏輯） ===
     void OnCollisionEnter2D(Collision2D collision)
     {
         // Enemy1：直接死亡
@@ -201,7 +255,7 @@ public class PlayerController2D : MonoBehaviour
         isGrounded = false;
     }
 
-    // === 新增：受傷系統 ===
+    // === 修改：受傷系統 ===
     public void TakeDamage(int damage)
     {
         if (isDead) return; // 如果已經死亡，不再受傷
@@ -209,6 +263,9 @@ public class PlayerController2D : MonoBehaviour
         currentHealth -= damage;              // 扣除血量
         currentHealth = Mathf.Max(currentHealth, 0); // 確保血量不會小於0
         lastDamageTime = Time.time;           // 記錄受傷時間
+
+        // === 新增：即時保存血量 ===
+        SaveHealth();
 
         UpdateHealthUI();                     // 更新血條UI
 
@@ -221,7 +278,7 @@ public class PlayerController2D : MonoBehaviour
         }
     }
 
-    // === 新增：治療系統（可選功能） ===
+    // === 修改：治療系統 ===
     public void Heal(int healAmount)
     {
         if (isDead) return; // 如果已經死亡，無法治療
@@ -229,11 +286,14 @@ public class PlayerController2D : MonoBehaviour
         currentHealth += healAmount;                          // 增加血量
         currentHealth = Mathf.Min(currentHealth, maxHealth);  // 確保血量不會超過最大值
 
+        // === 新增：即時保存血量 ===
+        SaveHealth();
+
         UpdateHealthUI();                                     // 更新血條UI
         Debug.Log($"玩家回復 {healAmount} 點血量。當前血量: {currentHealth}/{maxHealth}");
     }
 
-    // === 新增：更新血條UI ===
+    // === 更新血條UI（原有） ===
     void UpdateHealthUI()
     {
         // 尋找場景中的血條UI組件
@@ -248,7 +308,7 @@ public class PlayerController2D : MonoBehaviour
         }
     }
 
-    // === 新增：獲取血量資訊（供其他腳本使用） ===
+    // === 獲取血量資訊（原有） ===
     public int GetCurrentHealth()
     {
         return currentHealth;
@@ -268,6 +328,7 @@ public class PlayerController2D : MonoBehaviour
 
         // 掉落死亡時血條歸零
         currentHealth = 0;
+        SaveHealth(); // 保存死亡狀態
         UpdateHealthUI();
 
         isDead = true;
@@ -275,7 +336,7 @@ public class PlayerController2D : MonoBehaviour
         FindObjectOfType<GameManager>().PlayerDied();
     }
 
-    // === 新增：統一死亡處理 ===
+    // === 統一死亡處理（原有） ===
     void Die()
     {
         if (isDead) return;
@@ -283,13 +344,45 @@ public class PlayerController2D : MonoBehaviour
         isDead = true;
         canControl = false;
 
+        // === 新增：死亡時保存血量狀態 ===
+        SaveHealth();
+
         Debug.Log("玩家死亡！");
         FindObjectOfType<GameManager>().PlayerDied();
     }
 
-    // === 修改：暫停遊戲（使用統一死亡方法） ===
+    // === 暫停遊戲（原有） ===
     public void PauseGame()
     {
         Die();
+    }
+
+    // === 新增：公開方法供其他腳本使用 ===
+
+    /// <summary>
+    /// 手動保存當前血量
+    /// </summary>
+    public void SaveCurrentHealth()
+    {
+        SaveHealth();
+    }
+
+    /// <summary>
+    /// 獲取保存的血量
+    /// </summary>
+    public static int GetPersistentHealth()
+    {
+        return persistentHealth;
+    }
+
+    /// <summary>
+    /// 設置血量為滿血（用於新遊戲）
+    /// </summary>
+    public void SetFullHealth()
+    {
+        currentHealth = maxHealth;
+        SaveHealth();
+        UpdateHealthUI();
+        Debug.Log("[血量系統] 血量設為滿血");
     }
 }
