@@ -6,7 +6,9 @@ public class MeteorSpawner2 : MonoBehaviour
     public float spawnInterval = 3f;
 
     [Header("發射位置")]
-    public Vector2 spawnPosition = new Vector2(10f, 5f);
+    [Tooltip("是否使用自定義發射位置，不勾選則從此物件位置發射")]
+    public bool useCustomSpawnPosition = false;
+    public Vector2 customSpawnPosition = new Vector2(10f, 5f);
 
     [Header("角度設定")]
     public float startAngle = 10f;      // 起始角度
@@ -46,12 +48,15 @@ public class MeteorSpawner2 : MonoBehaviour
 
     void SpawnSingleMeteor(float angle, int index)
     {
+        // 決定發射位置
+        Vector2 spawnPos = useCustomSpawnPosition ? customSpawnPosition : (Vector2)transform.position;
+
         // 轉換成方向向量
         float angleInRadians = angle * Mathf.Deg2Rad;
         Vector2 direction = new Vector2(Mathf.Cos(angleInRadians), Mathf.Sin(angleInRadians));
 
         // 創建隕石
-        GameObject meteor = Instantiate(meteorPrefab, spawnPosition, Quaternion.identity);
+        GameObject meteor = Instantiate(meteorPrefab, spawnPos, Quaternion.identity);
 
         // 設定隕石屬性
         MeteorController meteorController = meteor.GetComponent<MeteorController>();
@@ -62,7 +67,7 @@ public class MeteorSpawner2 : MonoBehaviour
             meteorController.damage = meteorDamage;
         }
 
-        Debug.Log($"隕石 {index + 1} 發射，角度: {angle} 度");
+        Debug.Log($"隕石 {index + 1} 發射，角度: {angle} 度，位置: {spawnPos}");
     }
 
     // 手動發射測試

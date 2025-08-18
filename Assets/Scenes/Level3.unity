@@ -139,7 +139,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &15098988
 Transform:
   m_ObjectHideFlags: 0
@@ -148,12 +148,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 15098987}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.9, y: 4.2, z: -0.06761248}
+  m_LocalPosition: {x: -1.3, y: 1.7, z: -0.06761248}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 20
+  m_RootOrder: 19
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &15098989
 MonoBehaviour:
@@ -170,9 +170,8 @@ MonoBehaviour:
   meteorPrefab: {fileID: 3476353015167430043, guid: 9c8bea8ebe15de44fbaf6181cb164038, type: 3}
   spawnInterval: 3
   meteorsPerWave: 5
-  spawnPosition: {x: 10, y: 5}
-  spreadAngle: 60
-  baseAngle: 225
+  spawnPosition: {x: -1.3, y: 1.7}
+  shootDirection: 0
   meteorSpeed: 8
   meteorDamage: 30
 --- !u!1001 &24788186
@@ -607,7 +606,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 123100551}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 37.5, y: 13.8, z: 0}
+  m_LocalPosition: {x: 40.7, y: 25.4, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1345,12 +1344,12 @@ GameObject:
   - component: {fileID: 725834074}
   - component: {fileID: 725834075}
   m_Layer: 0
-  m_Name: MeteorSpawner (1)
+  m_Name: MeteorSpawner360
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &725834074
 Transform:
   m_ObjectHideFlags: 0
@@ -1359,12 +1358,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 725834072}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 23.4, y: 1.6, z: -0.06761248}
+  m_LocalPosition: {x: 46.2, y: 12.1, z: -0.06761248}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 21
+  m_RootOrder: 20
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &725834075
 MonoBehaviour:
@@ -1380,7 +1379,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   meteorPrefab: {fileID: 3476353015167430043, guid: 9c8bea8ebe15de44fbaf6181cb164038, type: 3}
   spawnInterval: 3
-  spawnPosition: {x: 10, y: 5}
+  useCustomSpawnPosition: 0
+  customSpawnPosition: {x: 10, y: 5}
   startAngle: 10
   endAngle: 360
   angleStep: 10
@@ -2022,7 +2022,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 19
+  m_RootOrder: 18
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1554179963
 GameObject:
@@ -3717,37 +3717,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2005626722}
   m_CullTransparentMesh: 1
---- !u!1 &2050742247
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2050742248}
-  m_Layer: 0
-  m_Name: TeleportPoint1 (1)
-  m_TagString: TeleportPoint
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &2050742248
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2050742247}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -13.8, y: -1.3, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_RootOrder: 18
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2079578998
 GameObject:
   m_ObjectHideFlags: 0

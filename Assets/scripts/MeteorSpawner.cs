@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class MeteorSpawner : MonoBehaviour
@@ -8,69 +9,83 @@ public class MeteorSpawner : MonoBehaviour
     public int meteorsPerWave = 5;
 
     [Header("發射位置")]
-    public Vector2 spawnPosition = new Vector2(10f, 5f);
+    public Vector2 spawnPosition = new Vector2(0f, 0f);
 
-    [Header("角度設定")]
-    public float spreadAngle = 60f;
-    public float baseAngle = 225f;
+    [Header("發射方向選擇")]
+    public Direction shootDirection = Direction.LeftDown;
 
     [Header("隕石屬性")]
     public float meteorSpeed = 8f;
     public int meteorDamage = 30;
 
+    // 發射方向枚舉 - 包含所有4個方位
+    public enum Direction
+    {
+        LeftDown,   // 朝左下角 (原本的)
+        RightUp,    // 朝右上角
+        RightDown,  // 朝右下角
+        LeftUp      // 朝左上角
+    }
+
     void Start()
     {
-        Debug.Log("隕石發射器啟動");
-
-        // 立即發射第一波，然後每3秒發射一波
         InvokeRepeating("SpawnMeteorWave", 0f, spawnInterval);
     }
 
     void SpawnMeteorWave()
     {
-        if (meteorPrefab == null)
+        if (meteorPrefab == null) return;
+
+        // 根據方向設定發射角度
+        float baseAngle;
+
+        switch (shootDirection)
         {
-            Debug.LogError("沒有設定隕石預製物！");
-            return;
+            case Direction.LeftDown:
+                baseAngle = 225f;                    // 朝左下方向 (原本的)
+                break;
+
+            case Direction.RightUp:
+                baseAngle = 45f;                     // 朝右上方向
+                break;
+
+            case Direction.RightDown:
+                baseAngle = 315f;                    // 朝右下方向
+                break;
+
+            case Direction.LeftUp:
+                baseAngle = 135f;                    // 朝左上方向
+                break;
+
+            default:
+                baseAngle = 225f;                    // 預設朝左下
+                break;
         }
 
-        Debug.Log($"發射一波隕石，共 {meteorsPerWave} 顆");
-
+        // 發射一波隕石
         for (int i = 0; i < meteorsPerWave; i++)
         {
-            SpawnSingleMeteor(i);
+            // 計算散布角度 (集中在60度範圍內)
+            float spreadRange = 60f; // 總散布角度
+            float angleOffset = (spreadRange / (meteorsPerWave - 1)) * i - (spreadRange / 2);
+            float finalAngle = baseAngle + angleOffset;
+
+            // 計算發射方向
+            Vector2 direction = new Vector2(
+                Mathf.Cos(finalAngle * Mathf.Deg2Rad),
+                Mathf.Sin(finalAngle * Mathf.Deg2Rad)
+            );
+
+            // 生成隕石（使用自設定的發射位置）
+            GameObject meteor = Instantiate(meteorPrefab, spawnPosition, Quaternion.identity);
+            MeteorController controller = meteor.GetComponent<MeteorController>();
+
+            if (controller != null)
+            {
+                controller.SetDirection(direction);
+                controller.SetSpeed(meteorSpeed);
+                controller.SetDamage(meteorDamage);
+            }
         }
-    }
-
-    void SpawnSingleMeteor(int index)
-    {
-        // 計算角度
-        float angleStep = spreadAngle / (meteorsPerWave - 1);
-        float currentAngle = baseAngle - (spreadAngle / 2) + (angleStep * index);
-
-        // 轉換成方向向量
-        float angleInRadians = currentAngle * Mathf.Deg2Rad;
-        Vector2 direction = new Vector2(Mathf.Cos(angleInRadians), Mathf.Sin(angleInRadians));
-
-        // 創建隕石
-        GameObject meteor = Instantiate(meteorPrefab, spawnPosition, Quaternion.identity);
-
-        // 設定隕石屬性
-        MeteorController meteorController = meteor.GetComponent<MeteorController>();
-        if (meteorController != null)
-        {
-            meteorController.SetDirection(direction);
-            meteorController.moveSpeed = meteorSpeed;
-            meteorController.damage = meteorDamage;
-        }
-
-        Debug.Log($"隕石 {index + 1} 發射，角度: {currentAngle} 度");
-    }
-
-    // 手動發射測試
-    [ContextMenu("測試發射一波")]
-    void TestSpawn()
-    {
-        SpawnMeteorWave();
     }
 }

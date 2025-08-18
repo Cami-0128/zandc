@@ -16,54 +16,75 @@ public class MeteorController : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
 
-        // 10秒後自動銷毀
-        Destroy(gameObject, lifetime);
+        // 啟動火焰效果
+        if (fireEffect != null)
+        {
+            fireEffect.Play();
+        }
 
-        Debug.Log("隕石已創建");
+        // 設定生命週期
+        Destroy(gameObject, lifetime);
     }
 
     void Update()
     {
         // 移動隕石
-        if (rb != null)
+        if (rb != null && moveDirection != Vector2.zero)
         {
             rb.velocity = moveDirection * moveSpeed;
         }
     }
 
-    // 設定隕石移動方向
+    // 設定移動方向
     public void SetDirection(Vector2 direction)
     {
         moveDirection = direction.normalized;
-        Debug.Log($"隕石方向設為: {moveDirection}");
     }
 
-    // 碰撞檢測
+    // 設定速度
+    public void SetSpeed(float speed)
+    {
+        moveSpeed = speed;
+    }
+
+    // 設定傷害
+    public void SetDamage(int damageValue)
+    {
+        damage = damageValue;
+    }
+
     void OnTriggerEnter2D(Collider2D other)
     {
-        Debug.Log($"隕石碰到: {other.name}");
-
-        // 碰到玩家
+        // 碰到玩家扣血
         if (other.CompareTag("Player") && !hasHitPlayer)
         {
             hasHitPlayer = true;
 
-            // 尋找玩家的血量控制腳本
             PlayerController2D player = other.GetComponent<PlayerController2D>();
             if (player != null)
             {
                 player.TakeDamage(damage);
-                Debug.Log($"對玩家造成 {damage} 點傷害！");
             }
 
-            // 銷毀隕石
-            Destroy(gameObject);
+            DestroyMeteor();
         }
-        // 碰到地面
-        else if (other.CompareTag("Ground"))
+
+        // 碰到地面消失
+        if (other.CompareTag("Ground"))
         {
-            Debug.Log("隕石碰到地面，銷毀");
-            Destroy(gameObject);
+            DestroyMeteor();
         }
+    }
+
+    void DestroyMeteor()
+    {
+        // 停止粒子效果
+        if (fireEffect != null)
+        {
+            fireEffect.Stop();
+        }
+
+        // 銷毀隕石
+        Destroy(gameObject);
     }
 }
