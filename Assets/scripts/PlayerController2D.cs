@@ -31,6 +31,11 @@ public class PlayerController2D : MonoBehaviour
     private float damageInvulnerabilityTime = 1f; // 受傷無敵時間（防止連續扣血）
     private float lastDamageTime = -999f;    // 上次受傷時間
 
+    // === 新增：血包系統相關 ===
+    [Header("Health Pickup System 血包系統")]
+    public AudioClip healSound;              // 治療音效
+    private AudioSource audioSource;
+
     // Wall Slide 相關（原有）
     public float wallSlideSpeed = 1f;
     public Transform wallCheck;
@@ -52,6 +57,14 @@ public class PlayerController2D : MonoBehaviour
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+
+        // === 新增：音效系統初始化 ===
+        audioSource = GetComponent<AudioSource>();
+        if (audioSource == null)
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
+            audioSource.playOnAwake = false;
+        }
 
         // === 修改：血量初始化邏輯 ===
         InitializeHealth();
@@ -105,6 +118,13 @@ public class PlayerController2D : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.R))
         {
             Debug.Log($"[測試] 當前血量: {currentHealth}/{maxHealth}, 保存血量: {persistentHealth}");
+        }
+
+        // === 新增：測試受傷按鍵 ===
+        if (Input.GetKeyDown(KeyCode.T))
+        {
+            TakeDamage(10);
+            Debug.Log("[測試] 玩家受到 10 點測試傷害");
         }
 
         // 原有的遊戲邏輯
@@ -278,19 +298,46 @@ public class PlayerController2D : MonoBehaviour
         }
     }
 
-    // === 修改：治療系統 ===
+    // === 修改：治療系統（增強版） ===
     public void Heal(int healAmount)
     {
         if (isDead) return; // 如果已經死亡，無法治療
 
+        int oldHealth = currentHealth;
         currentHealth += healAmount;                          // 增加血量
         currentHealth = Mathf.Min(currentHealth, maxHealth);  // 確保血量不會超過最大值
+
+        int actualHealAmount = currentHealth - oldHealth;     // 實際回復的血量
+
+        // === 新增：播放治療音效 ===
+        if (healSound != null && audioSource != null)
+        {
+            audioSource.clip = healSound;
+            audioSource.Play();
+        }
 
         // === 新增：即時保存血量 ===
         SaveHealth();
 
         UpdateHealthUI();                                     // 更新血條UI
-        Debug.Log($"玩家回復 {healAmount} 點血量。當前血量: {currentHealth}/{maxHealth}");
+        Debug.Log($"玩家回復 {actualHealAmount} 點血量。當前血量: {currentHealth}/{maxHealth}");
+
+        // === 新增：治療反饋效果（可選） ===
+        StartCoroutine(HealFeedback());
+    }
+
+    // === 新增：治療反饋效果協程 ===
+    IEnumerator HealFeedback()
+    {
+        // 可以在這裡添加視覺反饋，比如改變玩家顏色
+        SpriteRenderer sr = GetComponent<SpriteRenderer>();
+        if (sr != null)
+        {
+            Color originalColor = sr.color;
+            sr.color = Color.green; // 短暫變綠表示治療
+            yield return new WaitForSeconds(0.2f);
+            sr.color = originalColor;
+        }
     }
 
     // === 更新血條UI（原有） ===
@@ -317,6 +364,18 @@ public class PlayerController2D : MonoBehaviour
     public int GetMaxHealth()
     {
         return maxHealth;
+    }
+
+    // === 新增：檢查是否可以治療 ===
+    public bool CanHeal()
+    {
+        return !isDead && currentHealth < maxHealth;
+    }
+
+    // === 新增：獲取血量百分比 ===
+    public float GetHealthPercentage()
+    {
+        return (float)currentHealth / maxHealth;
     }
 
     // === 修改：掉落死亡 ===
@@ -384,5 +443,16 @@ public class PlayerController2D : MonoBehaviour
         SaveHealth();
         UpdateHealthUI();
         Debug.Log("[血量系統] 血量設為滿血");
+    }
+
+    /// <summary>
+    /// 設置特定血量值
+    /// </summary>
+    public void SetHealth(int health)
+    {
+        currentHealth = Mathf.Clamp(health, 0, maxHealth);
+        SaveHealth();
+        UpdateHealthUI();
+        Debug.Log($"[血量系統] 血量設為: {currentHealth}/{maxHealth}");
     }
 }
