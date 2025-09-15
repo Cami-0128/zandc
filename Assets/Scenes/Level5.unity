@@ -868,13 +868,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   playerTransform: {fileID: 1320464340}
   offset: {x: 0, y: 2, z: 0}
-  startYThreshold: 1
+  startXThreshold: -16
   fullHourglass: {fileID: 21300000, guid: 9e161615fce54464db89f026459d3510, type: 3}
   midHourglass: {fileID: 21300000, guid: e4bd0641516f1f244b0f5ada1927905f, type: 3}
   emptyHourglass: {fileID: 21300000, guid: 763d5fe3b8634004d912916d709060b7, type: 3}
   totalTime: 10
   hourglassImage: {fileID: 0}
-  player: {fileID: 0}
+  player: {fileID: 1320464339}
 --- !u!1 &376538553
 GameObject:
   m_ObjectHideFlags: 0
@@ -1093,7 +1093,7 @@ GameObject:
   - component: {fileID: 507768155}
   m_Layer: 0
   m_Name: Square
-  m_TagString: Untagged
+  m_TagString: EndPoint
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

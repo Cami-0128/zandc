@@ -8,6 +8,7 @@ TagManager:
   - Enemy1
   - TeleportPoint
   - Ground
+  - EndPoint
   layers:
   - Default
   - TransparentFX

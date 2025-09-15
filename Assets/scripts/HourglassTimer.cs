@@ -3,23 +3,23 @@ using UnityEngine.UI;
 
 public class HourglassTimer : MonoBehaviour
 {
-    public Transform playerTransform;          // 玩家Transform，用來取得X座標判斷
-    public Vector3 offset = new Vector3(0, 2f, 0);  // 沙漏相對玩家偏移
-    public float startXThreshold = -16f;        // 當玩家X大於此值開始倒數計時
+    public Transform playerTransform;
+    public Vector3 offset = new Vector3(0, 2f, 0);
+    public float startXThreshold = -16f;
 
-    public Sprite fullHourglass;                // 沙漏滿
-    public Sprite midHourglass;                 // 沙漏中度
-    public Sprite emptyHourglass;               // 沙漏空的
+    public Sprite fullHourglass;
+    public Sprite midHourglass;
+    public Sprite emptyHourglass;
 
     public float totalTime = 10f;
 
-    public Image hourglassImage;               // UI Image顯示用，可留空用SpriteRenderer
+    public Image hourglassImage;
 
     private float currentTime;
     private bool isCounting = false;
     private bool hasStarted = false;
 
-    public PlayerController2D player;          // 玩家控制器參考
+    public PlayerController2D player;
 
     void Start()
     {
@@ -88,14 +88,20 @@ public class HourglassTimer : MonoBehaviour
 
     private void OnTimerFinished()
     {
-        if (player != null && !player.hasReachedEnd)
+        if (player == null)
         {
-            Debug.Log("[HourglassTimer] 倒數結束，玩家未達終點，執行死亡");
+            Debug.LogWarning("[HourglassTimer] 玩家引用為空");
+            return;
+        }
+        Debug.Log($"[HourglassTimer] 玩家狀態 - hasReachedEnd: {player.hasReachedEnd}, isDead: {player.isDead}");
+        if (!player.hasReachedEnd && !player.isDead)
+        {
+            Debug.Log("[HourglassTimer] 倒數到，玩家未達終點，執行死亡");
             player.Die();
         }
         else
         {
-            Debug.Log("[HourglassTimer] 倒數結束，玩家已達終點或已死亡，不執行死亡");
+            Debug.Log("[HourglassTimer] 倒數到，玩家已達終點或已死亡，不執行死亡");
         }
     }
 }
