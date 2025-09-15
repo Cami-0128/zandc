@@ -3,23 +3,23 @@ using UnityEngine.UI;
 
 public class HourglassTimer : MonoBehaviour
 {
-    [Header("玩家設定")]
-    public Transform playerTransform;          // 玩家Transform
-    public Vector3 offset = new Vector3(0, 2f, 0);  // 沙漏偏移玩家頭頂位置
+    public Transform playerTransform;          // 玩家Transform，用來取得X座標判斷
+    public Vector3 offset = new Vector3(0, 2f, 0);  // 沙漏相對玩家偏移
+    public float startXThreshold = -16f;        // 當玩家X大於此值開始倒數計時
 
-    [Header("沙漏圖像")]
-    public Sprite fullHourglass;                // 沙漏滿狀態
-    public Sprite midHourglass;                 // 沙漏中間狀態
-    public Sprite emptyHourglass;               // 沙漏空狀態
+    public Sprite fullHourglass;                // 沙漏滿
+    public Sprite midHourglass;                 // 沙漏中度
+    public Sprite emptyHourglass;               // 沙漏空的
 
-    [Header("計時設定")]
-    public float totalTime = 10f;               // 總倒數時間（秒）
+    public float totalTime = 10f;
 
-    [Header("參考元件")]
-    public Image hourglassImage;                // UI Image 顯示沙漏 (若是用SpriteRenderer改為public SpriteRenderer)
+    public Image hourglassImage;               // UI Image顯示用，可留空用SpriteRenderer
 
     private float currentTime;
     private bool isCounting = false;
+    private bool hasStarted = false;
+
+    public PlayerController2D player;          // 玩家控制器參考
 
     void Start()
     {
@@ -29,18 +29,25 @@ public class HourglassTimer : MonoBehaviour
 
     void Update()
     {
-        if (!isCounting) return;
-
-        // 更新計時
-        currentTime -= Time.deltaTime;
-        if (currentTime < 0)
+        if (!hasStarted && playerTransform != null && playerTransform.position.x > startXThreshold)
         {
-            currentTime = 0;
-            isCounting = false;
-            // 計時結束可加額外事件
+            Debug.Log($"[HourglassTimer] 計時開始！玩家X={playerTransform.position.x} 超過閾值{startXThreshold}");
+            StartTimer();
+            hasStarted = true;
         }
 
-        // 更新沙漏圖像
+        if (!isCounting) return;
+
+        currentTime -= Time.deltaTime;
+
+        if (currentTime <= 0f)
+        {
+            currentTime = 0f;
+            isCounting = false;
+            Debug.Log("[HourglassTimer] 計時結束！");
+            OnTimerFinished();
+        }
+
         float ratio = currentTime / totalTime;
         if (ratio > 0.66f)
             SetHourglassSprite(fullHourglass);
@@ -49,14 +56,10 @@ public class HourglassTimer : MonoBehaviour
         else
             SetHourglassSprite(emptyHourglass);
 
-        // 維持沙漏位置跟隨玩家頭頂
         if (playerTransform != null)
-        {
             transform.position = playerTransform.position + offset;
-        }
     }
 
-    // 啟動倒數計時
     public void StartTimer()
     {
         currentTime = totalTime;
@@ -64,19 +67,35 @@ public class HourglassTimer : MonoBehaviour
         SetHourglassSprite(fullHourglass);
     }
 
-    // 切換沙漏圖片
     private void SetHourglassSprite(Sprite sprite)
     {
-        if (hourglassImage != null && hourglassImage.sprite != sprite)
+        if (hourglassImage != null)
         {
-            hourglassImage.sprite = sprite;
+            if (hourglassImage.sprite != sprite)
+            {
+                hourglassImage.sprite = sprite;
+            }
         }
-        else if (hourglassImage == null)
+        else
         {
-            // 若未使用UI Image，改成控制SpriteRenderer
             SpriteRenderer sr = GetComponent<SpriteRenderer>();
             if (sr != null && sr.sprite != sprite)
+            {
                 sr.sprite = sprite;
+            }
+        }
+    }
+
+    private void OnTimerFinished()
+    {
+        if (player != null && !player.hasReachedEnd)
+        {
+            Debug.Log("[HourglassTimer] 倒數結束，玩家未達終點，執行死亡");
+            player.Die();
+        }
+        else
+        {
+            Debug.Log("[HourglassTimer] 倒數結束，玩家已達終點或已死亡，不執行死亡");
         }
     }
 }

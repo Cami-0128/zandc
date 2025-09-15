@@ -18,11 +18,11 @@ public class PlayerController2D : MonoBehaviour
     private bool isGrounded;
     public bool canControl = true;
 
-    // === 修改：跨關卡血量系統 ===
+    // === 跨關卡血量系統 ===
     [Header("Health System 血量系統")]
     public int maxHealth = 100;              // 最大血量
 
-    // === 新增：靜態血量變數（跨場景保持） ===
+    // === 靜態血量變數（跨場景保持） ===
     private static int persistentHealth = -1; // -1 表示尚未初始化
     private static bool isFirstTimePlay = true; // 是否第一次遊戲
 
@@ -31,12 +31,12 @@ public class PlayerController2D : MonoBehaviour
     private float damageInvulnerabilityTime = 1f; // 受傷無敵時間（防止連續扣血）
     private float lastDamageTime = -999f;    // 上次受傷時間
 
-    // === 新增：血包系統相關 ===
+    // === 血包系統相關 ===
     [Header("Health Pickup System 血包系統")]
     public AudioClip healSound;              // 治療音效
     private AudioSource audioSource;
 
-    // Wall Slide 相關（原有）
+    // Wall Slide 相關
     public float wallSlideSpeed = 1f;
     public Transform wallCheck;
     public float wallCheckDistance = 0.5f;
@@ -44,15 +44,20 @@ public class PlayerController2D : MonoBehaviour
     private bool isWallSliding = false;
     private bool isTouchingWall = false;
 
-    // Wall Jump 相關（原有）
+    // Wall Jump 相關
     public float wallJumpForceY = 8f;
     public float wallJumpCooldown = 0.5f;
     private float lastWallJumpTime = -999f;
 
-    // Wall Jump Hang Time 相關（原有）
+    // Wall Jump Hang Time 相關
     private bool wallJumping = false;
     public float wallJumpHangTime = 0.2f;
     private float wallJumpHangCounter = 0f;
+
+    // 沙漏倒數計時器參考
+    public HourglassTimer hourglassTimer;
+
+    public bool hasReachedEnd = false;
 
     void Start()
     {
@@ -93,6 +98,16 @@ public class PlayerController2D : MonoBehaviour
             currentHealth = persistentHealth;
             Debug.Log($"[血量系統] 載入保存的血量: {currentHealth}/{maxHealth}");
         }
+
+        // 如果未在Inspector指定，嘗試自動找
+        if (hourglassTimer == null)
+        {
+            hourglassTimer = GetComponentInChildren<HourglassTimer>();
+            if (hourglassTimer == null)
+            {
+                Debug.LogWarning("找不到子物件中的 HourglassTimer 組件！");
+            }
+        }
     }
 
     // === 新增：保存血量方法 ===
@@ -114,18 +129,29 @@ public class PlayerController2D : MonoBehaviour
     {
         if (!canControl) return;
 
-        // === 新增：測試按鍵 ===
+        //// 以下示範用空白鍵啟動沙漏計時（可改成對應遊戲事件觸發）
+        //if (Input.GetKeyDown(KeyCode.Space))
+        //{
+        //    HourglassTimer hourglassTimer = GetComponentInChildren<HourglassTimer>();
+        //    if (hourglassTimer != null)
+        //    {
+        //        hourglassTimer.StartTimer();
+        //    }
+        //}
+
+
+        // === 測試按鍵 ===
         if (Input.GetKeyDown(KeyCode.R))
         {
             Debug.Log($"[測試] 當前血量: {currentHealth}/{maxHealth}, 保存血量: {persistentHealth}");
         }
 
-        // === 新增：測試受傷按鍵 ===
-        if (Input.GetKeyDown(KeyCode.T))
-        {
-            TakeDamage(10);
-            Debug.Log("[測試] 玩家受到 10 點測試傷害");
-        }
+        //// === 測試受傷按鍵 ===
+        //if (Input.GetKeyDown(KeyCode.T))
+        //{
+        //    TakeDamage(10);
+        //    Debug.Log("[測試] 玩家受到 10 點測試傷害");
+        //}
 
         // 原有的遊戲邏輯
         Move();
@@ -133,14 +159,27 @@ public class PlayerController2D : MonoBehaviour
         UpdateWallJumpHangTime();
         CheckWallSliding();
 
-        // 掉落死亡檢測（原有）
+        // 掉落死亡檢測
         if (transform.position.y < fall)
         {
             Fall();
         }
     }
 
-    // === 新增：場景切換時保存血量 ===
+
+    void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (collision.CompareTag("EndPoint"))
+        {
+            hasReachedEnd = true;
+            canControl = false;
+            rb.velocity = Vector2.zero;
+            Debug.Log("玩家已抵達終點！");
+        }
+    }
+
+
+    // === 場景切換時保存血量 ===
     void OnDestroy()
     {
         if (!isDead && currentHealth > 0)
@@ -149,14 +188,14 @@ public class PlayerController2D : MonoBehaviour
         }
     }
 
-    // 移動邏輯（原有）
+    // 移動邏輯
     void Move()
     {
         float moveX = Input.GetAxisRaw("Horizontal");
         rb.velocity = new Vector2(moveX * moveSpeed, rb.velocity.y);
     }
 
-    // 跳躍輸入處理（原有）
+    // 跳躍輸入處理
     void HandleJumpInput()
     {
         Time.timeScale = 1f;
@@ -173,14 +212,14 @@ public class PlayerController2D : MonoBehaviour
         }
     }
 
-    // 跳躍（原有）
+    // 跳躍
     void Jump()
     {
         rb.velocity = new Vector2(rb.velocity.x, jumpForce);
         jumpCount++;
     }
 
-    // 牆跳（原有）
+    // 牆跳
     void WallJump()
     {
         rb.velocity = new Vector2(rb.velocity.x, wallJumpForceY);
@@ -190,7 +229,7 @@ public class PlayerController2D : MonoBehaviour
         wallJumpHangCounter = wallJumpHangTime;
     }
 
-    // 更新牆跳掛牆時間（原有）
+    // 更新牆跳掛牆時間
     void UpdateWallJumpHangTime()
     {
         if (wallJumping)
@@ -203,7 +242,7 @@ public class PlayerController2D : MonoBehaviour
         }
     }
 
-    // 檢查牆滑（原有）
+    // 檢查牆滑
     void CheckWallSliding()
     {
         Vector2 checkLeft = Vector2.left;
@@ -238,7 +277,7 @@ public class PlayerController2D : MonoBehaviour
         Debug.DrawRay(wallCheck.position, checkRight * wallCheckDistance, Color.red);
     }
 
-    // === 碰撞檢測（原有邏輯） ===
+    // === 碰撞檢測 ===
     void OnCollisionEnter2D(Collision2D collision)
     {
         // Enemy1：直接死亡
@@ -258,7 +297,7 @@ public class PlayerController2D : MonoBehaviour
             }
         }
 
-        // 地面檢測（原有）
+        // 地面檢測
         foreach (ContactPoint2D contact in collision.contacts)
         {
             if (contact.normal.y > 0.5f)
@@ -269,7 +308,7 @@ public class PlayerController2D : MonoBehaviour
         }
     }
 
-    // 離開碰撞（原有）
+    // 離開碰撞
     void OnCollisionExit2D(Collision2D collision)
     {
         isGrounded = false;
@@ -340,7 +379,7 @@ public class PlayerController2D : MonoBehaviour
         }
     }
 
-    // === 更新血條UI（原有） ===
+    // === 更新血條UI ===
     void UpdateHealthUI()
     {
         // 尋找場景中的血條UI組件
@@ -355,7 +394,7 @@ public class PlayerController2D : MonoBehaviour
         }
     }
 
-    // === 獲取血量資訊（原有） ===
+    // === 獲取血量資訊 ===
     public int GetCurrentHealth()
     {
         return currentHealth;
@@ -395,8 +434,8 @@ public class PlayerController2D : MonoBehaviour
         FindObjectOfType<GameManager>().PlayerDied();
     }
 
-    // === 統一死亡處理（原有） ===
-    void Die()
+    // === 統一死亡處理 ===
+    public void Die()
     {
         if (isDead) return;
 
@@ -410,7 +449,7 @@ public class PlayerController2D : MonoBehaviour
         FindObjectOfType<GameManager>().PlayerDied();
     }
 
-    // === 暫停遊戲（原有） ===
+    // === 暫停遊戲 ===
     public void PauseGame()
     {
         Die();

@@ -779,6 +779,7 @@ GameObject:
   m_Component:
   - component: {fileID: 306923409}
   - component: {fileID: 306923410}
+  - component: {fileID: 306923411}
   m_Layer: 0
   m_Name: Hourglass
   m_TagString: Untagged
@@ -794,8 +795,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 306923408}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 15.005601, y: 7.2916727, z: -0.21831362}
-  m_LocalScale: {x: 1.0347995, y: 1.0349127, z: 1}
+  m_LocalPosition: {x: 0.04, y: 2.33, z: -0.21831362}
+  m_LocalScale: {x: 0.35, y: 0.35, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1320464340}
@@ -842,17 +843,38 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: 9e161615fce54464db89f026459d3510, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 4.39, y: 5.31}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 0
+  m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &306923411
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 306923408}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1bb5f2358902362479e2f6d72906001f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  playerTransform: {fileID: 1320464340}
+  offset: {x: 0, y: 2, z: 0}
+  startYThreshold: 1
+  fullHourglass: {fileID: 21300000, guid: 9e161615fce54464db89f026459d3510, type: 3}
+  midHourglass: {fileID: 21300000, guid: e4bd0641516f1f244b0f5ada1927905f, type: 3}
+  emptyHourglass: {fileID: 21300000, guid: 763d5fe3b8634004d912916d709060b7, type: 3}
+  totalTime: 10
+  hourglassImage: {fileID: 0}
+  player: {fileID: 0}
 --- !u!1 &376538553
 GameObject:
   m_ObjectHideFlags: 0
@@ -1227,17 +1249,25 @@ PrefabInstance:
       propertyPath: m_Name
       value: Player
       objectReference: {fileID: 0}
+    - target: {fileID: 2792378958021979176, guid: ab37e94afdfafb945983830d1ada8425, type: 3}
+      propertyPath: deathUI
+      value: 
+      objectReference: {fileID: 817548980}
+    - target: {fileID: 2792378958021979176, guid: ab37e94afdfafb945983830d1ada8425, type: 3}
+      propertyPath: hourglassTimer
+      value: 
+      objectReference: {fileID: 306923411}
     - target: {fileID: 2792378958021979183, guid: ab37e94afdfafb945983830d1ada8425, type: 3}
       propertyPath: m_RootOrder
       value: 12
       objectReference: {fileID: 0}
     - target: {fileID: 2792378958021979183, guid: ab37e94afdfafb945983830d1ada8425, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -16.4
+      value: -16.97
       objectReference: {fileID: 0}
     - target: {fileID: 2792378958021979183, guid: ab37e94afdfafb945983830d1ada8425, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -2.14
+      value: -2.08
       objectReference: {fileID: 0}
     - target: {fileID: 2792378958021979183, guid: ab37e94afdfafb945983830d1ada8425, type: 3}
       propertyPath: m_LocalPosition.z
@@ -1674,6 +1704,11 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 10
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &817548980 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8001985971536764069, guid: c949cfa2c0d3dd3438bbb83622e85356, type: 3}
+  m_PrefabInstance: {fileID: 1123383378}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &958373132
 GameObject:
   m_ObjectHideFlags: 0
@@ -2217,7 +2252,7 @@ MonoBehaviour:
   closeButton: {fileID: 1342696797}
   infoPanelCanvasGroup: {fileID: 0}
   toggleKey: 105
-  useAnimation: 1
+  useAnimation: 0
   animationDuration: 0.3
   animationType: 0
   openSound: {fileID: 0}
