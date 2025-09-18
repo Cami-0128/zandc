@@ -1,13 +1,10 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class CoinManager : MonoBehaviour
 {
     public static CoinManager Instance;
-
-    public Text moneyText; // 拖入 UI 的 Text 組件，顯示錢幣數量
+    public Text moneyText;   // 在 Inspector 拖入 UI 的 Text 組件
 
     private int moneyCount = 0;
 
@@ -25,16 +22,9 @@ public class CoinManager : MonoBehaviour
         UpdateMoneyUI();
     }
 
-    void UpdateMoneyUI()
+    private void UpdateMoneyUI()
     {
         if (moneyText != null)
-        {
             moneyText.text = "Money: " + moneyCount.ToString();
-        }
-    }
-
-    public void PlayerDied()
-    {
-        // 玩家死亡時的處理（您也可以在這裡重置錢幣或其他效果）
     }
 }
