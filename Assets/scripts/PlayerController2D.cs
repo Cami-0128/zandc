@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 public class PlayerController2D : MonoBehaviour
 {
-    // 原有變數
+    // 
     public bool isDead { get; private set; } = false;  // 改成公開只讀屬性，供外部檢查
     public float moveSpeed = 5f;
     public float jumpForce = 7f;
@@ -47,6 +47,9 @@ public class PlayerController2D : MonoBehaviour
     // 沙漏倒數計時器參考
     public HourglassTimer hourglassTimer;
     public bool hasReachedEnd = false;
+    // 攻擊發射方向
+    public int LastHorizontalDirection { get; private set; } = 1; // 初始預設向右
+
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -161,8 +164,13 @@ public class PlayerController2D : MonoBehaviour
     void Move()
     {
         float moveX = Input.GetAxisRaw("Horizontal");
+        if (moveX != 0)
+        {
+            LastHorizontalDirection = (int)Mathf.Sign(moveX);
+        }
         rb.velocity = new Vector2(moveX * moveSpeed, rb.velocity.y);
     }
+
     // 跳躍輸入處理
     void HandleJumpInput()
     {

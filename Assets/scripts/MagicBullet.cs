@@ -8,18 +8,52 @@ public class MagicBullet : MonoBehaviour
     public float lifetime = 5f;
 
     [Header("視覺效果")]
-    public ParticleSystem trailEffect;
-    public Color bulletColor = new Color(0.5f, 0.8f, 1f, 1f); // 淡藍色
+    public Color bulletColor = new Color(0.5f, 0.8f, 1f, 1f);
 
     private Rigidbody2D rb;
 
     void Start()
     {
+        SpriteRenderer spriteRenderer = GetComponent<SpriteRenderer>();
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.color = bulletColor;
+        }
+
         rb = GetComponent<Rigidbody2D>();
+        if (rb == null)
+        {
+            rb = gameObject.AddComponent<Rigidbody2D>();
+            rb.gravityScale = 0f; // 避免受重力影響
+            rb.freezeRotation = true;
+        }
 
-        // 設定子彈顏色
-        GetComponent<SpriteRenderer>().color = bulletColor;
+        // 設定 Rigidbody2D 速度
+        float direction = Mathf.Sign(transform.localScale.x);
+        rb.velocity = new Vector2(speed * direction, 0f);
 
-        // 自動銷毀
         Destroy(gameObject, lifetime);
     }
+
+    void OnTriggerEnter2D(Collider2D other)
+    {
+        Enemy enemy = other.GetComponent<Enemy>();
+        if (enemy != null)
+        {
+            enemy.TakeDamage(damage);
+            CreateHitEffect();
+            Destroy(gameObject);
+            return;
+        }
+        if (other.CompareTag("Ground"))
+        {
+            CreateHitEffect();
+            Destroy(gameObject);
+        }
+    }
+
+    void CreateHitEffect()
+    {
+        Debug.Log("魔法子彈擊中目標！");
+    }
+}

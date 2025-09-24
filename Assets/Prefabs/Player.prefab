@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2792378958021979183}
   - component: {fileID: 2792378958021979182}
+  - component: {fileID: 3887459829636375592}
   - component: {fileID: 2792378958021979176}
   - component: {fileID: 2792378958021979181}
   - component: {fileID: 2792378958021979180}
@@ -88,6 +89,25 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &3887459829636375592
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2792378958021979155}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9ecb30431c85dfa418b770a14352fb43, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  magicBulletPrefab: {fileID: 0}
+  firePoint: {fileID: 0}
+  magicCost: 5
+  magicCastSound: {fileID: 0}
+  currentHealth: 100
+  maxHealth: 100
+  attackKey: 109
 --- !u!114 &2792378958021979176
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -109,6 +129,7 @@ MonoBehaviour:
   canControl: 1
   maxHealth: 100
   enemyDamage: 15
+  healSound: {fileID: 0}
   wallSlideSpeed: 1
   wallCheck: {fileID: 2792378958746216702}
   wallCheckDistance: 0.5
@@ -118,6 +139,8 @@ MonoBehaviour:
   wallJumpForceY: 8
   wallJumpCooldown: 0.5
   wallJumpHangTime: 0.2
+  hourglassTimer: {fileID: 0}
+  hasReachedEnd: 0
 --- !u!50 &2792378958021979181
 Rigidbody2D:
   serializedVersion: 4
