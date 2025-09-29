@@ -144,7 +144,29 @@ public class Enemy : MonoBehaviour
 
         currentHealth -= damage;
 
-        Die();
+        if (currentHealth <= 0)
+        {
+            Die();
+        }
+        else
+        {
+            StartCoroutine(FlashEffect());
+        }
+    }
+
+    IEnumerator FlashEffect()
+    {
+        if (spriteRenderer == null) yield break;
+
+        Color originalColor = spriteRenderer.color;
+
+        for (int i = 0; i < 3; i++)
+        {
+            spriteRenderer.color = Color.white;
+            yield return new WaitForSeconds(0.1f);
+            spriteRenderer.color = originalColor;
+            yield return new WaitForSeconds(0.1f);
+        }
     }
 
     void Die()
@@ -157,9 +179,9 @@ public class Enemy : MonoBehaviour
 
         if (trailRenderer != null)
         {
-            trailRenderer.emitting = false;  // 停止產生尾巴
+            trailRenderer.emitting = false;
             trailRenderer.Clear();
-            Destroy(trailRenderer.gameObject, 0.1f); // 延遲銷毀尾巴物件
+            Destroy(trailRenderer.gameObject, 0.1f);
         }
 
         if (rb != null)
@@ -169,8 +191,7 @@ public class Enemy : MonoBehaviour
         }
 
         Collider2D collider = GetComponent<Collider2D>();
-        if (collider != null)
-            collider.enabled = false;
+        if (collider != null) collider.enabled = false;
 
         StartCoroutine(FragmentationEffect());
     }
@@ -180,11 +201,12 @@ public class Enemy : MonoBehaviour
         Vector3 centerPosition = transform.position;
 
         spriteRenderer.enabled = false;
-        if (trailRenderer != null)
-            trailRenderer.enabled = false;
+        if (trailRenderer != null) trailRenderer.enabled = false;
 
         for (int i = 0; i < fragmentCount; i++)
+        {
             CreateFragment(centerPosition, i);
+        }
 
         yield return new WaitForSeconds(3f);
 
@@ -196,9 +218,7 @@ public class Enemy : MonoBehaviour
         GameObject fragment;
 
         if (fragmentPrefab != null)
-        {
             fragment = Instantiate(fragmentPrefab, center, Quaternion.identity);
-        }
         else
         {
             fragment = new GameObject($"Fragment_{fragmentIndex}");
@@ -254,9 +274,7 @@ public class Enemy : MonoBehaviour
         if (isDying) return;
 
         if (other.CompareTag("Player"))
-        {
             return;
-        }
 
         MagicBullet bullet = other.GetComponent<MagicBullet>();
         if (bullet != null)
@@ -268,7 +286,7 @@ public class Enemy : MonoBehaviour
 
         if (other.CompareTag("Enemy") || other.CompareTag("Enemy1") )
         {
-            Die();
+            TakeDamage(50f);
             return;
         }
     }

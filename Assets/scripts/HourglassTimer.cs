@@ -8,6 +8,8 @@ public class HourglassTimer : MonoBehaviour
     public float startXThreshold = -16f;
 
     public Sprite fullHourglass;
+    public Sprite midHourglass2;  // 新增圖片2
+    public Sprite midHourglass3;  // 新增圖片3
     public Sprite midHourglass;
     public Sprite emptyHourglass;
 
@@ -49,9 +51,14 @@ public class HourglassTimer : MonoBehaviour
         }
 
         float ratio = currentTime / totalTime;
-        if (ratio > 0.66f)
+
+        if (ratio > 0.8f)
             SetHourglassSprite(fullHourglass);
-        else if (ratio > 0.33f)
+        else if (ratio > 0.6f)
+            SetHourglassSprite(midHourglass2);
+        else if (ratio > 0.4f)
+            SetHourglassSprite(midHourglass3);
+        else if (ratio > 0.2f)
             SetHourglassSprite(midHourglass);
         else
             SetHourglassSprite(emptyHourglass);
