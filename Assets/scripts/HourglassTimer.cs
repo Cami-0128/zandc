@@ -1,25 +1,28 @@
+ï»¿using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class HourglassTimer : MonoBehaviour
 {
     public Transform playerTransform;
-    public Vector3 offset = new Vector3(0, 2f, 0);
+    public Vector3 offset = new Vector3(0, 2f, 0); // æ²™æ¼ä½ç½®
+    public Vector3 textOffset = new Vector3(0, 0.5f, 0); // æ–‡å­—åœ¨æ²™æ¼ä¹‹ä¸Š
+
     public float startXThreshold = -16f;
 
-    public Sprite fullHourglass;
-    public Sprite midHourglass2;  // ·s¼W¹Ï¤ù2
-    public Sprite midHourglass3;  // ·s¼W¹Ï¤ù3
-    public Sprite midHourglass;
-    public Sprite emptyHourglass;
+    public Sprite fullHourglass;    // 1
+    public Sprite midHourglass2;    // 2
+    public Sprite midHourglass3;    // 3
+    public Sprite midHourglass;    // 4
+    public Sprite emptyHourglass;    // 5
 
     public float totalTime = 10f;
-
-    public Image hourglassImage;
-
     private float currentTime;
     private bool isCounting = false;
     private bool hasStarted = false;
+
+    public Image hourglassImage;
+    public TextMeshProUGUI timeText; // âœ… æ–°å¢æ™‚é–“æ–‡å­— Text
 
     public PlayerController2D player;
 
@@ -27,13 +30,18 @@ public class HourglassTimer : MonoBehaviour
     {
         currentTime = totalTime;
         SetHourglassSprite(fullHourglass);
+
+        if (timeText != null)
+        {
+            timeText.text = totalTime.ToString("F1");
+        }
     }
 
     void Update()
     {
         if (!hasStarted && playerTransform != null && playerTransform.position.x > startXThreshold)
         {
-            Debug.Log($"[HourglassTimer] ­p®É¶}©l¡Iª±®aX={playerTransform.position.x} ¶W¹LìH­È{startXThreshold}");
+            Debug.Log($"[HourglassTimer] è¨ˆæ™‚é–‹å§‹ï¼ç©å®¶X={playerTransform.position.x} è¶…éé–¾å€¼{startXThreshold}");
             StartTimer();
             hasStarted = true;
         }
@@ -41,12 +49,11 @@ public class HourglassTimer : MonoBehaviour
         if (!isCounting) return;
 
         currentTime -= Time.deltaTime;
-
         if (currentTime <= 0f)
         {
             currentTime = 0f;
             isCounting = false;
-            Debug.Log("[HourglassTimer] ­p®Éµ²§ô¡I");
+            Debug.Log("[HourglassTimer] è¨ˆæ™‚çµæŸï¼");
             OnTimerFinished();
         }
 
@@ -63,8 +70,17 @@ public class HourglassTimer : MonoBehaviour
         else
             SetHourglassSprite(emptyHourglass);
 
+        // âœ… æ›´æ–°æ™‚é–“æ–‡å­—
+        if (timeText != null)
+        {
+            timeText.text = currentTime.ToString("F1");
+            timeText.transform.position = transform.position + textOffset;
+        }
+
         if (playerTransform != null)
+        {
             transform.position = playerTransform.position + offset;
+        }
     }
 
     public void StartTimer()
@@ -72,6 +88,11 @@ public class HourglassTimer : MonoBehaviour
         currentTime = totalTime;
         isCounting = true;
         SetHourglassSprite(fullHourglass);
+
+        if (timeText != null)
+        {
+            timeText.text = currentTime.ToString("F1");
+        }
     }
 
     private void SetHourglassSprite(Sprite sprite)
@@ -97,18 +118,20 @@ public class HourglassTimer : MonoBehaviour
     {
         if (player == null)
         {
-            Debug.LogWarning("[HourglassTimer] ª±®a¤Ş¥Î¬°ªÅ");
+            Debug.LogWarning("[HourglassTimer] ç©å®¶å¼•ç”¨ç‚ºç©º");
             return;
         }
-        Debug.Log($"[HourglassTimer] ª±®aª¬ºA - hasReachedEnd: {player.hasReachedEnd}, isDead: {player.isDead}");
+
+        Debug.Log($"[HourglassTimer] ç©å®¶ç‹€æ…‹ - hasReachedEnd: {player.hasReachedEnd}, isDead: {player.isDead}");
+
         if (!player.hasReachedEnd && !player.isDead)
         {
-            Debug.Log("[HourglassTimer] ­Ë¼Æ¨ì¡Aª±®a¥¼¹F²×ÂI¡A°õ¦æ¦º¤`");
+            Debug.Log("[HourglassTimer] å€’æ•¸åˆ°ï¼Œç©å®¶æœªé”çµ‚é»ï¼ŒåŸ·è¡Œæ­»äº¡");
             player.Die();
         }
         else
         {
-            Debug.Log("[HourglassTimer] ­Ë¼Æ¨ì¡Aª±®a¤w¹F²×ÂI©Î¤w¦º¤`¡A¤£°õ¦æ¦º¤`");
+            Debug.Log("[HourglassTimer] å€’æ•¸åˆ°ï¼Œç©å®¶å·²é”çµ‚é»æˆ–å·²æ­»äº¡ï¼Œä¸åŸ·è¡Œæ­»äº¡");
         }
     }
 }
