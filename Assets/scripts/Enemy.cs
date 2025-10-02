@@ -7,6 +7,10 @@ public class Enemy : MonoBehaviour
     public float maxHealth = 100f;
     public float currentHealth;
 
+    [Header("血條設定")]
+    public GameObject healthBarPrefab;  // 血條 Prefab
+    private EnemyHealthBar healthBar;   // 血條腳本引用
+
     [Header("移動設定")]
     public float jumpForce = 8f;
     public float jumpHeight = 5f;
@@ -43,6 +47,9 @@ public class Enemy : MonoBehaviour
 
         SetupAppearance();
 
+        // === 創建血條 ===
+        CreateHealthBar();
+
         StartCoroutine(JumpRoutine());
     }
 
@@ -76,6 +83,29 @@ public class Enemy : MonoBehaviour
         Gradient gradient = new Gradient();
         gradient.SetKeys(colorKeys, alphaKeys);
         trailRenderer.colorGradient = gradient;
+    }
+
+    // === 新增：創建血條 ===
+    void CreateHealthBar()
+    {
+        if (healthBarPrefab == null)
+        {
+            Debug.LogWarning($"[Enemy] {gameObject.name} 未設定 Health Bar Prefab！");
+            return;
+        }
+
+        GameObject healthBarObj = Instantiate(healthBarPrefab);
+        healthBar = healthBarObj.GetComponent<EnemyHealthBar>();
+
+        if (healthBar != null)
+        {
+            healthBar.Initialize(this.transform);
+            healthBar.UpdateHealthBar(currentHealth, maxHealth);
+        }
+        else
+        {
+            Debug.LogError("[Enemy] Health Bar Prefab 缺少 EnemyHealthBar 組件！");
+        }
     }
 
     IEnumerator JumpRoutine()
@@ -144,6 +174,12 @@ public class Enemy : MonoBehaviour
 
         currentHealth -= damage;
 
+        // === 更新血條 ===
+        if (healthBar != null)
+        {
+            healthBar.UpdateHealthBar(currentHealth, maxHealth);
+        }
+
         if (currentHealth <= 0)
         {
             Die();
@@ -176,6 +212,12 @@ public class Enemy : MonoBehaviour
         isDying = true;
 
         StopAllCoroutines();
+
+        // === 銷毀血條 ===
+        if (healthBar != null && healthBar.gameObject != null)
+        {
+            Destroy(healthBar.gameObject);
+        }
 
         if (trailRenderer != null)
         {
@@ -284,10 +326,19 @@ public class Enemy : MonoBehaviour
             return;
         }
 
-        if (other.CompareTag("Enemy") || other.CompareTag("Enemy1") )
+        if (other.CompareTag("Enemy") || other.CompareTag("Enemy1"))
         {
             TakeDamage(50f);
             return;
+        }
+    }
+
+    // === 清理血條 ===
+    void OnDestroy()
+    {
+        if (healthBar != null && healthBar.gameObject != null)
+        {
+            Destroy(healthBar.gameObject);
         }
     }
 }

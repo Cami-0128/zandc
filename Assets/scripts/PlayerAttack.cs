@@ -51,14 +51,12 @@ public class PlayerAttack : MonoBehaviour
 
     void Start()
     {
-        // 獲取或添加AudioSource組件
         audioSource = GetComponent<AudioSource>();
         if (audioSource == null)
         {
             audioSource = gameObject.AddComponent<AudioSource>();
         }
 
-        // 如果沒有設定發射點，創建一個
         if (firePoint == null)
         {
             GameObject firePointObj = new GameObject("FirePoint");
@@ -67,14 +65,11 @@ public class PlayerAttack : MonoBehaviour
             firePoint = firePointObj.transform;
         }
 
-        // 初始化血量和魔力
         currentHealth = maxHealth;
         currentMana = maxMana;
 
-        // 取得 PlayerController2D
         playerController = GetComponent<PlayerController2D>();
 
-        // 啟動自動回魔協程（如果啟用）
         if (enableManaRegen)
         {
             manaRegenCoroutine = StartCoroutine(ManaRegenerationCoroutine());
@@ -83,6 +78,12 @@ public class PlayerAttack : MonoBehaviour
 
     void Update()
     {
+        // === 關鍵：檢查玩家是否死亡 ===
+        if (playerController != null && playerController.isDead)
+        {
+            return; // 死亡後直接返回，不執行任何操作
+        }
+
         // 檢測攻擊鍵輸入
         if (Input.GetKeyDown(attackKey))
         {
@@ -98,34 +99,34 @@ public class PlayerAttack : MonoBehaviour
 
     void CastMagic()
     {
-        // 檢查魔力是否足夠
+        // 再次檢查是否死亡（雙重保險）
+        if (playerController != null && playerController.isDead)
+        {
+            return;
+        }
+
         if (currentMana < attackManaCost)
         {
             Debug.Log("魔力不足！當前魔力: " + currentMana + "/" + maxMana);
             return;
         }
 
-        // 檢查是否有子彈Prefab
         if (magicBulletPrefab == null)
         {
             Debug.LogError("未設定魔法子彈Prefab！");
             return;
         }
 
-        // 消耗魔力
         ConsumeMana(attackManaCost);
 
-        // 播放音效
         if (magicCastSound != null && audioSource != null)
         {
             audioSource.PlayOneShot(magicCastSound);
         }
 
-        // 創建魔法子彈
         Vector3 spawnPosition = firePoint.position;
         GameObject bullet = Instantiate(magicBulletPrefab, spawnPosition, Quaternion.identity);
 
-        // 根據玩家最後按的方向設定子彈方向，預設向右 (1)
         int direction = 1;
         if (playerController != null)
         {
@@ -140,9 +141,6 @@ public class PlayerAttack : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 消耗魔力（內部方法）
-    /// </summary>
     private void ConsumeMana(int amount)
     {
         currentMana -= amount;
@@ -151,21 +149,23 @@ public class PlayerAttack : MonoBehaviour
         Debug.Log("消耗 " + amount + " MP，剩餘: " + currentMana + "/" + maxMana);
     }
 
-    /// <summary>
-    /// 自動回復魔力協程
-    /// </summary>
     private IEnumerator ManaRegenerationCoroutine()
     {
         while (true)
         {
-            yield return new WaitForSeconds(0.1f); // 每0.1秒檢查一次
+            yield return new WaitForSeconds(0.1f);
+
+            // === 死亡時停止回魔 ===
+            if (playerController != null && playerController.isDead)
+            {
+                continue;
+            }
 
             if (currentMana < maxMana)
             {
-                // 檢查是否過了延遲時間
                 if (Time.time - lastManaUseTime >= manaRegenDelay)
                 {
-                    float regenAmount = manaRegenRate * 0.1f; // 0.1秒的回復量
+                    float regenAmount = manaRegenRate * 0.1f;
                     currentMana += Mathf.RoundToInt(regenAmount);
                     currentMana = Mathf.Min(currentMana, maxMana);
                 }
@@ -173,12 +173,14 @@ public class PlayerAttack : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 手動回復魔力
-    /// </summary>
     private void ManualRestoreMana()
     {
-        // 檢查冷卻時間
+        // 死亡時無法手動回魔
+        if (playerController != null && playerController.isDead)
+        {
+            return;
+        }
+
         if (Time.time - lastManualRestoreTime < manualRestoreCooldown)
         {
             float remainingCooldown = manualRestoreCooldown - (Time.time - lastManualRestoreTime);
@@ -186,14 +188,12 @@ public class PlayerAttack : MonoBehaviour
             return;
         }
 
-        // 檢查是否已滿魔
         if (currentMana >= maxMana)
         {
             Debug.Log("魔力已滿！");
             return;
         }
 
-        // 回復魔力
         int oldMana = currentMana;
         currentMana += manualRestoreAmount;
         currentMana = Mathf.Min(currentMana, maxMana);
@@ -203,9 +203,6 @@ public class PlayerAttack : MonoBehaviour
         Debug.Log("手動回復 " + actualRestored + " MP，當前魔力: " + currentMana + "/" + maxMana);
     }
 
-    /// <summary>
-    /// 回復魔力（給藥水或其他道具使用）
-    /// </summary>
     public void RestoreMana(int amount)
     {
         int oldMana = currentMana;
@@ -215,25 +212,16 @@ public class PlayerAttack : MonoBehaviour
         Debug.Log("回復 " + actualRestored + " MP，當前魔力: " + currentMana + "/" + maxMana);
     }
 
-    /// <summary>
-    /// 獲取當前魔力（給UI使用）
-    /// </summary>
     public int GetCurrentMana()
     {
         return currentMana;
     }
 
-    /// <summary>
-    /// 獲取魔力百分比
-    /// </summary>
     public float GetManaPercentage()
     {
         return (float)currentMana / maxMana;
     }
 
-    /// <summary>
-    /// 受到傷害
-    /// </summary>
     public void TakeDamage(float damage)
     {
         currentHealth -= damage;
@@ -246,9 +234,6 @@ public class PlayerAttack : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 回復血量（給回血藥水使用）
-    /// </summary>
     public void Heal(float healAmount)
     {
         float oldHealth = currentHealth;
@@ -258,19 +243,11 @@ public class PlayerAttack : MonoBehaviour
         Debug.Log("主角回復 " + actualHealed + " 血量，當前血量: " + currentHealth);
     }
 
-    /// <summary>
-    /// 死亡
-    /// </summary>
     void Die()
     {
         Debug.Log("主角死亡！");
-        // 可以在這裡添加死亡邏輯
-        // 例如：播放死亡動畫、禁用玩家控制、顯示遊戲結束畫面等
     }
 
-    /// <summary>
-    /// 動態啟用/禁用自動回魔
-    /// </summary>
     public void SetManaRegen(bool enabled)
     {
         if (enabled && !enableManaRegen)
@@ -294,7 +271,6 @@ public class PlayerAttack : MonoBehaviour
 
     void OnDisable()
     {
-        // 清理協程
         if (manaRegenCoroutine != null)
         {
             StopCoroutine(manaRegenCoroutine);
@@ -303,7 +279,6 @@ public class PlayerAttack : MonoBehaviour
 
     void OnDestroy()
     {
-        // 清理協程
         if (manaRegenCoroutine != null)
         {
             StopCoroutine(manaRegenCoroutine);
