@@ -7,6 +7,7 @@ public class CoinManager : MonoBehaviour
     public Text moneyText;   // 在 Inspector 拖入 UI 的 Text 組件
 
     private int moneyCount = 0;
+    public int MoneyCount { get { return moneyCount; } }
 
     private void Awake()
     {

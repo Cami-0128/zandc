@@ -1,6 +1,10 @@
 using System.Collections;
 using UnityEngine;
 
+/// <summary>
+/// 玩家攻擊系統
+/// 自動讀取攻擊技能的傷害值和魔力消耗
+/// </summary>
 public class PlayerAttack : MonoBehaviour
 {
     [Header("攻擊設定")]
@@ -16,8 +20,6 @@ public class PlayerAttack : MonoBehaviour
     public float maxHealth = 100f;
 
     [Header("魔力系統")]
-    [Tooltip("每次攻擊消耗的魔力")]
-    public int attackManaCost = 5;
     [Tooltip("最大魔力值")]
     public int maxMana = 100;
     [SerializeField] private int currentMana;
@@ -78,10 +80,10 @@ public class PlayerAttack : MonoBehaviour
 
     void Update()
     {
-        // === 關鍵：檢查玩家是否死亡 ===
+        // 檢查玩家是否死亡
         if (playerController != null && playerController.isDead)
         {
-            return; // 死亡後直接返回，不執行任何操作
+            return;
         }
 
         // 檢測攻擊鍵輸入
@@ -97,36 +99,53 @@ public class PlayerAttack : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 施放魔法（自動讀取技能的魔力消耗）
+    /// </summary>
     void CastMagic()
     {
-        // 再次檢查是否死亡（雙重保險）
+        // 再次檢查是否死亡
         if (playerController != null && playerController.isDead)
         {
             return;
         }
 
-        if (currentMana < attackManaCost)
-        {
-            Debug.Log("魔力不足！當前魔力: " + currentMana + "/" + maxMana);
-            return;
-        }
-
         if (magicBulletPrefab == null)
         {
-            Debug.LogError("未設定魔法子彈Prefab！");
+            Debug.LogError("[PlayerAttack] 未設定魔法子彈 Prefab！");
             return;
         }
 
-        ConsumeMana(attackManaCost);
+        // === 關鍵：從 Prefab 讀取魔力消耗 ===
+        MagicBullet bulletData = magicBulletPrefab.GetComponent<MagicBullet>();
+        int manaCost = 5; // 預設值
 
+        if (bulletData != null)
+        {
+            manaCost = bulletData.manaCost;
+        }
+
+        // 檢查魔力是否足夠
+        if (currentMana < manaCost)
+        {
+            Debug.Log($"[PlayerAttack] 魔力不足！需要 {manaCost} MP，當前 {currentMana} MP");
+            return;
+        }
+
+        // 消耗魔力
+        ConsumeMana(manaCost);
+
+        // 播放音效
         if (magicCastSound != null && audioSource != null)
         {
             audioSource.PlayOneShot(magicCastSound);
         }
 
+        // 生成子彈
         Vector3 spawnPosition = firePoint.position;
         GameObject bullet = Instantiate(magicBulletPrefab, spawnPosition, Quaternion.identity);
 
+        // 設定方向
         int direction = 1;
         if (playerController != null)
         {
@@ -134,28 +153,37 @@ public class PlayerAttack : MonoBehaviour
         }
         bullet.transform.localScale = new Vector3(direction, 1, 1);
 
+        // 設定子彈速度
         MagicBullet bulletScript = bullet.GetComponent<MagicBullet>();
         if (bulletScript != null)
         {
             bulletScript.speed = Mathf.Abs(bulletScript.speed) * direction;
         }
+
+        Debug.Log($"[PlayerAttack] 施放 MagicBullet！消耗 {manaCost} MP，造成 {(bulletData != null ? bulletData.damage : 0)} 點傷害");
     }
 
+    /// <summary>
+    /// 消耗魔力
+    /// </summary>
     private void ConsumeMana(int amount)
     {
         currentMana -= amount;
         currentMana = Mathf.Max(0, currentMana);
         lastManaUseTime = Time.time;
-        Debug.Log("消耗 " + amount + " MP，剩餘: " + currentMana + "/" + maxMana);
+        Debug.Log($"[PlayerAttack] 消耗 {amount} MP，剩餘: {currentMana}/{maxMana}");
     }
 
+    /// <summary>
+    /// 魔力自動回復協程
+    /// </summary>
     private IEnumerator ManaRegenerationCoroutine()
     {
         while (true)
         {
             yield return new WaitForSeconds(0.1f);
 
-            // === 死亡時停止回魔 ===
+            // 死亡時停止回魔
             if (playerController != null && playerController.isDead)
             {
                 continue;
@@ -173,6 +201,9 @@ public class PlayerAttack : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 手動回復魔力
+    /// </summary>
     private void ManualRestoreMana()
     {
         // 死亡時無法手動回魔
@@ -184,13 +215,13 @@ public class PlayerAttack : MonoBehaviour
         if (Time.time - lastManualRestoreTime < manualRestoreCooldown)
         {
             float remainingCooldown = manualRestoreCooldown - (Time.time - lastManualRestoreTime);
-            Debug.Log("手動回魔冷卻中！剩餘時間: " + remainingCooldown.ToString("F1") + " 秒");
+            Debug.Log($"[PlayerAttack] 手動回魔冷卻中！剩餘時間: {remainingCooldown:F1} 秒");
             return;
         }
 
         if (currentMana >= maxMana)
         {
-            Debug.Log("魔力已滿！");
+            Debug.Log("[PlayerAttack] 魔力已滿！");
             return;
         }
 
@@ -200,33 +231,45 @@ public class PlayerAttack : MonoBehaviour
         int actualRestored = currentMana - oldMana;
 
         lastManualRestoreTime = Time.time;
-        Debug.Log("手動回復 " + actualRestored + " MP，當前魔力: " + currentMana + "/" + maxMana);
+        Debug.Log($"[PlayerAttack] 手動回復 {actualRestored} MP，當前魔力: {currentMana}/{maxMana}");
     }
 
+    /// <summary>
+    /// 回復魔力（供外部調用）
+    /// </summary>
     public void RestoreMana(int amount)
     {
         int oldMana = currentMana;
         currentMana += amount;
         currentMana = Mathf.Min(currentMana, maxMana);
         int actualRestored = currentMana - oldMana;
-        Debug.Log("回復 " + actualRestored + " MP，當前魔力: " + currentMana + "/" + maxMana);
+        Debug.Log($"[PlayerAttack] 回復 {actualRestored} MP，當前魔力: {currentMana}/{maxMana}");
     }
 
+    /// <summary>
+    /// 獲取當前魔力值
+    /// </summary>
     public int GetCurrentMana()
     {
         return currentMana;
     }
 
+    /// <summary>
+    /// 獲取魔力百分比
+    /// </summary>
     public float GetManaPercentage()
     {
         return (float)currentMana / maxMana;
     }
 
+    /// <summary>
+    /// 玩家受到傷害
+    /// </summary>
     public void TakeDamage(float damage)
     {
         currentHealth -= damage;
         currentHealth = Mathf.Max(0, currentHealth);
-        Debug.Log("主角受到 " + damage + " 點傷害，剩餘血量: " + currentHealth);
+        Debug.Log($"[PlayerAttack] 主角受到 {damage} 點傷害，剩餘血量: {currentHealth}");
 
         if (currentHealth <= 0)
         {
@@ -234,20 +277,26 @@ public class PlayerAttack : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 回復血量
+    /// </summary>
     public void Heal(float healAmount)
     {
         float oldHealth = currentHealth;
         currentHealth += healAmount;
         currentHealth = Mathf.Min(maxHealth, currentHealth);
         float actualHealed = currentHealth - oldHealth;
-        Debug.Log("主角回復 " + actualHealed + " 血量，當前血量: " + currentHealth);
+        Debug.Log($"[PlayerAttack] 主角回復 {actualHealed} 血量，當前血量: {currentHealth}");
     }
 
     void Die()
     {
-        Debug.Log("主角死亡！");
+        Debug.Log("[PlayerAttack] 主角死亡！");
     }
 
+    /// <summary>
+    /// 設定魔力回復開關
+    /// </summary>
     public void SetManaRegen(bool enabled)
     {
         if (enabled && !enableManaRegen)

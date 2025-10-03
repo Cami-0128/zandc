@@ -1,6 +1,11 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
+/// <summary>
+/// 敵人系統 - 修正版
+/// 防止重複扣血和血條跟隨問題
+/// </summary>
 public class Enemy : MonoBehaviour
 {
     [Header("敵人屬性")]
@@ -8,8 +13,11 @@ public class Enemy : MonoBehaviour
     public float currentHealth;
 
     [Header("血條設定")]
-    public GameObject healthBarPrefab;  // 血條 Prefab
-    private EnemyHealthBar healthBar;   // 血條腳本引用
+    [Tooltip("血條腳本（從子物件自動獲取）")]
+    public EnemyHealthBar healthBar;
+
+    [Tooltip("血條位置偏移")]
+    public Vector3 healthBarOffset = new Vector3(0, 1.5f, 0);
 
     [Header("移動設定")]
     public float jumpForce = 8f;
@@ -27,12 +35,27 @@ public class Enemy : MonoBehaviour
     public float fragmentSpeed = 5f;
     public GameObject fragmentPrefab;
 
+    [Header("傷害設定")]
+    [Tooltip("接觸玩家時造成的傷害")]
+    public float contactDamage = 10f;
+    [Tooltip("接觸傷害冷卻時間")]
+    public float contactDamageCooldown = 1f;
+    private float lastContactDamageTime = -999f;
+
+    [Header("Debug 設定")]
+    public bool debugMode = true;
+
     private Rigidbody2D rb;
     private SpriteRenderer spriteRenderer;
     private TrailRenderer trailRenderer;
     private Transform playerTransform;
     private bool isJumping = false;
     private bool isDying = false;
+
+    // 防止重複傷害的機制
+    private HashSet<GameObject> processedBullets = new HashSet<GameObject>();
+    private float lastDamageTime = -999f;
+    private float damageCooldown = 0.1f;  // 傷害冷卻時間
 
     void Start()
     {
@@ -47,10 +70,33 @@ public class Enemy : MonoBehaviour
 
         SetupAppearance();
 
-        // === 創建血條 ===
-        CreateHealthBar();
+        // 從子物件獲取血條（不動態創建）
+        if (healthBar == null)
+        {
+            healthBar = GetComponentInChildren<EnemyHealthBar>();
+        }
+
+        if (healthBar != null)
+        {
+            healthBar.Initialize(this.transform);
+            healthBar.UpdateHealthBar(currentHealth, maxHealth);
+
+            if (debugMode)
+            {
+                Debug.Log($"[Enemy] {gameObject.name} 找到血條組件");
+            }
+        }
+        else
+        {
+            Debug.LogWarning($"[Enemy] {gameObject.name} 找不到 EnemyHealthBar 組件！請在子物件中添加");
+        }
 
         StartCoroutine(JumpRoutine());
+
+        if (debugMode)
+        {
+            Debug.Log($"[Enemy] {gameObject.name} 初始化完成，血量: {currentHealth}/{maxHealth}");
+        }
     }
 
     void SetupAppearance()
@@ -85,26 +131,27 @@ public class Enemy : MonoBehaviour
         trailRenderer.colorGradient = gradient;
     }
 
-    // === 新增：創建血條 ===
+    /// <summary>
+    /// 動態創建血條（作為Enemy的子物件）
+    /// </summary>
     void CreateHealthBar()
     {
-        if (healthBarPrefab == null)
-        {
-            Debug.LogWarning($"[Enemy] {gameObject.name} 未設定 Health Bar Prefab！");
-            return;
-        }
+        // 創建血條物件
+        //healthBarObject = new GameObject($"HealthBar");
 
-        GameObject healthBarObj = Instantiate(healthBarPrefab);
-        healthBar = healthBarObj.GetComponent<EnemyHealthBar>();
+        // 添加 EnemyHealthBar 組件
+        //healthBar = healthBarObject.AddComponent<EnemyHealthBar>();
 
-        if (healthBar != null)
+        // 設定血條參數
+        //healthBar.offset = healthBarOffset;
+
+        // 初始化血條（會自動設為子物件）
+        healthBar.Initialize(this.transform);
+        healthBar.UpdateHealthBar(currentHealth, maxHealth);
+
+        if (debugMode)
         {
-            healthBar.Initialize(this.transform);
-            healthBar.UpdateHealthBar(currentHealth, maxHealth);
-        }
-        else
-        {
-            Debug.LogError("[Enemy] Health Bar Prefab 缺少 EnemyHealthBar 組件！");
+            Debug.Log($"[Enemy] {gameObject.name} 血條已創建為子物件");
         }
     }
 
@@ -168,18 +215,51 @@ public class Enemy : MonoBehaviour
         }
     }
 
-    public void TakeDamage(float damage)
+    // ============================================
+    // 核心：接收傷害系統（修正版 - 防止重複觸發）
+    // ============================================
+
+    /// <summary>
+    /// 敵人受到傷害（帶冷卻機制）
+    /// </summary>
+    public void TakeDamage(float damage, string damageSource = "Unknown")
     {
         if (isDying) return;
 
-        currentHealth -= damage;
+        // 防止短時間內重複扣血
+        if (Time.time - lastDamageTime < damageCooldown)
+        {
+            if (debugMode)
+            {
+                Debug.Log($"[Enemy] {gameObject.name} 傷害冷卻中，忽略此次傷害");
+            }
+            return;
+        }
 
-        // === 更新血條 ===
+        lastDamageTime = Time.time;
+
+        // 扣血
+        float oldHealth = currentHealth;
+        currentHealth -= damage;
+        currentHealth = Mathf.Max(0, currentHealth);
+
+        if (debugMode)
+        {
+            Debug.Log($"[Enemy] {gameObject.name} 受到 {damage} 點傷害 (來源: {damageSource})");
+            Debug.Log($"[Enemy] 血量變化: {oldHealth} → {currentHealth} / {maxHealth}");
+        }
+
+        // 更新血條
         if (healthBar != null)
         {
             healthBar.UpdateHealthBar(currentHealth, maxHealth);
         }
+        else
+        {
+            Debug.LogWarning($"[Enemy] {gameObject.name} 血條不存在！");
+        }
 
+        // 檢查是否死亡
         if (currentHealth <= 0)
         {
             Die();
@@ -190,6 +270,9 @@ public class Enemy : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 受傷閃爍效果
+    /// </summary>
     IEnumerator FlashEffect()
     {
         if (spriteRenderer == null) yield break;
@@ -211,19 +294,19 @@ public class Enemy : MonoBehaviour
 
         isDying = true;
 
+        if (debugMode)
+        {
+            Debug.Log($"[Enemy] {gameObject.name} 死亡！");
+        }
+
         StopAllCoroutines();
 
-        // === 銷毀血條 ===
-        if (healthBar != null && healthBar.gameObject != null)
-        {
-            Destroy(healthBar.gameObject);
-        }
+        // 血條會自動隨著 Enemy 銷毀（因為是子物件）
 
         if (trailRenderer != null)
         {
             trailRenderer.emitting = false;
             trailRenderer.Clear();
-            Destroy(trailRenderer.gameObject, 0.1f);
         }
 
         if (rb != null)
@@ -311,34 +394,130 @@ public class Enemy : MonoBehaviour
         Destroy(fragment);
     }
 
+    // ============================================
+    // 碰撞檢測（修正版 - 防止重複觸發）
+    // ============================================
+
     void OnTriggerEnter2D(Collider2D other)
     {
         if (isDying) return;
 
-        if (other.CompareTag("Player"))
-            return;
+        if (debugMode)
+        {
+            Debug.Log($"[Enemy] {gameObject.name} 觸發碰撞: {other.gameObject.name} (Tag: {other.tag})");
+        }
 
+        // === 1. 與玩家接觸造成傷害 ===
+        if (other.CompareTag("Player"))
+        {
+            if (Time.time - lastContactDamageTime >= contactDamageCooldown)
+            {
+                PlayerAttack playerAttack = other.GetComponent<PlayerAttack>();
+                if (playerAttack != null)
+                {
+                    playerAttack.TakeDamage(contactDamage);
+                    lastContactDamageTime = Time.time;
+
+                    if (debugMode)
+                    {
+                        Debug.Log($"[Enemy] 對玩家造成 {contactDamage} 點接觸傷害");
+                    }
+                }
+            }
+            return;
+        }
+
+        // === 2. 魔法子彈傷害（防止重複處理）===
         MagicBullet bullet = other.GetComponent<MagicBullet>();
         if (bullet != null)
         {
-            TakeDamage(50f);
+            // 檢查是否已經處理過這個子彈
+            if (processedBullets.Contains(other.gameObject))
+            {
+                if (debugMode)
+                {
+                    Debug.Log($"[Enemy] 子彈已處理過，忽略: {other.gameObject.name}");
+                }
+                return;
+            }
+
+            // 標記為已處理
+            processedBullets.Add(other.gameObject);
+
+            // 造成傷害
+            TakeDamage(bullet.damage, "MagicBullet");
+
+            // 銷毀子彈
             Destroy(other.gameObject);
             return;
         }
 
+        // === 3. 與其他敵人碰撞的傷害 ===
         if (other.CompareTag("Enemy") || other.CompareTag("Enemy1"))
         {
-            TakeDamage(50f);
+            TakeDamage(30f, "EnemyCollision");
             return;
         }
     }
 
-    // === 清理血條 ===
     void OnDestroy()
     {
-        if (healthBar != null && healthBar.gameObject != null)
+        // 血條會自動隨著 Enemy 銷毀
+        processedBullets.Clear();
+    }
+
+    // ============================================
+    // 公開方法供外部調用
+    // ============================================
+
+    public float GetHealthPercentage()
+    {
+        return currentHealth / maxHealth;
+    }
+
+    public void SetMaxHealth(float newMaxHealth)
+    {
+        float healthPercentage = GetHealthPercentage();
+        maxHealth = newMaxHealth;
+        currentHealth = maxHealth * healthPercentage;
+
+        if (healthBar != null)
         {
-            Destroy(healthBar.gameObject);
+            healthBar.UpdateHealthBar(currentHealth, maxHealth);
+        }
+    }
+
+    public void Heal(float healAmount)
+    {
+        if (isDying) return;
+
+        currentHealth += healAmount;
+        currentHealth = Mathf.Min(currentHealth, maxHealth);
+
+        if (healthBar != null)
+        {
+            healthBar.UpdateHealthBar(currentHealth, maxHealth);
+        }
+
+        if (debugMode)
+        {
+            Debug.Log($"[Enemy] {gameObject.name} 回復 {healAmount} 血量，當前: {currentHealth}/{maxHealth}");
+        }
+    }
+
+    public void ShowHealthBar()
+    {
+        if (healthBar != null)
+        {
+            healthBar.Show();
+        }
+    }
+
+    public void HideHealthBar()
+    {
+        if (healthBar != null)
+        {
+            healthBar.Hide();
         }
     }
 }
