@@ -1,17 +1,18 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 /// <summary>
-/// 敵人血條系統 - 使用現有的 Sprite 圖片
-/// 不動態生成UI，直接使用 Hierarchy 中的圖片
+/// 敵人血條系統 - 使用 UI Image 版本
+/// 直接在 Hierarchy 中設定 Canvas、Image 組件
 /// </summary>
 public class EnemyHealthBar : MonoBehaviour
 {
-    [Header("血條組件（手動拖入）")]
-    [Tooltip("血條填充的 SpriteRenderer（HealthFill 物件）")]
-    public SpriteRenderer healthFillSprite;
+    [Header("血條組件（手動拖入 Hierarchy 中的 Image）")]
+    [Tooltip("血條填充的 Image 組件（HealthFill）")]
+    public Image healthFillImage;
 
-    [Tooltip("血條外框的 SpriteRenderer（可選，如果要動態顯示/隱藏）")]
-    public SpriteRenderer healthBarBackground;
+    [Tooltip("血條外框的 Image 組件（可選）")]
+    public Image healthBarBackground;
 
     [Header("視覺效果 - 血條顏色漸變")]
     [Tooltip("100-76% 血量時的顏色")]
@@ -30,22 +31,17 @@ public class EnemyHealthBar : MonoBehaviour
     [Tooltip("血條是否永遠面向攝影機")]
     public bool alwaysFaceCamera = true;
 
-    [Header("血條縮放方式")]
-    [Tooltip("使用 Scale 還是 Sprite Mask 來控制血量")]
-    public bool useScaleMethod = true;
-
     [Header("動畫設定")]
     public bool enableSmoothTransition = true;
     public float transitionSpeed = 5f;
 
     [Header("Debug 設定")]
-    public bool debugMode = true;
+    public bool debugMode = false;
 
     private Transform enemyTransform;
     private Camera mainCamera;
     private float targetFillAmount;
     private float currentFillAmount;
-    private Vector3 originalFillScale;  // 記錄原始縮放
 
     void Awake()
     {
@@ -53,10 +49,14 @@ public class EnemyHealthBar : MonoBehaviour
         currentFillAmount = 1f;
         targetFillAmount = 1f;
 
-        // 記錄原始縮放
-        if (healthFillSprite != null)
+        // 設定 Image 為 Filled 模式
+        if (healthFillImage != null)
         {
-            originalFillScale = healthFillSprite.transform.localScale;
+            healthFillImage.type = Image.Type.Filled;
+            healthFillImage.fillMethod = Image.FillMethod.Horizontal;
+            healthFillImage.fillOrigin = (int)Image.OriginHorizontal.Left;
+            healthFillImage.fillAmount = 1f;
+            healthFillImage.color = fullHealthColor;
         }
     }
 
@@ -70,12 +70,6 @@ public class EnemyHealthBar : MonoBehaviour
         if (mainCamera == null)
         {
             Debug.LogError("[EnemyHealthBar] 找不到 Main Camera！");
-        }
-
-        // 設定初始顏色
-        if (healthFillSprite != null)
-        {
-            healthFillSprite.color = fullHealthColor;
         }
 
         // 設定局部位置
@@ -103,12 +97,17 @@ public class EnemyHealthBar : MonoBehaviour
         }
 
         // 平滑過渡動畫
-        if (enableSmoothTransition)
+        if (enableSmoothTransition && healthFillImage != null)
         {
             if (Mathf.Abs(currentFillAmount - targetFillAmount) > 0.001f)
             {
                 currentFillAmount = Mathf.Lerp(currentFillAmount, targetFillAmount, Time.deltaTime * transitionSpeed);
-                UpdateFillVisual(currentFillAmount);
+                healthFillImage.fillAmount = currentFillAmount;
+            }
+            else
+            {
+                currentFillAmount = targetFillAmount;
+                healthFillImage.fillAmount = targetFillAmount;
             }
         }
     }
@@ -118,9 +117,9 @@ public class EnemyHealthBar : MonoBehaviour
     /// </summary>
     public void UpdateHealthBar(float currentHealth, float maxHealth)
     {
-        if (healthFillSprite == null)
+        if (healthFillImage == null)
         {
-            Debug.LogWarning("[EnemyHealthBar] healthFillSprite 未設定！");
+            Debug.LogWarning("[EnemyHealthBar] healthFillImage 未設定！");
             return;
         }
 
@@ -130,44 +129,16 @@ public class EnemyHealthBar : MonoBehaviour
         if (!enableSmoothTransition)
         {
             currentFillAmount = targetFillAmount;
-            UpdateFillVisual(targetFillAmount);
+            healthFillImage.fillAmount = targetFillAmount;
         }
 
         // 更新顏色
         Color targetColor = GetColorForPercentage(healthPercentage);
-        healthFillSprite.color = targetColor;
+        healthFillImage.color = targetColor;
 
         if (debugMode)
         {
             Debug.Log($"[EnemyHealthBar] 更新血條: {currentHealth}/{maxHealth} ({healthPercentage * 100:F1}%)");
-        }
-    }
-
-    /// <summary>
-    /// 更新血條填充的視覺效果
-    /// </summary>
-    void UpdateFillVisual(float fillAmount)
-    {
-        if (healthFillSprite == null) return;
-
-        if (useScaleMethod)
-        {
-            // 方法1：使用 Scale 縮放（簡單）
-            Vector3 newScale = originalFillScale;
-            newScale.x = originalFillScale.x * fillAmount;
-            healthFillSprite.transform.localScale = newScale;
-
-            // 調整位置，讓血條從左邊開始減少
-            float offset = originalFillScale.x * (1f - fillAmount) * 0.5f;
-            Vector3 newPos = healthFillSprite.transform.localPosition;
-            newPos.x = -offset;
-            healthFillSprite.transform.localPosition = newPos;
-        }
-        else
-        {
-            // 方法2：使用 Sprite Mask（需要額外設定）
-            // 這個方法需要你添加 Sprite Mask 組件
-            Debug.LogWarning("[EnemyHealthBar] Sprite Mask 方法需要手動設定 Mask 組件");
         }
     }
 
@@ -199,11 +170,7 @@ public class EnemyHealthBar : MonoBehaviour
     /// </summary>
     public void Show()
     {
-        if (healthFillSprite != null)
-            healthFillSprite.enabled = true;
-
-        if (healthBarBackground != null)
-            healthBarBackground.enabled = true;
+        gameObject.SetActive(true);
     }
 
     /// <summary>
@@ -211,10 +178,6 @@ public class EnemyHealthBar : MonoBehaviour
     /// </summary>
     public void Hide()
     {
-        if (healthFillSprite != null)
-            healthFillSprite.enabled = false;
-
-        if (healthBarBackground != null)
-            healthBarBackground.enabled = false;
+        gameObject.SetActive(false);
     }
 }

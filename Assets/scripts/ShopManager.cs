@@ -1,6 +1,7 @@
+using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using System.Collections.Generic;
 
 public class ShopManager : MonoBehaviour
 {
@@ -13,27 +14,33 @@ public class ShopManager : MonoBehaviour
         public Sprite icon;
     }
 
-    public List<ShopItem> items;
+    [Header("商品與面板")]
+    public List<ShopItem> items;             // 商品清單
+    public GameObject shopPanel;             // 商品主面板 (列表)
+    public Button[] itemButtons;             // 商品按鈕陣列
+    public Button shopCloseButton;           // 商店面板關閉按鈕
+    public Button shopButton;                // 外部開啟商店按鈕
 
-    public GameObject shopPanel;
-    public Animator shopAnimator;
-    public Button[] itemButtons;
-    public Image selectedItemIcon;
-    public Text selectedItemDescription;
-    public Text playerMoneyText;
+    [Header("商品詳情面板")]
+    public GameObject detailPanel;           // 詳細面板 (顯示商品資訊)
+    public Image selectedItemIcon;           // 顯示商品圖片
+    public TextMeshProUGUI selectedItemDescription; // 顯示商品說明
+    public Button buyButton;                 // 購買按鈕
+    public Button detailCloseButton;         // 關閉詳情面板按鈕
 
-    public Button openShopButton;   // 代表商店的開啟按鈕
-    public Button closeButton;      // 商店關閉按鈕
+    [Header("玩家金錢")]
+    public Text playerMoneyText;             // 金錢顯示
 
     private int selectedIndex = -1;
     private HashSet<int> purchasedItems = new HashSet<int>();
 
-    private bool isShopOpen = false;
-
     void Start()
     {
+        // 商店面板、詳情面板初始都不顯示
         shopPanel.SetActive(false);
+        detailPanel.SetActive(false);
 
+        // 商品按鈕設定圖片與事件
         for (int i = 0; i < itemButtons.Length; i++)
         {
             int index = i;
@@ -48,11 +55,21 @@ public class ShopManager : MonoBehaviour
             }
         }
 
-        if (openShopButton != null)
-            openShopButton.onClick.AddListener(() => { if (!isShopOpen) OpenShop(); });
+        // 商店面板關閉按鈕點擊事件
+        if (shopCloseButton != null)
+            shopCloseButton.onClick.AddListener(() => shopPanel.SetActive(false));
 
-        if (closeButton != null)
-            closeButton.onClick.AddListener(() => { if (isShopOpen) CloseShop(); });
+        // 開啟商店按鈕點擊事件
+        if (shopButton != null)
+            shopButton.onClick.AddListener(ToggleShopPanel);
+
+        // 詳情面板關閉按鈕
+        if (detailCloseButton != null)
+            detailCloseButton.onClick.AddListener(() => detailPanel.SetActive(false));
+
+        // 購買按鈕點擊事件
+        if (buyButton != null)
+            buyButton.onClick.AddListener(BuySelectedItem);
 
         LoadPurchasedItems();
         UpdatePlayerMoneyUI();
@@ -60,54 +77,50 @@ public class ShopManager : MonoBehaviour
 
     void Update()
     {
+        // 按下S鍵切換商店面板顯示狀態
         if (Input.GetKeyDown(KeyCode.S))
         {
-            if (isShopOpen)
-                CloseShop();
-            else
-                OpenShop();
+            ToggleShopPanel();
         }
     }
 
-    public void OpenShop()
+    // 切換商店面板顯示/隱藏
+    public void ToggleShopPanel()
     {
-        isShopOpen = true;
-        shopPanel.SetActive(true);
-        shopAnimator.SetTrigger("Open");
+        bool isActive = shopPanel.activeSelf;
+        shopPanel.SetActive(!isActive);
+
+        // 關閉詳情面板，避免UI重疊
+        if (detailPanel.activeSelf)
+            detailPanel.SetActive(false);
     }
 
-    public void CloseShop()
-    {
-        if (!shopPanel.activeSelf) return;
-
-        isShopOpen = false;
-        shopAnimator.SetTrigger("Close");
-        Invoke(nameof(DeactivateShopPanel), 0.4f); // 動畫長度依實際調整
-    }
-
-    private void DeactivateShopPanel()
-    {
-        shopPanel.SetActive(false);
-    }
-
+    // 按下商品按鈕呼叫，打開詳情面板，顯示該商品資訊
     public void OnItemButtonClicked(int index)
     {
-        if (index < 0 || index >= items.Count) return;
+        if (index < 0 || index >= items.Count)
+            return;
 
         selectedIndex = index;
-        var item = items[index];
+        ShopItem item = items[index];
+
         selectedItemIcon.sprite = item.icon;
         selectedItemDescription.text = $"{item.itemName}\n{item.description}\n價格: {item.price}元";
+
+        detailPanel.SetActive(true);
     }
 
+    // 購買當前選中的商品
     public void BuySelectedItem()
     {
-        if (selectedIndex == -1) return;
+        if (selectedIndex == -1)
+            return;
 
-        var item = items[selectedIndex];
+        ShopItem item = items[selectedIndex];
+
         if (purchasedItems.Contains(selectedIndex))
         {
-            Debug.Log("該商品已購買");
+            Debug.Log("已購買過此商品");
             return;
         }
 
@@ -131,7 +144,8 @@ public class ShopManager : MonoBehaviour
         }
     }
 
-    void UpdatePlayerMoneyUI()
+    // 更新金錢UI顯示
+    public void UpdatePlayerMoneyUI()
     {
         if (playerMoneyText != null && CoinManager.Instance != null)
         {
@@ -139,14 +153,16 @@ public class ShopManager : MonoBehaviour
         }
     }
 
-    void SavePurchasedItems()
+    // 儲存已購買商品資料
+    public void SavePurchasedItems()
     {
         string data = string.Join(",", purchasedItems);
         PlayerPrefs.SetString("PurchasedItems", data);
         PlayerPrefs.Save();
     }
 
-    void LoadPurchasedItems()
+    // 載入已購買商品資料
+    public void LoadPurchasedItems()
     {
         string data = PlayerPrefs.GetString("PurchasedItems", "");
         purchasedItems.Clear();
@@ -159,5 +175,12 @@ public class ShopManager : MonoBehaviour
                     purchasedItems.Add(idx);
             }
         }
+    }
+
+    // 強制關閉商店及詳情面板，供GameManager調用
+    public void ForceCloseShop()
+    {
+        shopPanel.SetActive(false);
+        detailPanel.SetActive(false);
     }
 }
