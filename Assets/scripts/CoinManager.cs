@@ -26,6 +26,6 @@ public class CoinManager : MonoBehaviour
     private void UpdateMoneyUI()
     {
         if (moneyText != null)
-            moneyText.text = "Money: " + moneyCount.ToString();
+            moneyText.text = "Money : " + moneyCount.ToString();
     }
 }

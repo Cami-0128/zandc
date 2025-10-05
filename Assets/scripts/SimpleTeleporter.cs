@@ -58,8 +58,8 @@ public class SimpleTeleporter : MonoBehaviour
 
     void Update()
     {
-        // 檢查是否同時按住S、O、P
-        if (Input.GetKey(KeyCode.S) && Input.GetKey(KeyCode.O) && Input.GetKey(KeyCode.P))
+        // 檢查是否同時按住L、O、P
+        if (Input.GetKey(KeyCode.L) && Input.GetKey(KeyCode.O) && Input.GetKey(KeyCode.P))
         {
             // 防止重複觸發，只在其中一個鍵剛按下時觸發
             if (Input.GetKeyDown(KeyCode.S) || Input.GetKeyDown(KeyCode.O) || Input.GetKeyDown(KeyCode.P))

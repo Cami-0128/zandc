@@ -15,8 +15,8 @@ public class GameManager : MonoBehaviour
         if (!completeUI.activeSelf)
         {
             deathUI.SetActive(true);
-            if (shopManager != null)
-                shopManager.ForceCloseShop();
+            //if (shopManager != null)
+            //    shopManager.ForceCloseShop();  //ForceCloseShop()已刪
             Debug.Log("Game Paused 遊戲暫停 - 玩家死亡");
         }
     }

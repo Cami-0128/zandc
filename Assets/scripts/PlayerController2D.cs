@@ -21,7 +21,7 @@ public class PlayerController2D : MonoBehaviour
     // === 靜態血量變數（跨場景保持） ===
     private static int persistentHealth = -1; // -1 表示尚未初始化
     private static bool isFirstTimePlay = true; // 是否第一次遊戲
-    private int currentHealth;               // 當前血量
+    public int currentHealth;               // 當前血量
     public int enemyDamage = 15;             // Enemy造成的傷害
     private float damageInvulnerabilityTime = 1f; // 受傷無敵時間（防止連續扣血）
     private float lastDamageTime = -999f;    // 上次受傷時間
@@ -121,10 +121,10 @@ public class PlayerController2D : MonoBehaviour
         //    }
         //}
         // === 測試按鍵 ===
-        if (Input.GetKeyDown(KeyCode.R))
-        {
-            Debug.Log($"[測試] 當前血量: {currentHealth}/{maxHealth}, 保存血量: {persistentHealth}");
-        }
+        //if (Input.GetKeyDown(KeyCode.R))
+        //{
+        //    Debug.Log($"[測試] 當前血量: {currentHealth}/{maxHealth}, 保存血量: {persistentHealth}");
+        //}
         //// === 測試受傷按鍵 ===
         //if (Input.GetKeyDown(KeyCode.T))
         //{
@@ -295,22 +295,21 @@ public class PlayerController2D : MonoBehaviour
     // === 修改：治療系統（增強版） ===
     public void Heal(int healAmount)
     {
+        Debug.Log($"Heal函數被呼叫，healAmount = {healAmount}");
         if (isDead) return; // 如果已經死亡，無法治療
+
         int oldHealth = currentHealth;
         currentHealth += healAmount;                          // 增加血量
         currentHealth = Mathf.Min(currentHealth, maxHealth);  // 確保血量不會超過最大值
-        int actualHealAmount = currentHealth - oldHealth;     // 實際回復的血量
-        // === 新增：播放治療音效 ===
+
         if (healSound != null && audioSource != null)
-        {
-            audioSource.clip = healSound;
-            audioSource.Play();
-        }
-        // === 新增：即時保存血量 ===
+            audioSource.PlayOneShot(healSound);
+
         SaveHealth();
-        UpdateHealthUI();                                     // 更新血條UI
-        Debug.Log($"玩家回復 {actualHealAmount} 點血量。當前血量: {currentHealth}/{maxHealth}");
-        // === 新增：治療反饋效果（可選） ===
+        UpdateHealthUI();
+
+        Debug.Log($"回血 {currentHealth - oldHealth} 點，目前血量: {currentHealth}/{maxHealth}");
+
         StartCoroutine(HealFeedback());
     }
     // === 新增：治療反饋效果協程 ===

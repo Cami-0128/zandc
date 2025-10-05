@@ -92,11 +92,11 @@ public class PlayerAttack : MonoBehaviour
             CastMagic();
         }
 
-        // 檢測手動回魔按鍵
-        if (enableManualRestore && Input.GetKeyDown(manualRestoreKey))
-        {
-            ManualRestoreMana();
-        }
+        //// 檢測手動回魔按鍵
+        //if (enableManualRestore && Input.GetKeyDown(manualRestoreKey))
+        //{
+        //    ManualRestoreMana();
+        //}
     }
 
     /// <summary>
@@ -204,35 +204,35 @@ public class PlayerAttack : MonoBehaviour
     /// <summary>
     /// 手動回復魔力
     /// </summary>
-    private void ManualRestoreMana()
-    {
-        // 死亡時無法手動回魔
-        if (playerController != null && playerController.isDead)
-        {
-            return;
-        }
+    //private void ManualRestoreMana()
+    //{
+    //    // 死亡時無法手動回魔
+    //    if (playerController != null && playerController.isDead)
+    //    {
+    //        return;
+    //    }
 
-        if (Time.time - lastManualRestoreTime < manualRestoreCooldown)
-        {
-            float remainingCooldown = manualRestoreCooldown - (Time.time - lastManualRestoreTime);
-            Debug.Log($"[PlayerAttack] 手動回魔冷卻中！剩餘時間: {remainingCooldown:F1} 秒");
-            return;
-        }
+    //    if (Time.time - lastManualRestoreTime < manualRestoreCooldown)
+    //    {
+    //        float remainingCooldown = manualRestoreCooldown - (Time.time - lastManualRestoreTime);
+    //        Debug.Log($"[PlayerAttack] 手動回魔冷卻中！剩餘時間: {remainingCooldown:F1} 秒");
+    //        return;
+    //    }
 
-        if (currentMana >= maxMana)
-        {
-            Debug.Log("[PlayerAttack] 魔力已滿！");
-            return;
-        }
+    //    if (currentMana >= maxMana)
+    //    {
+    //        Debug.Log("[PlayerAttack] 魔力已滿！");
+    //        return;
+    //    }
 
-        int oldMana = currentMana;
-        currentMana += manualRestoreAmount;
-        currentMana = Mathf.Min(currentMana, maxMana);
-        int actualRestored = currentMana - oldMana;
+    //    int oldMana = currentMana;
+    //    currentMana += manualRestoreAmount;
+    //    currentMana = Mathf.Min(currentMana, maxMana);
+    //    int actualRestored = currentMana - oldMana;
 
-        lastManualRestoreTime = Time.time;
-        Debug.Log($"[PlayerAttack] 手動回復 {actualRestored} MP，當前魔力: {currentMana}/{maxMana}");
-    }
+    //    lastManualRestoreTime = Time.time;
+    //    Debug.Log($"[PlayerAttack] 手動回復 {actualRestored} MP，當前魔力: {currentMana}/{maxMana}");
+    //}
 
     /// <summary>
     /// 回復魔力（供外部調用）
