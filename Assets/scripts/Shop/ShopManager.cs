@@ -54,7 +54,6 @@ public class ShopManager : MonoBehaviour
         UpdatePlayerMoneyUI();
     }
 
-
     void Update()
     {
         if (Input.GetKeyDown(KeyCode.S))
@@ -69,7 +68,7 @@ public class ShopManager : MonoBehaviour
             {
                 case "Health":
                 case "回復藥水":
-                    item.effect = new HealEffect(20); // 回復數量寫死
+                    item.effect = new HealEffect(20); // 固定回復20血
                     break;
                 default:
                     item.effect = null;
@@ -99,24 +98,25 @@ public class ShopManager : MonoBehaviour
 
     void ToggleShopPanel()
     {
+        if (shopPanel == null) return;
+
         bool isActive = shopPanel.activeSelf;
         shopPanel.SetActive(!isActive);
+
         if (detailPanel != null && detailPanel.activeSelf)
             detailPanel.SetActive(false);
     }
 
     public void OnItemButtonClicked(int index)
     {
-        if (index < 0 || index >= items.Count)
-            return;
+        if (index < 0 || index >= items.Count) return;
 
         selectedIndex = index;
         ShopItem item = items[index];
         if (selectedItemIcon != null) selectedItemIcon.sprite = item.icon;
         if (selectedItemDescription != null)
             selectedItemDescription.text = $"{item.itemName}\n{item.description}\n價格: {item.price}元";
-        if (detailPanel != null)
-            detailPanel.SetActive(true);
+        if (detailPanel != null) detailPanel.SetActive(true);
     }
 
     public void BuySelectedItem()
@@ -142,11 +142,21 @@ public class ShopManager : MonoBehaviour
                 item.effect.ApplyEffect(player);
             }
         }
+        else
+        {
+            Debug.Log("玩家金錢不足，無法購買");
+        }
     }
 
     public void UpdatePlayerMoneyUI()
     {
         if (playerMoneyText != null && CoinManager.Instance != null)
             playerMoneyText.text = $"Money : {CoinManager.Instance.MoneyCount}";
+    }
+
+    public void ForceCloseShop()
+    {
+        if (shopPanel != null) shopPanel.SetActive(false);
+        if (detailPanel != null) detailPanel.SetActive(false);
     }
 }
