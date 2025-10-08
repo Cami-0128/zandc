@@ -12,8 +12,8 @@ GameObject:
   - component: {fileID: 4777416421436998663}
   - component: {fileID: 3398446474270238577}
   - component: {fileID: 4777416421436998660}
-  - component: {fileID: 4777416421436998661}
   - component: {fileID: 533696128551202553}
+  - component: {fileID: 4777416421436998661}
   m_Layer: 0
   m_Name: MagicBullet
   m_TagString: Untagged
@@ -100,7 +100,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 43330f4ea222df645a1720c71dafc5a7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  damage: 50
+  damage: 30
   manaCost: 5
   speed: 10
   lifetime: 5
@@ -126,22 +126,6 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
---- !u!58 &4777416421436998661
-CircleCollider2D:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4777416421436998658}
-  m_Enabled: 1
-  m_Density: 1
-  m_Material: {fileID: 0}
-  m_IsTrigger: 1
-  m_UsedByEffector: 0
-  m_UsedByComposite: 0
-  m_Offset: {x: 0, y: 0}
-  serializedVersion: 2
-  m_Radius: 0.1
 --- !u!114 &533696128551202553
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -159,3 +143,19 @@ MonoBehaviour:
   speed: 10
   lifetime: 5
   bulletColor: {r: 0.5, g: 0.8, b: 1, a: 1}
+--- !u!58 &4777416421436998661
+CircleCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4777416421436998658}
+  m_Enabled: 1
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IsTrigger: 1
+  m_UsedByEffector: 0
+  m_UsedByComposite: 0
+  m_Offset: {x: 0, y: 0}
+  serializedVersion: 2
+  m_Radius: 0.1

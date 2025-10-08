@@ -1,4 +1,3 @@
-// GameManager.cs
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -16,11 +15,10 @@ public class GameManager : MonoBehaviour
         {
             deathUI.SetActive(true);
             if (shopManager != null)
-                shopManager.ForceCloseShop();  // 強制關閉商店面板
+                shopManager.ForceCloseShop();
             Debug.Log("Game Paused 遊戲暫停 - 玩家死亡");
         }
     }
-
 
     public void RestartGame()
     {

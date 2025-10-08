@@ -6,24 +6,23 @@ using UnityEngine.UI;
 public class ShopManager : MonoBehaviour
 {
     public List<ShopItem> items;
-
     public GameObject shopPanel;
     public Button[] itemButtons;
     public Button shopCloseButton;
     public Button shopButton;
-
-    public GameObject detailPanel;
+    public GameObject detailPanel;  // SelectedPanel
     public Image selectedItemIcon;
     public TextMeshProUGUI selectedItemDescription;
     public Button buyButton;
     public Button detailCloseButton;
-
     public Text playerMoneyText;
 
     private int selectedIndex = -1;
+    private PlayerController2D player;
 
     void Start()
     {
+        player = FindObjectOfType<PlayerController2D>();
         if (shopPanel != null) shopPanel.SetActive(false);
         if (detailPanel != null) detailPanel.SetActive(false);
 
@@ -33,7 +32,7 @@ public class ShopManager : MonoBehaviour
         if (shopCloseButton != null)
         {
             shopCloseButton.onClick.RemoveAllListeners();
-            shopCloseButton.onClick.AddListener(() => shopPanel.SetActive(false));
+            shopCloseButton.onClick.AddListener(() => CloseShopPanel());
         }
         if (shopButton != null)
         {
@@ -50,14 +49,17 @@ public class ShopManager : MonoBehaviour
             buyButton.onClick.RemoveAllListeners();
             buyButton.onClick.AddListener(BuySelectedItem);
         }
-
         UpdatePlayerMoneyUI();
     }
 
     void Update()
     {
+        // 玩家死亡時不能開啟商店
         if (Input.GetKeyDown(KeyCode.S))
+        {
+            if (player == null || player.isDead) return;
             ToggleShopPanel();
+        }
     }
 
     void InjectEffectsBasedOnName()
@@ -68,7 +70,7 @@ public class ShopManager : MonoBehaviour
             {
                 case "Health":
                 case "回復藥水":
-                    item.effect = new HealEffect(20); // 固定回復20血
+                    item.effect = new HealEffect(20);
                     break;
                 default:
                     item.effect = null;
@@ -96,47 +98,61 @@ public class ShopManager : MonoBehaviour
         }
     }
 
-    void ToggleShopPanel()
-    {
-        if (shopPanel == null) return;
-
-        bool isActive = shopPanel.activeSelf;
-        shopPanel.SetActive(!isActive);
-
-        if (detailPanel != null && detailPanel.activeSelf)
-            detailPanel.SetActive(false);
-    }
-
+    // 商品詳情面板只能在未死亡時出現
     public void OnItemButtonClicked(int index)
     {
+        if (player == null || player.isDead) return;
         if (index < 0 || index >= items.Count) return;
-
         selectedIndex = index;
         ShopItem item = items[index];
         if (selectedItemIcon != null) selectedItemIcon.sprite = item.icon;
         if (selectedItemDescription != null)
-            selectedItemDescription.text = $"{item.itemName}\n{item.description}\n價格: {item.price}元";
-        if (detailPanel != null) detailPanel.SetActive(true);
+            selectedItemDescription.text = $"{item.itemName}\n{item.description}\nPrice: {item.price}coin";
+        if (detailPanel != null)
+            detailPanel.SetActive(true);
+    }
+
+    // 商店主Panel只能在未死亡時開啟
+    void ToggleShopPanel()
+    {
+        if (player == null || player.isDead)
+        {
+            CloseShopPanel();
+            return;
+        }
+        if (shopPanel == null) return;
+        bool isActive = shopPanel.activeSelf;
+        if (isActive)
+        {
+            CloseShopPanel();
+        }
+        else
+        {
+            shopPanel.SetActive(true);
+        }
+    }
+
+    // 關閉商店時，也一併關閉詳情Panel
+    void CloseShopPanel()
+    {
+        if (shopPanel != null) shopPanel.SetActive(false);
+        if (detailPanel != null) detailPanel.SetActive(false);
     }
 
     public void BuySelectedItem()
     {
         if (selectedIndex == -1) return;
         var item = items[selectedIndex];
-
         if (CoinManager.Instance == null)
         {
             Debug.LogError("缺少CoinManager");
             return;
         }
-
         int moneyCount = CoinManager.Instance.MoneyCount;
         if (moneyCount >= item.price)
         {
             CoinManager.Instance.AddMoney(-item.price);
             UpdatePlayerMoneyUI();
-
-            PlayerController2D player = FindObjectOfType<PlayerController2D>();
             if (player != null && item.effect != null)
             {
                 item.effect.ApplyEffect(player);
@@ -154,9 +170,9 @@ public class ShopManager : MonoBehaviour
             playerMoneyText.text = $"Money : {CoinManager.Instance.MoneyCount}";
     }
 
+    // 死亡時外部調用，讓兩Panel全關閉
     public void ForceCloseShop()
     {
-        if (shopPanel != null) shopPanel.SetActive(false);
-        if (detailPanel != null) detailPanel.SetActive(false);
+        CloseShopPanel();
     }
 }

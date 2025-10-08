@@ -8,7 +8,7 @@ public class MagicBullet : MonoBehaviour
 {
     [Header("攻擊屬性")]
     [Tooltip("對敵人造成的傷害")]
-    public float damage = 50f;
+    public float damage = 30f;
 
     [Tooltip("所需魔力（由 PlayerAttack 讀取）")]
     public int manaCost = 5;

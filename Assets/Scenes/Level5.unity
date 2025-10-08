@@ -1965,9 +1965,21 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3887459829636375592, guid: ab37e94afdfafb945983830d1ada8425, type: 3}
+      propertyPath: firePoint
+      value: 
+      objectReference: {fileID: 1670458041}
+    - target: {fileID: 3887459829636375592, guid: ab37e94afdfafb945983830d1ada8425, type: 3}
+      propertyPath: heavyBulletPrefab
+      value: 
+      objectReference: {fileID: 2368465509891626261, guid: 873a2c428c4d78a45a7f29dc46edfe7e, type: 3}
+    - target: {fileID: 3887459829636375592, guid: ab37e94afdfafb945983830d1ada8425, type: 3}
       propertyPath: magicBulletPrefab
       value: 
       objectReference: {fileID: 4777416421436998658, guid: 0ef6cac81d90a564cba1052a67003f89, type: 3}
+    - target: {fileID: 3887459829636375592, guid: ab37e94afdfafb945983830d1ada8425, type: 3}
+      propertyPath: enableManualRestore
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: ab37e94afdfafb945983830d1ada8425, type: 3}
 --- !u!1 &709671772
@@ -5474,6 +5486,37 @@ Transform:
   m_Father: {fileID: 1257676718}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1670458040
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1670458041}
+  m_Layer: 0
+  m_Name: FirePoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1670458041
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1670458040}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.56, y: 0.21, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1320464340}
+  m_RootOrder: 2
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1689842046
 GameObject:
   m_ObjectHideFlags: 0
@@ -6851,7 +6894,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Health
+  m_text: +20
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
