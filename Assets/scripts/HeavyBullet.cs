@@ -15,8 +15,6 @@ public class HeavyBullet : MonoBehaviour
     public Color bulletColor = Color.black;
 
     private Rigidbody2D rb;
-    private PlayerController2D player;
-    private bool hasUsedMana = false;
 
     void Awake()
     {
@@ -35,8 +33,6 @@ public class HeavyBullet : MonoBehaviour
 
     void Start()
     {
-        player = FindObjectOfType<PlayerController2D>();
-
         SpriteRenderer sr = GetComponent<SpriteRenderer>();
         if (sr != null)
             sr.color = bulletColor;
@@ -53,27 +49,6 @@ public class HeavyBullet : MonoBehaviour
 
     void OnTriggerEnter2D(Collider2D other)
     {
-        if (hasUsedMana) return; // 避免重複扣魔
-        hasUsedMana = true;
-
-        if (player == null)
-        {
-            Debug.LogError("[HeavyBullet] 找不到 PlayerController2D");
-            Destroy(gameObject);
-            return;
-        }
-
-        if (player.currentMana < manaCost)
-        {
-            Debug.Log("[HeavyBullet] 魔力不足，無法發動攻擊");
-            Destroy(gameObject);
-            return;
-        }
-
-        player.currentMana -= manaCost;
-        player.currentMana = Mathf.Max(player.currentMana, 0);
-        FindObjectOfType<ManaBarUI>()?.UpdateManaBar(player.currentMana, player.maxMana);
-
         if (other.CompareTag("Player"))
             return;
 
@@ -99,7 +74,9 @@ public class HeavyBullet : MonoBehaviour
     }
 
     public void SetDamage(float newDamage) => damage = newDamage;
+
     public void SetManaCost(int cost) => manaCost = cost;
+
     public void SetColor(Color color)
     {
         bulletColor = color;

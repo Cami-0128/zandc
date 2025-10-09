@@ -14,13 +14,9 @@ public class MagicBullet : MonoBehaviour
     public Color bulletColor = new Color(0.5f, 0.8f, 1f, 1f);
 
     private Rigidbody2D rb;
-    private PlayerController2D player;
-    private bool hasUsedMana = false;
 
     void Start()
     {
-        player = FindObjectOfType<PlayerController2D>();
-
         SpriteRenderer sr = GetComponent<SpriteRenderer>();
         if (sr != null)
             sr.color = bulletColor;
@@ -41,27 +37,6 @@ public class MagicBullet : MonoBehaviour
 
     void OnTriggerEnter2D(Collider2D other)
     {
-        if (hasUsedMana) return;
-        hasUsedMana = true;
-
-        if (player == null)
-        {
-            Debug.LogError("[MagicBullet] 找不到 PlayerController2D");
-            Destroy(gameObject);
-            return;
-        }
-
-        if (player.currentMana < manaCost)
-        {
-            Debug.Log("[MagicBullet] 魔力不足，無法發動攻擊");
-            Destroy(gameObject);
-            return;
-        }
-
-        player.currentMana -= manaCost;
-        player.currentMana = Mathf.Max(player.currentMana, 0);
-        FindObjectOfType<ManaBarUI>()?.UpdateManaBar(player.currentMana, player.maxMana);
-
         if (other.CompareTag("Player"))
             return;
 
@@ -87,7 +62,9 @@ public class MagicBullet : MonoBehaviour
     }
 
     public void SetDamage(float newDamage) => damage = newDamage;
+
     public void SetManaCost(int cost) => manaCost = cost;
+
     public void SetSpeed(float newSpeed)
     {
         speed = newSpeed;

@@ -75,34 +75,41 @@ public class ManaBarUI : MonoBehaviour
         StartCoroutine(InitializeManaBar());
     }
 
+
     IEnumerator InitializeManaBar()
     {
         yield return new WaitForEndOfFrame();
-        player = FindObjectOfType<PlayerController2D>();
+        var playerAttack = FindObjectOfType<PlayerAttack>();
         int attempts = 0;
-        while (player == null && attempts < 100)
+        while (playerAttack == null && attempts < 100)
         {
             yield return new WaitForEndOfFrame();
-            player = FindObjectOfType<PlayerController2D>();
+            playerAttack = FindObjectOfType<PlayerAttack>();
             attempts++;
         }
 
-        if (player != null)
+        if (playerAttack != null)
         {
-            UpdateManaBar(player.currentMana, player.maxMana);
-            lastKnownMana = player.currentMana;
+            int currentMana = playerAttack.GetCurrentMana();
+            int maxMana = playerAttack.maxMana;
+
+            float manaPercentage = (float)currentMana / maxMana;
+            currentFillAmount = manaPercentage;
+            targetFillAmount = manaPercentage;
+
+            if (manaBarFill != null)
+            {
+                manaBarFill.fillAmount = manaPercentage;
+                UpdateManaBarColor(manaPercentage);
+            }
+            UpdateManaText(currentMana, maxMana);
+
+            lastKnownMana = currentMana;
             isInitialized = true;
         }
         else
         {
-            Debug.LogError("找不到 PlayerController2D 組件，魔力條無法初始化。");
-            if (manaBarFill != null)
-            {
-                currentFillAmount = 1f;
-                targetFillAmount = 1f;
-                manaBarFill.fillAmount = 1f;
-                manaBarFill.color = fullManaColor;
-            }
+            Debug.LogError("找不到 PlayerAttack 組件！魔力條無法初始化");
         }
     }
 
@@ -134,35 +141,27 @@ public class ManaBarUI : MonoBehaviour
 
     void AutoSyncWithPlayer()
     {
-        if (player != null)
+        var playerAttack = FindObjectOfType<PlayerAttack>();
+        if (playerAttack != null)
         {
-            int currentMana = player.currentMana;
+            int currentMana = playerAttack.GetCurrentMana();
             if (currentMana != lastKnownMana)
             {
-                UpdateManaBar(currentMana, player.maxMana);
+                int maxMana = playerAttack.maxMana;
+                UpdateManaBar(currentMana, maxMana);
                 lastKnownMana = currentMana;
             }
         }
     }
 
-    // 供玩家施放攻擊時呼叫，減少魔力並更新UI
-    public void ReduceMana(int amount)
-    {
-        if (player == null) return;
-        player.currentMana -= amount;
-        player.currentMana = Mathf.Clamp(player.currentMana, 0, player.maxMana);
-        UpdateManaBar(player.currentMana, player.maxMana);
-    }
 
     public void UpdateManaBar(int currentMana, int maxMana)
     {
         if (manaBarFill == null)
             return;
-
         float manaPercentage = (float)currentMana / maxMana;
         bool usedMana = (lastKnownMana > 0 && currentMana < lastKnownMana);
         targetFillAmount = manaPercentage;
-
         if (!enableSmoothTransition)
         {
             currentFillAmount = targetFillAmount;
@@ -174,28 +173,20 @@ public class ManaBarUI : MonoBehaviour
             targetFillAmount = 0f;
             manaBarFill.fillAmount = 0f;
         }
-
         UpdateManaBarColor(manaPercentage);
         UpdateManaText(currentMana, maxMana);
-
         if (enableFlashOnUse && usedMana)
         {
             PlayManaFlash();
         }
-
         lastKnownMana = currentMana;
-
         if (!isInitialized)
-        {
             isInitialized = true;
-        }
     }
 
     void UpdateManaBarColor(float manaPercentage)
     {
-        if (manaBarFill == null)
-            return;
-
+        if (manaBarFill == null) return;
         Color newTargetColor;
         if (manaPercentage > 0.75f)
             newTargetColor = fullManaColor;
@@ -205,9 +196,7 @@ public class ManaBarUI : MonoBehaviour
             newTargetColor = mediumManaColor;
         else
             newTargetColor = lowManaColor;
-
         targetColor = newTargetColor;
-
         if (!enableColorLerp)
         {
             currentColor = targetColor;
@@ -238,13 +227,10 @@ public class ManaBarUI : MonoBehaviour
     {
         if (manaBarFill == null)
             yield break;
-
         isFlashing = true;
         Color originalColor = currentColor;
         manaBarFill.color = useFlashColor;
-
         yield return new WaitForSeconds(flashDuration);
-
         manaBarFill.color = originalColor;
         isFlashing = false;
         flashCoroutine = null;

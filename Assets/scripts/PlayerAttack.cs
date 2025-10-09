@@ -141,14 +141,20 @@ public class PlayerAttack : MonoBehaviour
     }
 
 
-
-
     private void ConsumeMana(int amount)
     {
         currentMana -= amount;
         currentMana = Mathf.Max(0, currentMana);
         lastManaUseTime = Time.time;
+
+        ManaBarUI manaBar = FindObjectOfType<ManaBarUI>();
+        if (manaBar != null)
+        {
+            manaBar.UpdateManaBar(currentMana, maxMana);
+        }
     }
+
+
 
     private IEnumerator ManaRegenerationCoroutine()
     {
