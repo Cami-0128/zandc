@@ -12,7 +12,7 @@ public class CoinPickup : MonoBehaviour
 
     [Header("自動消失")]
     [Tooltip("金幣存在時間（秒），0 = 永不消失")]
-    public float lifetime = 10f;
+    public float lifetime = 0f;
 
     [Header("飛向玩家設定（可選）")]
     [Tooltip("是否自動飛向玩家")]

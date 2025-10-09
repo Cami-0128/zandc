@@ -64,7 +64,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   value: 1
-  lifetime: 10
+  lifetime: 0
   flyToPlayer: 0
   flySpeed: 5
   flyDelay: 0.5

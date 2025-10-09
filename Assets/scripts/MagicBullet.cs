@@ -1,16 +1,9 @@
 using UnityEngine;
 
-/// <summary>
-/// 魔法子彈攻擊
-/// 傷害值和魔力消耗在這裡定義
-/// </summary>
 public class MagicBullet : MonoBehaviour
 {
     [Header("攻擊屬性")]
-    [Tooltip("對敵人造成的傷害")]
     public float damage = 30f;
-
-    [Tooltip("所需魔力（由 PlayerAttack 讀取）")]
     public int manaCost = 5;
 
     [Header("子彈設定")]
@@ -21,24 +14,25 @@ public class MagicBullet : MonoBehaviour
     public Color bulletColor = new Color(0.5f, 0.8f, 1f, 1f);
 
     private Rigidbody2D rb;
+    private PlayerController2D player;
+    private bool hasUsedMana = false;
 
     void Start()
     {
-        SpriteRenderer spriteRenderer = GetComponent<SpriteRenderer>();
-        if (spriteRenderer != null)
-        {
-            spriteRenderer.color = bulletColor;
-        }
+        player = FindObjectOfType<PlayerController2D>();
+
+        SpriteRenderer sr = GetComponent<SpriteRenderer>();
+        if (sr != null)
+            sr.color = bulletColor;
 
         rb = GetComponent<Rigidbody2D>();
         if (rb == null)
         {
             rb = gameObject.AddComponent<Rigidbody2D>();
-            rb.gravityScale = 0f; // 避免受重力影響
+            rb.gravityScale = 0f;
             rb.freezeRotation = true;
         }
 
-        // 設定 Rigidbody2D 速度
         float direction = Mathf.Sign(transform.localScale.x);
         rb.velocity = new Vector2(speed * direction, 0f);
 
@@ -47,13 +41,30 @@ public class MagicBullet : MonoBehaviour
 
     void OnTriggerEnter2D(Collider2D other)
     {
-        // 忽略玩家
-        if (other.CompareTag("Player"))
+        if (hasUsedMana) return;
+        hasUsedMana = true;
+
+        if (player == null)
         {
+            Debug.LogError("[MagicBullet] 找不到 PlayerController2D");
+            Destroy(gameObject);
             return;
         }
 
-        // 擊中敵人（關鍵：傳遞自己的傷害值）
+        if (player.currentMana < manaCost)
+        {
+            Debug.Log("[MagicBullet] 魔力不足，無法發動攻擊");
+            Destroy(gameObject);
+            return;
+        }
+
+        player.currentMana -= manaCost;
+        player.currentMana = Mathf.Max(player.currentMana, 0);
+        FindObjectOfType<ManaBarUI>()?.UpdateManaBar(player.currentMana, player.maxMana);
+
+        if (other.CompareTag("Player"))
+            return;
+
         Enemy enemy = other.GetComponent<Enemy>();
         if (enemy != null)
         {
@@ -63,7 +74,6 @@ public class MagicBullet : MonoBehaviour
             return;
         }
 
-        // 擊中地面
         if (other.CompareTag("Ground"))
         {
             CreateHitEffect();
@@ -74,55 +84,24 @@ public class MagicBullet : MonoBehaviour
     void CreateHitEffect()
     {
         Debug.Log($"[MagicBullet] 擊中目標！造成 {damage} 點傷害");
-        // 未來可以在這裡添加擊中特效
-        // 例如：Instantiate(hitEffectPrefab, transform.position, Quaternion.identity);
     }
 
-    // ============================================
-    // 公開方法供外部調用（方便動態調整）
-    // ============================================
-
-    /// <summary>
-    /// 設定傷害值
-    /// </summary>
-    public void SetDamage(float newDamage)
-    {
-        damage = newDamage;
-    }
-
-    /// <summary>
-    /// 設定魔力消耗
-    /// </summary>
-    public void SetManaCost(int cost)
-    {
-        manaCost = cost;
-    }
-
-    /// <summary>
-    /// 設定子彈速度
-    /// </summary>
+    public void SetDamage(float newDamage) => damage = newDamage;
+    public void SetManaCost(int cost) => manaCost = cost;
     public void SetSpeed(float newSpeed)
     {
         speed = newSpeed;
-
         if (rb != null)
         {
             float direction = Mathf.Sign(transform.localScale.x);
             rb.velocity = new Vector2(speed * direction, 0f);
         }
     }
-
-    /// <summary>
-    /// 設定子彈顏色
-    /// </summary>
     public void SetColor(Color color)
     {
         bulletColor = color;
-
-        SpriteRenderer spriteRenderer = GetComponent<SpriteRenderer>();
-        if (spriteRenderer != null)
-        {
-            spriteRenderer.color = color;
-        }
+        SpriteRenderer sr = GetComponent<SpriteRenderer>();
+        if (sr != null)
+            sr.color = color;
     }
 }

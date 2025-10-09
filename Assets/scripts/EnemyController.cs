@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class EnemyController : MonoBehaviour
+public class EnemyController : MonoBehaviour   //廢棄，未使用
 {
     public float moveSpeed = 2f;
     public float groundCheckDistance = 1f; // 偵測地板前緣的距離

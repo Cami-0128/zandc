@@ -15,6 +15,8 @@ public class HeavyBullet : MonoBehaviour
     public Color bulletColor = Color.black;
 
     private Rigidbody2D rb;
+    private PlayerController2D player;
+    private bool hasUsedMana = false;
 
     void Awake()
     {
@@ -24,10 +26,8 @@ public class HeavyBullet : MonoBehaviour
         rb.gravityScale = 0f;
         rb.freezeRotation = true;
 
-        // 設定大小
         transform.localScale = new Vector3(bulletScale, bulletScale, 1f);
 
-        // Collider 縮放
         CircleCollider2D cc = GetComponent<CircleCollider2D>();
         if (cc != null)
             cc.radius = 0.5f * bulletScale;
@@ -35,18 +35,15 @@ public class HeavyBullet : MonoBehaviour
 
     void Start()
     {
-        // 設定顏色
-        SpriteRenderer spriteRenderer = GetComponent<SpriteRenderer>();
-        if (spriteRenderer != null)
-            spriteRenderer.color = bulletColor;
+        player = FindObjectOfType<PlayerController2D>();
 
-        // 不用在這裡設速度，速度由外部 SetSpeed 決定
+        SpriteRenderer sr = GetComponent<SpriteRenderer>();
+        if (sr != null)
+            sr.color = bulletColor;
+
         Destroy(gameObject, lifetime);
     }
 
-    /// <summary>
-    /// 外部呼叫，讓子彈移動
-    /// </summary>
     public void SetSpeed(float bulletSpeed)
     {
         if (rb == null)
@@ -56,6 +53,27 @@ public class HeavyBullet : MonoBehaviour
 
     void OnTriggerEnter2D(Collider2D other)
     {
+        if (hasUsedMana) return; // 避免重複扣魔
+        hasUsedMana = true;
+
+        if (player == null)
+        {
+            Debug.LogError("[HeavyBullet] 找不到 PlayerController2D");
+            Destroy(gameObject);
+            return;
+        }
+
+        if (player.currentMana < manaCost)
+        {
+            Debug.Log("[HeavyBullet] 魔力不足，無法發動攻擊");
+            Destroy(gameObject);
+            return;
+        }
+
+        player.currentMana -= manaCost;
+        player.currentMana = Mathf.Max(player.currentMana, 0);
+        FindObjectOfType<ManaBarUI>()?.UpdateManaBar(player.currentMana, player.maxMana);
+
         if (other.CompareTag("Player"))
             return;
 
@@ -85,8 +103,8 @@ public class HeavyBullet : MonoBehaviour
     public void SetColor(Color color)
     {
         bulletColor = color;
-        SpriteRenderer spriteRenderer = GetComponent<SpriteRenderer>();
-        if (spriteRenderer != null)
-            spriteRenderer.color = color;
+        SpriteRenderer sr = GetComponent<SpriteRenderer>();
+        if (sr != null)
+            sr.color = color;
     }
 }

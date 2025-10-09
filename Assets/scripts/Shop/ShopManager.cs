@@ -66,18 +66,29 @@ public class ShopManager : MonoBehaviour
     {
         foreach (var item in items)
         {
+            Debug.Log($"嘗試注入效果：商品 = {item.itemName}");
             switch (item.itemName)
             {
                 case "Health":
                 case "回復藥水":
                     item.effect = new HealEffect(20);
+                    Debug.Log("注入HealEffect");
+                    break;
+                case "Mana":
+                case "魔力回復":
+                    item.effect = new ManaHealEffect(20);
+                    Debug.Log("注入ManaHealEffect");
                     break;
                 default:
                     item.effect = null;
+                    Debug.Log("未注入效果");
                     break;
             }
         }
     }
+
+
+
 
     void SetupUIButtons()
     {
@@ -143,6 +154,8 @@ public class ShopManager : MonoBehaviour
     {
         if (selectedIndex == -1) return;
         var item = items[selectedIndex];
+        Debug.Log($"[ShopManager] 買商品: {item.itemName} 價格: {item.price} 金錢: {CoinManager.Instance.MoneyCount}");
+
         if (CoinManager.Instance == null)
         {
             Debug.LogError("缺少CoinManager");
@@ -153,9 +166,15 @@ public class ShopManager : MonoBehaviour
         {
             CoinManager.Instance.AddMoney(-item.price);
             UpdatePlayerMoneyUI();
+            Debug.Log("[ShopManager] 扣錢後金額: " + CoinManager.Instance.MoneyCount);
             if (player != null && item.effect != null)
             {
+                Debug.Log("[ShopManager] 執行商品效果 ApplyEffect");
                 item.effect.ApplyEffect(player);
+            }
+            else
+            {
+                Debug.LogWarning("player或effect為null");
             }
         }
         else
@@ -163,6 +182,7 @@ public class ShopManager : MonoBehaviour
             Debug.Log("玩家金錢不足，無法購買");
         }
     }
+
 
     public void UpdatePlayerMoneyUI()
     {

@@ -29,6 +29,9 @@ public class PlayerController2D : MonoBehaviour
     [Header("Health Pickup System 血包系統")]
     public AudioClip healSound;              // 治療音效
     private AudioSource audioSource;
+    // === 魔力 ===
+    public int maxMana = 100;  // 你需要新增魔力最大值欄位
+    public int currentMana = 100;  // 目前魔力欄位（可初始化為maxMana）
     // Wall Slide 相關
     public float wallSlideSpeed = 1f;
     public Transform wallCheck;
@@ -60,6 +63,11 @@ public class PlayerController2D : MonoBehaviour
             audioSource = gameObject.AddComponent<AudioSource>();
             audioSource.playOnAwake = false;
         }
+        // === MP魔力條 ===
+        currentMana = maxMana;  // 遊戲開始魔力滿100
+        ManaBarUI manaBar = FindObjectOfType<ManaBarUI>();
+        if (manaBar != null)
+            manaBar.UpdateManaBar(currentMana, maxMana);
         // === 血量初始化邏輯 ===
         InitializeHealth();
         Time.timeScale = 1f;
@@ -108,6 +116,21 @@ public class PlayerController2D : MonoBehaviour
         isFirstTimePlay = true;
         Debug.Log("[血量系統] 血量系統已重置");
     }
+
+    public void ManaHeal(int manaAmount)
+    {
+        if (isDead) return;
+        currentMana += manaAmount;
+        currentMana = Mathf.Min(currentMana, maxMana);
+        Debug.Log($"魔力回復了 {manaAmount} 點，現在魔力: {currentMana}/{maxMana}");
+
+        // 呼叫ManaBarUI即時更新
+        ManaBarUI manaBar = FindObjectOfType<ManaBarUI>();
+        if (manaBar != null)
+            manaBar.UpdateManaBar(currentMana, maxMana);
+    }
+
+
     void Update()
     {
         if (!canControl) return;

@@ -1,9 +1,10 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro; // 引入 TextMeshPro
 
 /// <summary>
-/// 敵人血條系統 - 使用 UI Image 版本
-/// 直接在 Hierarchy 中設定 Canvas、Image 組件
+/// 敵人血條系統 - 使用 UI Image + TextMeshPro 顯示血量數字
+/// 直接在 Hierarchy 中設定 Canvas、Image、Text 組件
 /// </summary>
 public class EnemyHealthBar : MonoBehaviour
 {
@@ -13,6 +14,16 @@ public class EnemyHealthBar : MonoBehaviour
 
     [Tooltip("血條外框的 Image 組件（可選）")]
     public Image healthBarBackground;
+
+    [Header("血量文字顯示")]
+    [Tooltip("顯示血量數字的 TextMeshProUGUI 組件")]
+    public TextMeshProUGUI healthText;
+
+    [Tooltip("文字顯示格式")]
+    public HealthTextFormat textFormat = HealthTextFormat.CurrentAndMax;
+
+    [Tooltip("是否顯示血量文字")]
+    public bool showHealthText = true;
 
     [Header("視覺效果 - 血條顏色漸變")]
     [Tooltip("100-76% 血量時的顏色")]
@@ -38,10 +49,24 @@ public class EnemyHealthBar : MonoBehaviour
     [Header("Debug 設定")]
     public bool debugMode = false;
 
+    // 私有變數
     private Transform enemyTransform;
     private Camera mainCamera;
     private float targetFillAmount;
     private float currentFillAmount;
+    private float currentHealthValue;
+    private float maxHealthValue;
+
+    /// <summary>
+    /// 血量文字顯示格式
+    /// </summary>
+    public enum HealthTextFormat
+    {
+        CurrentOnly,        // 只顯示當前血量: "85"
+        CurrentAndMax,      // 顯示當前/最大: "85/100"
+        Percentage,         // 顯示百分比: "85%"
+        CurrentAndPercent   // 顯示當前+百分比: "85 (85%)"
+    }
 
     void Awake()
     {
@@ -58,6 +83,12 @@ public class EnemyHealthBar : MonoBehaviour
             healthFillImage.fillAmount = 1f;
             healthFillImage.color = fullHealthColor;
         }
+
+        // 初始化文字組件
+        if (healthText != null)
+        {
+            healthText.gameObject.SetActive(showHealthText);
+        }
     }
 
     /// <summary>
@@ -69,7 +100,11 @@ public class EnemyHealthBar : MonoBehaviour
 
         if (mainCamera == null)
         {
-            Debug.LogError("[EnemyHealthBar] 找不到 Main Camera！");
+            mainCamera = Camera.main;
+            if (mainCamera == null)
+            {
+                Debug.LogError("[EnemyHealthBar] 找不到 Main Camera！");
+            }
         }
 
         // 設定局部位置
@@ -89,11 +124,15 @@ public class EnemyHealthBar : MonoBehaviour
             return;
         }
 
-        // 面向攝影機
+        // 面向攝影機（修正反向問題）
         if (alwaysFaceCamera && mainCamera != null)
         {
-            Vector3 directionToCamera = mainCamera.transform.position - transform.position;
-            transform.rotation = Quaternion.LookRotation(directionToCamera);
+            // 方法1: 直接使用攝影機的旋轉
+            transform.rotation = mainCamera.transform.rotation;
+
+            // 或方法2: 使用 LookRotation 但反向
+            // Vector3 directionToCamera = transform.position - mainCamera.transform.position;
+            // transform.rotation = Quaternion.LookRotation(directionToCamera);
         }
 
         // 平滑過渡動畫
@@ -123,6 +162,10 @@ public class EnemyHealthBar : MonoBehaviour
             return;
         }
 
+        // 儲存血量值供文字更新使用
+        currentHealthValue = currentHealth;
+        maxHealthValue = maxHealth;
+
         float healthPercentage = Mathf.Clamp01(currentHealth / maxHealth);
         targetFillAmount = healthPercentage;
 
@@ -136,10 +179,48 @@ public class EnemyHealthBar : MonoBehaviour
         Color targetColor = GetColorForPercentage(healthPercentage);
         healthFillImage.color = targetColor;
 
+        // 更新血量文字
+        UpdateHealthText(currentHealth, maxHealth, healthPercentage);
+
         if (debugMode)
         {
             Debug.Log($"[EnemyHealthBar] 更新血條: {currentHealth}/{maxHealth} ({healthPercentage * 100:F1}%)");
         }
+    }
+
+    /// <summary>
+    /// 更新血量文字顯示
+    /// </summary>
+    private void UpdateHealthText(float currentHealth, float maxHealth, float percentage)
+    {
+        if (healthText == null || !showHealthText) return;
+
+        string displayText = "";
+
+        switch (textFormat)
+        {
+            case HealthTextFormat.CurrentOnly:
+                // 只顯示當前血量: "85"
+                displayText = Mathf.CeilToInt(currentHealth).ToString();
+                break;
+
+            case HealthTextFormat.CurrentAndMax:
+                // 顯示當前/最大: "85/100"
+                displayText = $"{Mathf.CeilToInt(currentHealth)}/{Mathf.CeilToInt(maxHealth)}";
+                break;
+
+            case HealthTextFormat.Percentage:
+                // 顯示百分比: "85%"
+                displayText = $"{Mathf.RoundToInt(percentage * 100)}%";
+                break;
+
+            case HealthTextFormat.CurrentAndPercent:
+                // 顯示當前+百分比: "85 (85%)"
+                displayText = $"{Mathf.CeilToInt(currentHealth)} ({Mathf.RoundToInt(percentage * 100)}%)";
+                break;
+        }
+
+        healthText.text = displayText;
     }
 
     /// <summary>
@@ -179,5 +260,30 @@ public class EnemyHealthBar : MonoBehaviour
     public void Hide()
     {
         gameObject.SetActive(false);
+    }
+
+    /// <summary>
+    /// 設定是否顯示血量文字
+    /// </summary>
+    public void SetShowHealthText(bool show)
+    {
+        showHealthText = show;
+        if (healthText != null)
+        {
+            healthText.gameObject.SetActive(show);
+        }
+    }
+
+    /// <summary>
+    /// 設定文字顯示格式
+    /// </summary>
+    public void SetTextFormat(HealthTextFormat format)
+    {
+        textFormat = format;
+        // 立即更新文字顯示
+        if (maxHealthValue > 0)
+        {
+            UpdateHealthText(currentHealthValue, maxHealthValue, currentHealthValue / maxHealthValue);
+        }
     }
 }
