@@ -1337,57 +1337,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 191445991}
   m_CullTransparentMesh: 1
---- !u!1 &215767837
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 215767839}
-  - component: {fileID: 215767838}
-  m_Layer: 0
-  m_Name: ArrowSpawner
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &215767838
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 215767837}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d2119ecdce1d0f1499e7f19ccbafa06b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  arrowPrefab: {fileID: 1433550845236206593, guid: e98daaadf20cd174f916e95283fe0282, type: 3}
-  delayBetweenShots: 1.75
-  arrowSpeed: 5
-  repeatCount: -1
-  initialPoolSize: 10
-  maxPoolSize: 20
-  recycleTime: 10
---- !u!4 &215767839
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 215767837}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 44.75, y: -2.94, z: -0.09663013}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_RootOrder: 18
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &258770108
 GameObject:
   m_ObjectHideFlags: 0
@@ -3030,7 +2979,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 22
+  m_RootOrder: 21
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &656405067
 GameObject:
@@ -3482,8 +3431,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 707289709}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 9.9116, y: -16.67, z: 0.17723435}
-  m_LocalScale: {x: 39.325928, y: 0.63560104, z: 1}
+  m_LocalPosition: {x: 9.9116, y: -16.8341, z: 0.17723435}
+  m_LocalScale: {x: 39.325928, y: 0.9638603, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1912574408}
@@ -3599,7 +3548,7 @@ GameObject:
   - component: {fileID: 749082094}
   - component: {fileID: 749082093}
   m_Layer: 0
-  m_Name: ArrowSpawner (3)
+  m_Name: ArrowSpawner
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3637,7 +3586,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 21
+  m_RootOrder: 18
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &812183099
 GameObject:
@@ -6702,8 +6651,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1194645555}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 19.54, y: -12.5806, z: 0.17723435}
-  m_LocalScale: {x: 6.5681915, y: 0.53943366, z: 1}
+  m_LocalPosition: {x: 19.54, y: -12.6352, z: 0.17723435}
+  m_LocalScale: {x: 6.5681915, y: 0.64866894, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1912574408}

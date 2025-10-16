@@ -79,6 +79,11 @@ public class ShopManager : MonoBehaviour
                     item.effect = new ManaHealEffect(20);
                     Debug.Log("注入ManaHealEffect");
                     break;
+                case "CaptureSkill":
+                case "捕捉技能":
+                    item.effect = new SkillUnlockEffect(1); // 購買一次增加1次使用次數
+                    Debug.Log("注入SkillUnlockEffect");
+                    break;
                 default:
                     item.effect = null;
                     Debug.Log("未注入效果");
@@ -86,7 +91,6 @@ public class ShopManager : MonoBehaviour
             }
         }
     }
-
 
 
 
@@ -118,7 +122,7 @@ public class ShopManager : MonoBehaviour
         ShopItem item = items[index];
         if (selectedItemIcon != null) selectedItemIcon.sprite = item.icon;
         if (selectedItemDescription != null)
-            selectedItemDescription.text = $"{item.itemName}\n{item.description}\nPrice: {item.price}coin";
+            selectedItemDescription.text = $"{item.itemName}\n{item.description}\nPrice : {item.price} coin";
         if (detailPanel != null)
             detailPanel.SetActive(true);
     }
