@@ -2,28 +2,25 @@
 using System.Collections;
 using System.Collections.Generic;
 
-/// <summary>
-/// 敵人系統 - 簡化版
-/// </summary>
 public class Enemy : MonoBehaviour
 {
     [Header("敵人屬性")]
-    [Tooltip("最大血量")]
     public float maxHealth = 100f;
-
     [SerializeField] private float currentHealth;
 
     [Header("血條設定")]
-    [Tooltip("血條腳本（從子物件自動獲取或手動拖入）")]
     public EnemyHealthBar healthBar;
 
-    [Header("移動設定")]
-    public float jumpForce = 8f;
-    public float jumpHeight = 5f;
-    public float jumpInterval = 2f;
+    [Header("跳躍設定")]
+    public float jumpForceVertical = 8f;          // 垂直跳躍力
+    public float jumpForceHorizontalMax = 5f;     // 最大水平跳躍力
+    public float jumpInterval = 2f;               // 跳躍間隔（秒）
 
     [Header("追蹤玩家設定")]
     public bool enablePlayerTracking = true;
+    public float trackingRange = 40f;             // 追蹤觸發範圍
+    public int maxJumpCount = 2;                  // 最多允許跳幾次（雙跳設2）
+    public float groundCheckDistance = 0.6f;      // 地面偵測（Raycast）距離
 
     [Header("外觀設定")]
     public Color enemyColor = Color.red;
@@ -34,21 +31,12 @@ public class Enemy : MonoBehaviour
     public GameObject fragmentPrefab;
 
     [Header("金幣掉落設定")]
-    [Tooltip("金幣 Prefab")]
     public GameObject coinPrefab;
-
-    [Tooltip("是否掉落金幣")]
     public bool dropCoins = true;
-
-    [Tooltip("掉落金幣的最小數量")]
     [Range(1, 20)]
     public int minCoins = 2;
-
-    [Tooltip("掉落金幣的最大數量")]
     [Range(1, 20)]
     public int maxCoins = 5;
-
-    [Tooltip("金幣掉落範圍")]
     public float coinDropRadius = 1f;
 
     [Header("Debug 設定")]
@@ -61,6 +49,7 @@ public class Enemy : MonoBehaviour
     private bool isJumping = false;
     private bool isDying = false;
 
+    private int currentJumpCount = 0;
     private HashSet<GameObject> processedBullets = new HashSet<GameObject>();
     private float lastDamageTime = -999f;
     private float damageCooldown = 0.1f;
@@ -79,35 +68,21 @@ public class Enemy : MonoBehaviour
         SetupAppearance();
 
         if (healthBar == null)
-        {
             healthBar = GetComponentInChildren<EnemyHealthBar>();
-        }
 
         if (healthBar != null)
         {
             healthBar.Initialize(this.transform);
             healthBar.UpdateHealthBar(currentHealth, maxHealth);
-
-            if (debugMode)
-            {
-                Debug.Log($"[Enemy] {gameObject.name} 找到血條組件");
-            }
         }
 
         StartCoroutine(JumpRoutine());
-
-        if (debugMode)
-        {
-            Debug.Log($"[Enemy] {gameObject.name} 初始化完成，血量: {currentHealth}/{maxHealth}");
-        }
     }
 
     void SetupAppearance()
     {
         if (spriteRenderer != null)
-        {
             spriteRenderer.color = enemyColor;
-        }
 
         if (trailRenderer == null)
             trailRenderer = gameObject.AddComponent<TrailRenderer>();
@@ -119,63 +94,51 @@ public class Enemy : MonoBehaviour
         trailRenderer.endWidth = 0.1f;
         trailRenderer.time = 0.3f;
         trailRenderer.sortingOrder = -1;
-
-        GradientColorKey[] colorKeys = new GradientColorKey[2]
-        {
-            new GradientColorKey(enemyColor, 0f),
-            new GradientColorKey(enemyColor, 1f)
-        };
-        GradientAlphaKey[] alphaKeys = new GradientAlphaKey[2]
-        {
-            new GradientAlphaKey(0.8f, 0f),
-            new GradientAlphaKey(0f, 1f)
-        };
-
-        Gradient gradient = new Gradient();
-        gradient.SetKeys(colorKeys, alphaKeys);
-        trailRenderer.colorGradient = gradient;
-    }
-
-    void EnsureCorrectColor()
-    {
-        if (spriteRenderer != null && !isDying)
-        {
-            spriteRenderer.color = enemyColor;
-        }
     }
 
     IEnumerator JumpRoutine()
     {
-        PerformJump();
-
         while (currentHealth > 0 && !isDying)
         {
-            yield return new WaitForSeconds(jumpInterval);
-            if (!isJumping && !isDying)
+            float distanceToPlayer = (playerTransform != null) ? Vector2.Distance(transform.position, playerTransform.position) : Mathf.Infinity;
+
+            // 重點：無論地面與否，「只要跳躍次數還沒超過」且「玩家在追蹤距離內」都允許執行跳躍
+            if ((IsGrounded() || currentJumpCount < maxJumpCount) && distanceToPlayer <= trackingRange)
+            {
                 PerformJump();
+            }
+
+            yield return new WaitForSeconds(jumpInterval);
         }
     }
 
     void PerformJump()
     {
         if (rb == null || isDying) return;
-
         isJumping = true;
 
-        Vector2 jumpDirection;
+        // 預設空中連跳時垂直力稍降以防過高（可調整或關掉）
+        float verticalForce = jumpForceVertical * (currentJumpCount == 0 ? 1f : 0.9f);
+
+        float horizontalForce = 0f;
+
         if (enablePlayerTracking && playerTransform != null)
         {
-            Vector3 dir = (playerTransform.position - transform.position).normalized;
-            jumpDirection = new Vector2(dir.x, jumpHeight).normalized;
-        }
-        else
-        {
-            jumpDirection = new Vector2(0, jumpHeight).normalized;
+            float dx = playerTransform.position.x - transform.position.x;
+            float normalizedHorizontal = Mathf.Clamp(dx / trackingRange, -1f, 1f);
+            horizontalForce = normalizedHorizontal * jumpForceHorizontalMax;
+
+            // 角色面向
+            if (horizontalForce != 0 && spriteRenderer != null)
+                spriteRenderer.flipX = horizontalForce < 0;
         }
 
-        rb.velocity = Vector2.zero;
-        rb.AddForce(jumpDirection * jumpForce, ForceMode2D.Impulse);
+        // 跳前歸零水平速度，避免飄移
+        rb.velocity = new Vector2(0f, rb.velocity.y);
 
+        rb.AddForce(new Vector2(horizontalForce, verticalForce), ForceMode2D.Impulse);
+
+        currentJumpCount++;
         StartCoroutine(JumpEndCheck());
     }
 
@@ -184,13 +147,12 @@ public class Enemy : MonoBehaviour
         yield return new WaitForSeconds(0.1f);
         while (rb.velocity.y > 0.1f || !IsGrounded())
             yield return new WaitForFixedUpdate();
-
         isJumping = false;
     }
 
     bool IsGrounded()
     {
-        RaycastHit2D hit = Physics2D.Raycast(transform.position, Vector2.down, 0.6f);
+        RaycastHit2D hit = Physics2D.Raycast(transform.position, Vector2.down, groundCheckDistance);
         return hit.collider != null && !hit.collider.isTrigger;
     }
 
@@ -198,15 +160,11 @@ public class Enemy : MonoBehaviour
     {
         if (isDying) return;
 
-        if (spriteRenderer != null && spriteRenderer.color != enemyColor && spriteRenderer.color != Color.white)
-        {
-            spriteRenderer.color = enemyColor;
-        }
+        if (IsGrounded()) currentJumpCount = 0;
 
-        if (transform.position.y < -15f)
-        {
-            Die();
-        }
+        if (spriteRenderer != null && spriteRenderer.color != enemyColor && spriteRenderer.color != Color.white)
+            spriteRenderer.color = enemyColor;
+        if (transform.position.y < -15f) Die();
     }
 
     public void TakeDamage(float damage, string damageSource = "Unknown")

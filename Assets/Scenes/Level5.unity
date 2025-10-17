@@ -371,7 +371,7 @@ GameObject:
   - component: {fileID: 74495831}
   - component: {fileID: 74495830}
   m_Layer: 5
-  m_Name: infoCloseButton
+  m_Name: CloseButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2651,6 +2651,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: ab37e94afdfafb945983830d1ada8425, type: 3}
+--- !u!1 &529941144 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2792378958021979155, guid: ab37e94afdfafb945983830d1ada8425, type: 3}
+  m_PrefabInstance: {fileID: 529941143}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &709671772
 GameObject:
   m_ObjectHideFlags: 0
@@ -4897,7 +4902,7 @@ MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 2792378958021979176, guid: ab37e94afdfafb945983830d1ada8425, type: 3}
   m_PrefabInstance: {fileID: 529941143}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 529941144}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8cf3f39cf73da3c409dd8968754d90fc, type: 3}
@@ -4908,6 +4913,36 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 2792378958021979183, guid: ab37e94afdfafb945983830d1ada8425, type: 3}
   m_PrefabInstance: {fileID: 529941143}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1320464341
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 529941144}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ba6a5346353bea94082b7c5a32cec2ce, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  skillCount: 0
+  projectileSpeed: 12
+  maxDistance: 20
+  bubbleRiseSpeed: 3
+  bubbleRiseHeight: 8
+  captureDelay: 0.3
+  projectilePrefab: {fileID: 0}
+  bubblePrefab: {fileID: 0}
+  skillTutorialPanel: {fileID: 1588514780}
+  closeButton: {fileID: 74495830}
+  skillCountText: {fileID: 1138961660}
+  panelAutoHideTime: 5
+  projectileColor: {r: 0, g: 1, b: 1, a: 1}
+  projectileWidth: 0.1
+  bubbleColor: {r: 0.5, g: 0.8, b: 1, a: 0.5}
+  bubbleSize: 1.5
+  colliderWidth: 1
+  colliderHeight: 1
 --- !u!1 &1331268943
 GameObject:
   m_ObjectHideFlags: 0
@@ -7273,7 +7308,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1689842046}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 31.409422, y: 14.047575, z: -0.01575886}
+  m_LocalPosition: {x: 31.409422, y: 14.047575, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -7692,11 +7727,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   maxHealth: 200
   currentHealth: 0
-  healthBar: {fileID: 0}
-  jumpForce: 8
-  jumpHeight: 5
+  healthBar: {fileID: 298253316}
+  jumpForceVertical: 6
+  jumpForceHorizontalMax: 3
   jumpInterval: 0.1
   enablePlayerTracking: 1
+  trackingRange: 40
+  maxJumpCount: 2
+  groundCheckDistance: 0.6
   enemyColor: {r: 1, g: 0, b: 0, a: 1}
   fragmentCount: 15
   fragmentSpeed: 5
@@ -9513,7 +9551,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4373213459656665256, guid: 341efe7a63c9cbf42959752ac2d74d21, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 12.8
+      value: 14.4
       objectReference: {fileID: 0}
     - target: {fileID: 4373213459656665256, guid: 341efe7a63c9cbf42959752ac2d74d21, type: 3}
       propertyPath: m_LocalPosition.z

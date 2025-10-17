@@ -1,9 +1,6 @@
-using System.Collections;
+ï»¿using System.Collections;
 using UnityEngine;
 
-/// <summary>
-/// ®·®»®g½u - ¤ô¥­­¸¦æ¨Ã®·®»¼Ä¤H
-/// </summary>
 public class CaptureProjectile : MonoBehaviour
 {
     private int direction;
@@ -19,10 +16,9 @@ public class CaptureProjectile : MonoBehaviour
     private Vector3 startPosition;
     private bool hasHit = false;
     private LineRenderer lineRenderer;
+    private SpriteRenderer spriteRenderer;
+    private float traveledDistance = 0f;
 
-    /// <summary>
-    /// ªì©l¤Æ®g½u°Ñ¼Æ
-    /// </summary>
     public void Initialize(int dir, float spd, float maxDist, GameObject bubble,
                           float riseSpeed, float riseHeight, float capDelay,
                           Color bColor, float bSize)
@@ -39,12 +35,31 @@ public class CaptureProjectile : MonoBehaviour
 
         startPosition = transform.position;
 
-        // ³]¸m LineRenderer
         lineRenderer = GetComponent<LineRenderer>();
         if (lineRenderer != null)
         {
             lineRenderer.SetPosition(0, transform.position);
             lineRenderer.SetPosition(1, transform.position);
+        }
+
+        spriteRenderer = GetComponent<SpriteRenderer>();
+
+        // ç¢ºèªç¢°æ’é«”è¨­ç½®
+        BoxCollider2D col = GetComponent<BoxCollider2D>();
+        if (col != null)
+        {
+            Debug.Log($"[å°„ç·šåˆå§‹åŒ–] ä½ç½®ï¼š{transform.position}ï¼Œæ–¹å‘ï¼š{direction}ï¼Œç¢°æ’é«”å¤§å°ï¼š{col.size}ï¼ŒIsTriggerï¼š{col.isTrigger}");
+        }
+        else
+        {
+            Debug.LogError("[å°„ç·šåˆå§‹åŒ–] æ‰¾ä¸åˆ° BoxCollider2Dï¼");
+        }
+
+        // ç¢ºèª Rigidbody2D
+        Rigidbody2D rb = GetComponent<Rigidbody2D>();
+        if (rb == null)
+        {
+            Debug.LogError("[å°„ç·šåˆå§‹åŒ–] æ‰¾ä¸åˆ° Rigidbody2Dï¼");
         }
     }
 
@@ -52,45 +67,71 @@ public class CaptureProjectile : MonoBehaviour
     {
         if (hasHit) return;
 
-        // ¤ô¥­²¾°Ê
-        transform.position += Vector3.right * direction * speed * Time.deltaTime;
+        // ç§»å‹•
+        float moveAmount = speed * Time.deltaTime;
+        transform.position += Vector3.right * direction * moveAmount;
+        traveledDistance += moveAmount;
 
-        // §ó·s½u±ø²×ÂI
+        // æ›´æ–°è¦–è¦º
         if (lineRenderer != null)
         {
             lineRenderer.SetPosition(1, transform.position);
         }
 
-        // ¶W¹L³Ì¤j¶ZÂ÷«h¾P·´
-        if (Vector3.Distance(startPosition, transform.position) > maxDistance)
+        // æ¯ 0.5 ç§’è¼¸å‡ºä¸€æ¬¡ä½ç½®
+        if (Time.frameCount % 30 == 0)
         {
+            Debug.Log($"[å°„ç·šç§»å‹•] ç•¶å‰ä½ç½®ï¼š{transform.position}ï¼Œå·²ç§»å‹•ï¼š{traveledDistance:F2}");
+        }
+
+        // è¶…éæœ€å¤§è·é›¢
+        if (traveledDistance >= maxDistance)
+        {
+            Debug.Log($"[å°„ç·š] å·²é£›è¡Œ {traveledDistance:F2} å–®ä½ï¼Œè¶…éæœ€å¤§è·é›¢ {maxDistance}ï¼ŒéŠ·æ¯€");
             Destroy(gameObject);
         }
     }
 
-    void OnTriggerEnter2D(Collider2D collision)
+    // â­ æœ€é‡è¦ï¼šTrigger ç¢°æ’æª¢æ¸¬
+    void OnTriggerEnter2D(Collider2D other)
     {
+        Debug.Log($"[å°„ç·š Trigger] âš¡ ç¢°åˆ°ç‰©ä»¶ï¼åç¨±ï¼š{other.gameObject.name}ï¼ŒTagï¼š{other.gameObject.tag}ï¼ŒLayerï¼š{LayerMask.LayerToName(other.gameObject.layer)}");
+
         if (hasHit) return;
 
-        // ÀË¬d¬O§_¸I¨ì¼Ä¤H
-        if (collision.CompareTag("Enemy") || collision.CompareTag("Enemy1"))
+        if (other.gameObject.CompareTag("Enemy") || other.gameObject.CompareTag("Enemy1"))
         {
+            Debug.Log($"[å°„ç·š] âœ… Tag åŒ¹é…æˆåŠŸï¼é–‹å§‹æ•æ‰ï¼š{other.gameObject.name}");
+            hasHit = true;
+            CaptureEnemy(other.gameObject);
+            Destroy(gameObject, 0.1f);
+        }
+        else
+        {
+            Debug.LogWarning($"[å°„ç·š] âŒ Tag ä¸åŒ¹é…ï¼Œç‰©ä»¶ï¼š{other.gameObject.name}ï¼ŒTagï¼š{other.gameObject.tag}");
+        }
+    }
+
+    // å‚™ç”¨ï¼šæ™®é€šç¢°æ’
+    void OnCollisionEnter2D(Collision2D collision)
+    {
+        Debug.Log($"[å°„ç·š Collision] ç¢°åˆ°ç‰©ä»¶ï¼š{collision.gameObject.name}");
+
+        if (hasHit) return;
+
+        if (collision.gameObject.CompareTag("Enemy") || collision.gameObject.CompareTag("Enemy1"))
+        {
+            Debug.Log($"[å°„ç·š Collision] âœ… åŒ¹é…æˆåŠŸï¼");
             hasHit = true;
             CaptureEnemy(collision.gameObject);
-
-            // ®g½u¤w§¹¦¨¥ô°È¡A¾P·´
             Destroy(gameObject, 0.1f);
         }
     }
 
-    /// <summary>
-    /// ®·®»¼Ä¤H
-    /// </summary>
     void CaptureEnemy(GameObject enemy)
     {
-        Debug.Log($"[®·®»§Ş¯à] ¦¨¥\®·®»¼Ä¤H¡G{enemy.name}");
+        Debug.Log($"[æ•æ‰æŠ€èƒ½] ğŸ¯ æˆåŠŸæ•æ‰æ•µäººï¼š{enemy.name}");
 
-        // ³Ğ«Ø®·®»ªwªw
         GameObject bubble;
 
         if (bubblePrefab != null)
@@ -99,11 +140,9 @@ public class CaptureProjectile : MonoBehaviour
         }
         else
         {
-            // ³Ğ«Ø¹w³]ªwªw
             bubble = CreateDefaultBubble(enemy.transform.position);
         }
 
-        // ³]¸mªwªw¸}¥»
         CaptureBubble bubbleScript = bubble.GetComponent<CaptureBubble>();
         if (bubbleScript == null)
         {
@@ -113,19 +152,14 @@ public class CaptureProjectile : MonoBehaviour
         bubbleScript.Initialize(enemy, bubbleRiseSpeed, bubbleRiseHeight, captureDelay);
     }
 
-    /// <summary>
-    /// ³Ğ«Ø¹w³]ªwªw
-    /// </summary>
     GameObject CreateDefaultBubble(Vector3 position)
     {
         GameObject bubble = new GameObject("CaptureBubble");
         bubble.transform.position = position;
         bubble.transform.localScale = Vector3.one * bubbleSize;
 
-        // ²K¥[µøÄ±®ÄªG¡]¶ê§ÎºëÆF¡^
         SpriteRenderer sr = bubble.AddComponent<SpriteRenderer>();
 
-        // ³Ğ«Ø¶ê§Î¯¾²z
         int resolution = 128;
         Texture2D tex = new Texture2D(resolution, resolution);
         Color[] pixels = new Color[resolution * resolution];
@@ -139,13 +173,11 @@ public class CaptureProjectile : MonoBehaviour
                 float dist = Vector2.Distance(new Vector2(x, y), center);
                 if (dist < radius)
                 {
-                    // ±q¤¤¤ß¨ìÃä½tªºº¥ÅÜ³z©ú«×
                     float alpha = bubbleColor.a * (1f - dist / radius) * 0.6f;
                     pixels[y * resolution + x] = new Color(bubbleColor.r, bubbleColor.g, bubbleColor.b, alpha);
                 }
                 else if (dist < radius + 2)
                 {
-                    // Ãä½t§ó©úÅã
                     pixels[y * resolution + x] = new Color(bubbleColor.r, bubbleColor.g, bubbleColor.b, bubbleColor.a * 0.8f);
                 }
                 else
