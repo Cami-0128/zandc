@@ -6290,7 +6290,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0.1}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1545466120
@@ -6605,7 +6605,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1588514781
 RectTransform:
   m_ObjectHideFlags: 0
@@ -7153,7 +7153,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 76.997}
+  m_AnchoredPosition: {x: 0, y: 56.3}
   m_SizeDelta: {x: 264.7183, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1667359440
@@ -7730,11 +7730,14 @@ MonoBehaviour:
   healthBar: {fileID: 298253316}
   jumpForceVertical: 6
   jumpForceHorizontalMax: 3
-  jumpInterval: 0.1
+  jumpCooldown: 0.5
+  groundCheckRadius: 0.2
   enablePlayerTracking: 1
-  trackingRange: 40
-  maxJumpCount: 2
-  groundCheckDistance: 0.6
+  trackingRange: 100
+  maxJumpCount: 1
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 64
   enemyColor: {r: 1, g: 0, b: 0, a: 1}
   fragmentCount: 15
   fragmentSpeed: 5
@@ -7803,8 +7806,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1831108617}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -2.5198, y: -2.4355, z: 0.01575886}
-  m_LocalScale: {x: 18.254845, y: 1.0696503, z: 1}
+  m_LocalPosition: {x: 1.539, y: -2.4355, z: 0.01575886}
+  m_LocalScale: {x: 26.372774, y: 1.0696503, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1689842047}
@@ -7844,7 +7847,7 @@ BoxCollider2D:
   m_IsTrigger: 0
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: 0, y: -0.019041404}
+  m_Offset: {x: 0, y: -0.006102413}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
@@ -7855,7 +7858,7 @@ BoxCollider2D:
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 1, y: 0.96191716}
+  m_Size: {x: 1, y: 0.9877952}
   m_EdgeRadius: 0
 --- !u!212 &1831108621
 SpriteRenderer:
@@ -9551,7 +9554,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4373213459656665256, guid: 341efe7a63c9cbf42959752ac2d74d21, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 14.4
+      value: 13.06
       objectReference: {fileID: 0}
     - target: {fileID: 4373213459656665256, guid: 341efe7a63c9cbf42959752ac2d74d21, type: 3}
       propertyPath: m_LocalPosition.z

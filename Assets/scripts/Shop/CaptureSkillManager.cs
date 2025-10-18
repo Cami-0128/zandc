@@ -151,18 +151,21 @@ public class CaptureSkillManager : MonoBehaviour
         lr.endColor = projectileColor;
         lr.sortingOrder = 5;
 
-        // 同時添加 SpriteRenderer 讓射線更明顯
+        // 注意：不添加 SpriteRenderer，只使用 LineRenderer 顯示射線
+        // 如果需要方形，取消下面的註解並調整大小
+        /*
         SpriteRenderer sr = proj.AddComponent<SpriteRenderer>();
-        Texture2D tex = new Texture2D(32, 32);
-        Color[] pixels = new Color[32 * 32];
+        Texture2D tex = new Texture2D(8, 8);  // 改小尺寸
+        Color[] pixels = new Color[8 * 8];
         for (int i = 0; i < pixels.Length; i++)
         {
             pixels[i] = projectileColor;
         }
         tex.SetPixels(pixels);
         tex.Apply();
-        sr.sprite = Sprite.Create(tex, new Rect(0, 0, 32, 32), new Vector2(0.5f, 0.5f), 32);
+        sr.sprite = Sprite.Create(tex, new Rect(0, 0, 8, 8), new Vector2(0.5f, 0.5f), 32);
         sr.sortingOrder = 5;
+        */
 
         Debug.Log($"[技能系統] 已創建預設射線，Layer：{LayerMask.LayerToName(proj.layer)}");
         return proj;

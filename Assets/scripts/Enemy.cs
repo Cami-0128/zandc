@@ -12,15 +12,16 @@ public class Enemy : MonoBehaviour
     public EnemyHealthBar healthBar;
 
     [Header("跳躍設定")]
-    public float jumpForceVertical = 8f;          // 垂直跳躍力
-    public float jumpForceHorizontalMax = 5f;     // 最大水平跳躍力
-    public float jumpInterval = 2f;               // 跳躍間隔（秒）
+    public float jumpForceVertical = 8f;
+    public float jumpForceHorizontalMax = 8f;
+    public float jumpCooldown = 0.35f;
+    public float groundCheckRadius = 0.2f; // 用圓形檢查落地
 
     [Header("追蹤玩家設定")]
     public bool enablePlayerTracking = true;
-    public float trackingRange = 40f;             // 追蹤觸發範圍
-    public int maxJumpCount = 2;                  // 最多允許跳幾次（雙跳設2）
-    public float groundCheckDistance = 0.6f;      // 地面偵測（Raycast）距離
+    public float trackingRange = 80f;
+    public int maxJumpCount = 2;
+    public LayerMask groundLayer; // 用於OverlapCircle檢查地面
 
     [Header("外觀設定")]
     public Color enemyColor = Color.red;
@@ -50,6 +51,8 @@ public class Enemy : MonoBehaviour
     private bool isDying = false;
 
     private int currentJumpCount = 0;
+    private float lastJumpTime = -999f;
+    private Vector2 groundOffset = new Vector2(0, -0.5f); // 角色底部中心，必要時微調
     private HashSet<GameObject> processedBullets = new HashSet<GameObject>();
     private float lastDamageTime = -999f;
     private float damageCooldown = 0.1f;
@@ -64,19 +67,15 @@ public class Enemy : MonoBehaviour
             playerTransform = player.transform;
 
         currentHealth = maxHealth;
-
         SetupAppearance();
 
         if (healthBar == null)
             healthBar = GetComponentInChildren<EnemyHealthBar>();
-
         if (healthBar != null)
         {
             healthBar.Initialize(this.transform);
             healthBar.UpdateHealthBar(currentHealth, maxHealth);
         }
-
-        StartCoroutine(JumpRoutine());
     }
 
     void SetupAppearance()
@@ -96,49 +95,49 @@ public class Enemy : MonoBehaviour
         trailRenderer.sortingOrder = -1;
     }
 
-    IEnumerator JumpRoutine()
+    void Update()
     {
-        while (currentHealth > 0 && !isDying)
-        {
-            float distanceToPlayer = (playerTransform != null) ? Vector2.Distance(transform.position, playerTransform.position) : Mathf.Infinity;
+        if (isDying) return;
 
-            // 重點：無論地面與否，「只要跳躍次數還沒超過」且「玩家在追蹤距離內」都允許執行跳躍
-            if ((IsGrounded() || currentJumpCount < maxJumpCount) && distanceToPlayer <= trackingRange)
+        // 實時檢查落地，落地時即時歸零跳次數
+        if (IsGrounded()) currentJumpCount = 0;
+
+        if (enablePlayerTracking && playerTransform != null)
+        {
+            float distToPlayer = Vector2.Distance(transform.position, playerTransform.position);
+
+            // 距離夠近且冷卻後，且沒超過跳數才可以跳
+            if (distToPlayer <= trackingRange &&
+                Time.time - lastJumpTime >= jumpCooldown &&
+                currentJumpCount < maxJumpCount)
             {
                 PerformJump();
             }
-
-            yield return new WaitForSeconds(jumpInterval);
         }
     }
 
     void PerformJump()
     {
+        // 嚴格只允許最多maxJumpCount次跳
+        if (currentJumpCount >= maxJumpCount) return;
         if (rb == null || isDying) return;
         isJumping = true;
 
-        // 預設空中連跳時垂直力稍降以防過高（可調整或關掉）
-        float verticalForce = jumpForceVertical * (currentJumpCount == 0 ? 1f : 0.9f);
+        Vector2 playerDirection = playerTransform != null ? (playerTransform.position - transform.position) : Vector2.right;
+        playerDirection = playerDirection.normalized;
 
-        float horizontalForce = 0f;
+        // 橫向力按X分量乘以最大水平力，確保跳向玩家
+        float horizontalForce = playerDirection.x * jumpForceHorizontalMax;
+        float verticalForce = jumpForceVertical * (currentJumpCount == 0 ? 1f : 0.8f);
 
-        if (enablePlayerTracking && playerTransform != null)
-        {
-            float dx = playerTransform.position.x - transform.position.x;
-            float normalizedHorizontal = Mathf.Clamp(dx / trackingRange, -1f, 1f);
-            horizontalForce = normalizedHorizontal * jumpForceHorizontalMax;
+        // 朝玩家面向
+        if (horizontalForce != 0 && spriteRenderer != null)
+            spriteRenderer.flipX = horizontalForce < 0;
 
-            // 角色面向
-            if (horizontalForce != 0 && spriteRenderer != null)
-                spriteRenderer.flipX = horizontalForce < 0;
-        }
-
-        // 跳前歸零水平速度，避免飄移
         rb.velocity = new Vector2(0f, rb.velocity.y);
-
         rb.AddForce(new Vector2(horizontalForce, verticalForce), ForceMode2D.Impulse);
-
         currentJumpCount++;
+        lastJumpTime = Time.time;
         StartCoroutine(JumpEndCheck());
     }
 
@@ -150,21 +149,11 @@ public class Enemy : MonoBehaviour
         isJumping = false;
     }
 
+    // 改用OverlapCircle落地（更準確不怕厚度）
     bool IsGrounded()
     {
-        RaycastHit2D hit = Physics2D.Raycast(transform.position, Vector2.down, groundCheckDistance);
-        return hit.collider != null && !hit.collider.isTrigger;
-    }
-
-    void Update()
-    {
-        if (isDying) return;
-
-        if (IsGrounded()) currentJumpCount = 0;
-
-        if (spriteRenderer != null && spriteRenderer.color != enemyColor && spriteRenderer.color != Color.white)
-            spriteRenderer.color = enemyColor;
-        if (transform.position.y < -15f) Die();
+        Vector2 groundPos = (Vector2)transform.position + groundOffset;
+        return Physics2D.OverlapCircle(groundPos, groundCheckRadius, groundLayer) != null;
     }
 
     public void TakeDamage(float damage, string damageSource = "Unknown")
@@ -439,7 +428,6 @@ public class Enemy : MonoBehaviour
         {
             Destroy(healthBar.gameObject);
         }
-
         processedBullets.Clear();
     }
 
@@ -447,25 +435,20 @@ public class Enemy : MonoBehaviour
     {
         return currentHealth / maxHealth;
     }
-
     public float GetCurrentHealth()
     {
         return currentHealth;
     }
-
     public void Heal(float healAmount)
     {
         if (isDying) return;
-
         currentHealth += healAmount;
         currentHealth = Mathf.Min(currentHealth, maxHealth);
-
         if (healthBar != null)
         {
             healthBar.UpdateHealthBar(currentHealth, maxHealth);
         }
     }
-
     public void ShowHealthBar()
     {
         if (healthBar != null)
@@ -473,7 +456,6 @@ public class Enemy : MonoBehaviour
             healthBar.Show();
         }
     }
-
     public void HideHealthBar()
     {
         if (healthBar != null)
