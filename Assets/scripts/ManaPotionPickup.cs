@@ -34,35 +34,33 @@ public class ManaPotionPickup : MonoBehaviour
     [Tooltip("漂浮速度")]
     public float floatSpeed = 2f;
 
+    [Header("功能設定")]
+    [Tooltip("是否啟用魔力滿判斷，若魔力滿則不拾取")]
+    public bool useCheckManaFull = true;
+
     private SpriteRenderer spriteRenderer;
     private Vector3 startPosition;
     private float timeOffset;
 
     void Start()
     {
-        // 獲取 SpriteRenderer 並設定顏色
         spriteRenderer = GetComponent<SpriteRenderer>();
         if (spriteRenderer != null)
         {
             spriteRenderer.color = potionColor;
         }
 
-        // 記錄初始位置
         startPosition = transform.position;
-
-        // 隨機時間偏移，讓多個藥水不同步
         timeOffset = Random.Range(0f, 2f * Mathf.PI);
     }
 
     void Update()
     {
-        // 旋轉動畫
         if (enableRotation)
         {
             transform.Rotate(Vector3.forward, rotationSpeed * Time.deltaTime);
         }
 
-        // 漂浮動畫
         if (enableFloating)
         {
             float newY = startPosition.y + Mathf.Sin((Time.time + timeOffset) * floatSpeed) * floatHeight;
@@ -72,29 +70,32 @@ public class ManaPotionPickup : MonoBehaviour
 
     void OnTriggerEnter2D(Collider2D other)
     {
-        // 檢查是否是玩家
         PlayerAttack player = other.GetComponent<PlayerAttack>();
-
         if (player != null)
         {
-            // 回復玩家魔力
+            if (useCheckManaFull)
+            {
+                if (player.GetCurrentMana() >= player.maxMana)
+                {
+                    Debug.Log("[ManaPotionPickup] 玩家魔力已滿，無法拾取魔力藥水！");
+                    return; // 不拾取藥水，保留道具
+                }
+            }
+
             player.RestoreMana(manaRestoreAmount);
 
             Debug.Log($"[ManaPotionPickup] 玩家拾取魔力藥水，回復 {manaRestoreAmount} MP！");
 
-            // 播放拾取音效
             if (pickupSound != null)
             {
                 AudioSource.PlayClipAtPoint(pickupSound, transform.position);
             }
 
-            // 生成拾取特效
             if (pickupEffectPrefab != null)
             {
                 Instantiate(pickupEffectPrefab, transform.position, Quaternion.identity);
             }
 
-            // 銷毀藥水
             Destroy(gameObject);
         }
     }

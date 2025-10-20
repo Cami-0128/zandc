@@ -14,6 +14,10 @@ public class HealthPickup : MonoBehaviour
     public float floatSpeed = 2f;           // 浮動速度
     public float floatHeight = 0.5f;        // 浮動高度
 
+    [Header("功能設定")]
+    [Tooltip("是否啟用滿血判斷，若滿血則不拾取血包")]
+    public bool useCheckHealthFull = true;
+
     private Vector3 startPosition;
     private AudioSource audioSource;
 
@@ -49,30 +53,30 @@ public class HealthPickup : MonoBehaviour
 
             if (player != null)
             {
-                // 檢查玩家是否已經滿血
-                if (player.GetCurrentHealth() < player.GetMaxHealth())
+                if (useCheckHealthFull)
                 {
-                    // 治療玩家
-                    player.Heal(healAmount);
-
-                    // 播放音效
-                    PlayPickupSound();
-
-                    // 播放特效
-                    PlayPickupEffect();
-
-                    // 顯示提示訊息（可選）
-                    Debug.Log($"玩家拾取血包，回復 {healAmount} 點血量！");
-
-                    // 銷毀血包
-                    Destroy(gameObject, 0.1f); // 稍微延遲銷毀，讓音效有時間播放
+                    // 檢查玩家是否已經滿血
+                    if (player.GetCurrentHealth() >= player.GetMaxHealth())
+                    {
+                        Debug.Log("玩家血量已滿，無法使用血包！");
+                        return; // 血量滿時不拾取，保留血包
+                    }
                 }
-                else
-                {
-                    Debug.Log("玩家血量已滿，無法使用血包！");
-                    // 可以選擇是否在血量滿時也銷毀血包，或是保留血包
-                    // 這裡選擇保留血包，讓玩家在需要時再來拾取
-                }
+
+                // 治療玩家
+                player.Heal(healAmount);
+
+                // 播放音效
+                PlayPickupSound();
+
+                // 播放特效
+                PlayPickupEffect();
+
+                // 顯示提示訊息（可選）
+                Debug.Log($"玩家拾取血包，回復 {healAmount} 點血量！");
+
+                // 銷毀血包
+                Destroy(gameObject, 0.1f); // 稍微延遲銷毀，讓音效有時間播放
             }
         }
     }
