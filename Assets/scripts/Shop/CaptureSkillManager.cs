@@ -39,6 +39,12 @@ public class CaptureSkillManager : MonoBehaviour
     [Tooltip("射線碰撞體高度")]
     public float colliderHeight = 1f;
 
+    [Header("=== 面板控制設定 ===")]
+    [Tooltip("當SkillTutorialPanel顯示時，自動隱藏Shop與Selected面板")]
+    public bool autoHideOtherPanels = true;
+
+    public ShopManager shopManager;  // 請在Inspector中指派此物件
+
     private PlayerController2D player;
     private Coroutine hideCoroutine;
 
@@ -129,19 +135,16 @@ public class CaptureSkillManager : MonoBehaviour
         proj.transform.position = transform.position;
         proj.layer = gameObject.layer; // 使用與 Player 相同的 Layer
 
-        // ⭐ 關鍵：創建更大更明顯的碰撞體
         BoxCollider2D col = proj.AddComponent<BoxCollider2D>();
         col.isTrigger = true;
         col.size = new Vector2(colliderWidth, colliderHeight);
 
         Debug.Log($"[技能系統] 射線碰撞體大小：{col.size}");
 
-        // 添加 Rigidbody2D（必須！否則 Trigger 不會工作）
         Rigidbody2D rb = proj.AddComponent<Rigidbody2D>();
         rb.gravityScale = 0;
         rb.bodyType = RigidbodyType2D.Kinematic;
 
-        // 添加視覺效果
         LineRenderer lr = proj.AddComponent<LineRenderer>();
         lr.startWidth = projectileWidth;
         lr.endWidth = projectileWidth;
@@ -151,22 +154,6 @@ public class CaptureSkillManager : MonoBehaviour
         lr.endColor = projectileColor;
         lr.sortingOrder = 5;
 
-        // 注意：不添加 SpriteRenderer，只使用 LineRenderer 顯示射線
-        // 如果需要方形，取消下面的註解並調整大小
-        /*
-        SpriteRenderer sr = proj.AddComponent<SpriteRenderer>();
-        Texture2D tex = new Texture2D(8, 8);  // 改小尺寸
-        Color[] pixels = new Color[8 * 8];
-        for (int i = 0; i < pixels.Length; i++)
-        {
-            pixels[i] = projectileColor;
-        }
-        tex.SetPixels(pixels);
-        tex.Apply();
-        sr.sprite = Sprite.Create(tex, new Rect(0, 0, 8, 8), new Vector2(0.5f, 0.5f), 32);
-        sr.sortingOrder = 5;
-        */
-
         Debug.Log($"[技能系統] 已創建預設射線，Layer：{LayerMask.LayerToName(proj.layer)}");
         return proj;
     }
@@ -175,6 +162,13 @@ public class CaptureSkillManager : MonoBehaviour
     {
         if (skillTutorialPanel == null) return;
         skillTutorialPanel.SetActive(true);
+
+        if (autoHideOtherPanels && shopManager != null)
+        {
+            if (shopManager.shopPanel != null) shopManager.shopPanel.SetActive(false);
+            if (shopManager.detailPanel != null) shopManager.detailPanel.SetActive(false);
+        }
+
         if (hideCoroutine != null) StopCoroutine(hideCoroutine);
         hideCoroutine = StartCoroutine(AutoHidePanel());
     }
@@ -205,6 +199,7 @@ public class CaptureSkillManager : MonoBehaviour
     }
 
     public int GetSkillCount() => skillCount;
+
     public void SetSkillCount(int count)
     {
         skillCount = Mathf.Max(0, count);

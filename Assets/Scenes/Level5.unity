@@ -5037,6 +5037,8 @@ MonoBehaviour:
   bubbleSize: 1.5
   colliderWidth: 1
   colliderHeight: 1
+  autoHideOtherPanels: 1
+  shopManager: {fileID: 1914082718}
 --- !u!114 &1320464346
 MonoBehaviour:
   m_ObjectHideFlags: 0

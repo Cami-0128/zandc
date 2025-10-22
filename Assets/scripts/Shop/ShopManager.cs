@@ -54,7 +54,6 @@ public class ShopManager : MonoBehaviour
 
     void Update()
     {
-        // 玩家死亡時不能開啟商店
         if (Input.GetKeyDown(KeyCode.S))
         {
             if (player == null || player.isDead) return;
@@ -81,7 +80,7 @@ public class ShopManager : MonoBehaviour
                     break;
                 case "CaptureSkill":
                 case "捕捉技能":
-                    item.effect = new SkillUnlockEffect(1); // 購買一次增加1次使用次數
+                    item.effect = new SkillUnlockEffect(1);
                     Debug.Log("注入SkillUnlockEffect");
                     break;
                 default:
@@ -91,8 +90,6 @@ public class ShopManager : MonoBehaviour
             }
         }
     }
-
-
 
     void SetupUIButtons()
     {
@@ -113,7 +110,6 @@ public class ShopManager : MonoBehaviour
         }
     }
 
-    // 商品詳情面板只能在未死亡時出現
     public void OnItemButtonClicked(int index)
     {
         if (player == null || player.isDead) return;
@@ -127,7 +123,6 @@ public class ShopManager : MonoBehaviour
             detailPanel.SetActive(true);
     }
 
-    // 商店主Panel只能在未死亡時開啟
     void ToggleShopPanel()
     {
         if (player == null || player.isDead)
@@ -147,7 +142,6 @@ public class ShopManager : MonoBehaviour
         }
     }
 
-    // 關閉商店時，也一併關閉詳情Panel
     void CloseShopPanel()
     {
         if (shopPanel != null) shopPanel.SetActive(false);
@@ -187,14 +181,12 @@ public class ShopManager : MonoBehaviour
         }
     }
 
-
     public void UpdatePlayerMoneyUI()
     {
         if (playerMoneyText != null && CoinManager.Instance != null)
             playerMoneyText.text = $"Money : {CoinManager.Instance.MoneyCount}";
     }
 
-    // 死亡時外部調用，讓兩Panel全關閉
     public void ForceCloseShop()
     {
         CloseShopPanel();
