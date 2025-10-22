@@ -755,7 +755,7 @@ GameObject:
   - component: {fileID: 216492808}
   - component: {fileID: 216492810}
   - component: {fileID: 216492809}
-  m_Layer: 5
+  m_Layer: 7
   m_Name: EnemyHealthText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1146,7 +1146,7 @@ GameObject:
   - component: {fileID: 298253314}
   - component: {fileID: 298253313}
   - component: {fileID: 298253316}
-  m_Layer: 5
+  m_Layer: 7
   m_Name: Health
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2577,6 +2577,10 @@ PrefabInstance:
       propertyPath: wallLayer.m_Bits
       value: 72
       objectReference: {fileID: 0}
+    - target: {fileID: 2792378958021979176, guid: ab37e94afdfafb945983830d1ada8425, type: 3}
+      propertyPath: enemyLayer.m_Bits
+      value: 128
+      objectReference: {fileID: 0}
     - target: {fileID: 2792378958021979181, guid: ab37e94afdfafb945983830d1ada8425, type: 3}
       propertyPath: m_Constraints
       value: 4
@@ -2980,6 +2984,7 @@ MonoBehaviour:
   enableFloating: 1
   floatSpeed: 2
   floatHeight: 0.5
+  useCheckHealthFull: 1
 --- !u!61 &745273201
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -3436,7 +3441,7 @@ GameObject:
   m_Component:
   - component: {fileID: 870451725}
   - component: {fileID: 870451726}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: sword
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3450,14 +3455,14 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 870451724}
-  m_LocalRotation: {x: 0, y: 0, z: -0.258819, w: 0.9659259}
-  m_LocalPosition: {x: 0.8, y: 1, z: 0}
-  m_LocalScale: {x: 0.15, y: 1.5, z: 1.5}
+  m_LocalRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
+  m_LocalPosition: {x: 1.0281, y: 0.08, z: 0}
+  m_LocalScale: {x: 0.26838002, y: 3.0256197, z: 1.5}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1320464340}
   m_RootOrder: 3
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: -30}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 90}
 --- !u!212 &870451726
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -3842,7 +3847,7 @@ GameObject:
   - component: {fileID: 1044876920}
   - component: {fileID: 1044876921}
   - component: {fileID: 1044876922}
-  m_Layer: 5
+  m_Layer: 7
   m_Name: HealthFill
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -4016,6 +4021,7 @@ MonoBehaviour:
   enableFloating: 1
   floatHeight: 0.3
   floatSpeed: 2
+  useCheckManaFull: 1
 --- !u!212 &1065531536
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -5031,6 +5037,51 @@ MonoBehaviour:
   bubbleSize: 1.5
   colliderWidth: 1
   colliderHeight: 1
+--- !u!114 &1320464346
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 529941144}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8b3e0d52ed2c1f04eb22ca5fc795d557, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  isUnlocked: 1
+  swordObject: {fileID: 870451724}
+  slashDownDuration: 0.15
+  holdDuration: 0.2
+  returnDuration: 0.1
+  cooldown: 0.5
+  slashKey: 119
+  swordDamage: 30
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 128
+  enableTrail: 1
+  trailCount: 5
+  trailColor: {r: 0.7, g: 0.7, b: 0.7, a: 0.5}
+  trailFadeDuration: 0.3
+  slashSound: {fileID: 0}
+  hitSound: {fileID: 0}
+  pivotOffsetRatio: 0.95
+--- !u!114 &1320464347
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 529941144}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1b8bd6e26ef3fc54cbfafb5dccb414f0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  swordSlashSkill: {fileID: 0}
+  startWithSwordUnlocked: 1
+  debugMode: 1
 --- !u!1 &1331268943
 GameObject:
   m_ObjectHideFlags: 0
@@ -6611,7 +6662,7 @@ GameObject:
   - component: {fileID: 1570184787}
   - component: {fileID: 1570184789}
   - component: {fileID: 1570184788}
-  m_Layer: 5
+  m_Layer: 7
   m_Name: EnemyHealthBar
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -9699,6 +9750,10 @@ PrefabInstance:
     - target: {fileID: 4373213459656665261, guid: 341efe7a63c9cbf42959752ac2d74d21, type: 3}
       propertyPath: m_Name
       value: Enemy
+      objectReference: {fileID: 0}
+    - target: {fileID: 4373213459656665261, guid: 341efe7a63c9cbf42959752ac2d74d21, type: 3}
+      propertyPath: m_Layer
+      value: 7
       objectReference: {fileID: 0}
     - target: {fileID: 4373213459656665261, guid: 341efe7a63c9cbf42959752ac2d74d21, type: 3}
       propertyPath: m_IsActive

@@ -2,6 +2,10 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+/// 玩家控制器 - 簡化版（移除揮劍相關）
+/// 只負責移動、跳躍、血量系統
+/// </summary>
 public class PlayerController2D : MonoBehaviour
 {
     //
@@ -58,25 +62,8 @@ public class PlayerController2D : MonoBehaviour
     public HourglassTimer hourglassTimer;
     public bool hasReachedEnd = false;
 
-    // 攻擊發射方向
+    // 攻擊發射方向（供技能系統使用）
     public int LastHorizontalDirection { get; private set; } = 1;
-
-    // === 新增：揮劍系統 ===
-    [Header("Sword Slash System 揮劍系統")]
-    public GameObject swordObject; // 劍的GameObject
-    public float slashDuration = 0.3f; // 揮劍持續時間
-    public float startAngle = 60f; // 起始角度
-    public float endAngle = -60f; // 結束角度
-    public int trailCount = 8; // 殘影數量
-    public float trailFadeDuration = 0.5f; // 殘影消失時間
-    public Color trailColor = new Color(0.7f, 0.7f, 0.7f, 0.5f); // 殘影顏色
-
-    private bool isSlashing = false;
-    private float slashTimer = 0f;
-    private Vector3 originalSwordRotation;
-    private Vector3 originalSwordLocalPosition; // 記錄劍的初始相對位置
-    private SpriteRenderer swordSpriteRenderer;
-    private float lastTrailTime = 0f; // 記錄上次創建殘影的時間
 
     void Start()
     {
@@ -112,30 +99,6 @@ public class PlayerController2D : MonoBehaviour
             {
                 Debug.LogWarning("找不到 HourglassTimer 組件！");
             }
-        }
-
-        // === 初始化劍系統 ===
-        InitializeSword();
-    }
-
-    // === 初始化劍 ===
-    void InitializeSword()
-    {
-        if (swordObject != null)
-        {
-            originalSwordRotation = swordObject.transform.localEulerAngles;
-            originalSwordLocalPosition = swordObject.transform.localPosition;
-
-            // 獲取劍的SpriteRenderer
-            swordSpriteRenderer = swordObject.GetComponent<SpriteRenderer>();
-            if (swordSpriteRenderer == null)
-            {
-                Debug.LogWarning("劍物件沒有SpriteRenderer組件！");
-            }
-        }
-        else
-        {
-            Debug.LogWarning("未設定劍物件！請在Inspector中指定swordObject");
         }
     }
 
@@ -193,123 +156,11 @@ public class PlayerController2D : MonoBehaviour
         UpdateWallJumpHangTime();
         CheckWallSliding();
 
-        // === 新增：更新劍的位置和方向 ===
-        UpdateSwordPosition();
-
-        // === 新增：揮劍輸入檢測 ===
-        HandleSwordSlash();
-
         // 掉落死亡檢測
         if (transform.position.y < fall)
         {
             Fall();
         }
-    }
-
-    // === 新增：更新劍的位置（跟隨玩家轉向） ===
-    void UpdateSwordPosition()
-    {
-        if (swordObject == null) return;
-
-        // 根據玩家朝向調整劍的位置
-        Vector3 newLocalPosition = originalSwordLocalPosition;
-        if (LastHorizontalDirection == -1) // 朝左
-        {
-            newLocalPosition.x = -Mathf.Abs(originalSwordLocalPosition.x);
-        }
-        else // 朝右
-        {
-            newLocalPosition.x = Mathf.Abs(originalSwordLocalPosition.x);
-        }
-
-        swordObject.transform.localPosition = newLocalPosition;
-    }
-
-    // === 處理揮劍 ===
-    void HandleSwordSlash()
-    {
-        // 按W鍵發動揮劍
-        if (Input.GetKeyDown(KeyCode.W) && !isSlashing && swordObject != null)
-        {
-            StartSlash();
-        }
-
-        // 處理揮劍動畫
-        if (isSlashing)
-        {
-            slashTimer += Time.deltaTime;
-            float progress = slashTimer / slashDuration;
-
-            if (progress >= 1f)
-            {
-                // 揮劍結束
-                isSlashing = false;
-                slashTimer = 0f;
-                lastTrailTime = 0f;
-                swordObject.transform.localEulerAngles = originalSwordRotation;
-            }
-            else
-            {
-                // 計算當前角度（使用easeInOutQuad讓動作更流暢）
-                float easedProgress = progress < 0.5f
-                    ? 2f * progress * progress
-                    : 1f - Mathf.Pow(-2f * progress + 2f, 2f) / 2f;
-
-                float currentAngle = Mathf.Lerp(startAngle, endAngle, easedProgress);
-
-                // 根據玩家朝向調整劍的角度
-                Vector3 newRotation = originalSwordRotation;
-                if (LastHorizontalDirection == -1) // 朝左時鏡像角度
-                {
-                    newRotation.z = -currentAngle + 180f; // 加180度翻轉劍
-                }
-                else // 朝右
-                {
-                    newRotation.z = currentAngle;
-                }
-                swordObject.transform.localEulerAngles = newRotation;
-
-                // 創建殘影（使用固定時間間隔而不是進度百分比）
-                float trailInterval = slashDuration / trailCount;
-                if (slashTimer - lastTrailTime >= trailInterval)
-                {
-                    CreateSwordTrail();
-                    lastTrailTime = slashTimer;
-                }
-            }
-        }
-    }
-
-    // === 開始揮劍 ===
-    void StartSlash()
-    {
-        isSlashing = true;
-        slashTimer = 0f;
-        lastTrailTime = 0f;
-        Debug.Log("揮劍！");
-    }
-
-    // === 創建劍的殘影 ===
-    void CreateSwordTrail()
-    {
-        if (swordObject == null || swordSpriteRenderer == null) return;
-
-        // 創建殘影GameObject
-        GameObject trail = new GameObject("SwordTrail");
-        trail.transform.position = swordObject.transform.position;
-        trail.transform.rotation = swordObject.transform.rotation;
-        trail.transform.localScale = swordObject.transform.lossyScale; // 使用世界縮放
-
-        // 添加SpriteRenderer來顯示殘影
-        SpriteRenderer trailRenderer = trail.AddComponent<SpriteRenderer>();
-        trailRenderer.sprite = swordSpriteRenderer.sprite;
-        trailRenderer.color = trailColor;
-        trailRenderer.sortingLayerName = swordSpriteRenderer.sortingLayerName;
-        trailRenderer.sortingOrder = swordSpriteRenderer.sortingOrder - 1; // 在劍後面
-
-        // 添加淡出腳本
-        SwordTrailFade fade = trail.AddComponent<SwordTrailFade>();
-        fade.fadeDuration = trailFadeDuration;
     }
 
     void OnTriggerEnter2D(Collider2D collision)
@@ -560,40 +411,5 @@ public class PlayerController2D : MonoBehaviour
         SaveHealth();
         UpdateHealthUI();
         Debug.Log($"[血量系統] 血量設為: {currentHealth}/{maxHealth}");
-    }
-}
-
-// === 殘影淡出腳本 ===
-public class SwordTrailFade : MonoBehaviour
-{
-    public float fadeDuration = 0.5f;
-    private float timer = 0f;
-    private SpriteRenderer spriteRenderer;
-    private Color startColor;
-
-    void Start()
-    {
-        spriteRenderer = GetComponent<SpriteRenderer>();
-        if (spriteRenderer != null)
-        {
-            startColor = spriteRenderer.color;
-        }
-    }
-
-    void Update()
-    {
-        if (spriteRenderer == null) return;
-
-        timer += Time.deltaTime;
-        float alpha = Mathf.Lerp(startColor.a, 0f, timer / fadeDuration);
-
-        Color newColor = startColor;
-        newColor.a = alpha;
-        spriteRenderer.color = newColor;
-
-        if (timer >= fadeDuration)
-        {
-            Destroy(gameObject);
-        }
     }
 }
