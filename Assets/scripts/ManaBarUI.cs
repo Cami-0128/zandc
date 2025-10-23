@@ -27,7 +27,6 @@ public class ManaBarUI : MonoBehaviour
     public bool enableColorLerp = true;
     public float colorTransitionSpeed = 3f;
 
-    private PlayerController2D player;
     private float targetFillAmount;
     private float currentFillAmount;
     private int lastKnownMana = -1;
@@ -74,7 +73,6 @@ public class ManaBarUI : MonoBehaviour
     {
         StartCoroutine(InitializeManaBar());
     }
-
 
     IEnumerator InitializeManaBar()
     {
@@ -154,32 +152,41 @@ public class ManaBarUI : MonoBehaviour
         }
     }
 
-
     public void UpdateManaBar(int currentMana, int maxMana)
     {
         if (manaBarFill == null)
             return;
         float manaPercentage = (float)currentMana / maxMana;
-        bool usedMana = (lastKnownMana > 0 && currentMana < lastKnownMana);
+
+        // 只要魔力有變化就觸發更新
+        bool manaChanged = (lastKnownMana != currentMana);
+
         targetFillAmount = manaPercentage;
+
         if (!enableSmoothTransition)
         {
             currentFillAmount = targetFillAmount;
             manaBarFill.fillAmount = currentFillAmount;
         }
+
         if (currentMana <= 0)
         {
             currentFillAmount = 0f;
             targetFillAmount = 0f;
             manaBarFill.fillAmount = 0f;
         }
+
         UpdateManaBarColor(manaPercentage);
         UpdateManaText(currentMana, maxMana);
-        if (enableFlashOnUse && usedMana)
+
+        // 任何魔力變化都觸發閃光
+        if (enableFlashOnUse && manaChanged)
         {
             PlayManaFlash();
         }
+
         lastKnownMana = currentMana;
+
         if (!isInitialized)
             isInitialized = true;
     }

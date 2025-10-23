@@ -2,13 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>
-/// 玩家控制器 - 簡化版（移除揮劍相關）
-/// 只負責移動、跳躍、血量系統
-/// </summary>
 public class PlayerController2D : MonoBehaviour
 {
-    //
     public bool isDead { get; private set; } = false;
     public float moveSpeed = 5f;
     public float jumpForce = 7f;
@@ -21,7 +16,6 @@ public class PlayerController2D : MonoBehaviour
     private bool isGrounded;
     public bool canControl = true;
 
-    // === 跨關卡血量系統 ===
     [Header("Health System 血量系統")]
     public int maxHealth = 100;
     private static int persistentHealth = -1;
@@ -31,7 +25,6 @@ public class PlayerController2D : MonoBehaviour
     private float damageInvulnerabilityTime = 1f;
     private float lastDamageTime = -999f;
 
-    // === 血包系統相關 ===
     [Header("Health Pickup System 血包系統")]
     public AudioClip healSound;
     private AudioSource audioSource;
@@ -40,7 +33,6 @@ public class PlayerController2D : MonoBehaviour
     public int maxMana = 100;
     public int currentMana = 100;
 
-    // Wall Slide 相關
     public float wallSlideSpeed = 1f;
     public Transform wallCheck;
     public float wallCheckDistance = 0.5f;
@@ -48,28 +40,21 @@ public class PlayerController2D : MonoBehaviour
     private bool isWallSliding = false;
     private bool isTouchingWall = false;
 
-    // Wall Jump 相關
     public float wallJumpForceY = 8f;
     public float wallJumpCooldown = 0.5f;
     private float lastWallJumpTime = -999f;
-
-    // Wall Jump Hang Time 相關
     private bool wallJumping = false;
     public float wallJumpHangTime = 0.2f;
     private float wallJumpHangCounter = 0f;
 
-    // 沙漏倒數計時器參考
     public HourglassTimer hourglassTimer;
     public bool hasReachedEnd = false;
 
-    // 攻擊發射方向（供技能系統使用）
     public int LastHorizontalDirection { get; private set; } = 1;
 
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
-
-        // === 音效系統初始化 ===
         audioSource = GetComponent<AudioSource>();
         if (audioSource == null)
         {
@@ -77,21 +62,15 @@ public class PlayerController2D : MonoBehaviour
             audioSource.playOnAwake = false;
         }
 
-        // === MP魔力條 ===
-        currentMana = maxMana;
         ManaBarUI manaBar = FindObjectOfType<ManaBarUI>();
         if (manaBar != null)
             manaBar.UpdateManaBar(currentMana, maxMana);
 
-        // === 血量初始化邏輯 ===
         InitializeHealth();
         Time.timeScale = 1f;
         Debug.Log($"Game Start. 遊戲開始 - 血量: {currentHealth}/{maxHealth}");
-
-        // === 更新血條UI ===
         UpdateHealthUI();
 
-        // 自動尋找hourglassTimer
         if (hourglassTimer == null)
         {
             hourglassTimer = GetComponentInChildren<HourglassTimer>();
@@ -102,15 +81,15 @@ public class PlayerController2D : MonoBehaviour
         }
     }
 
-    // === 血量初始化方法 ===
     void InitializeHealth()
     {
         if (isFirstTimePlay || persistentHealth <= 0)
         {
             currentHealth = maxHealth;
             persistentHealth = maxHealth;
+            currentMana = maxMana;
             isFirstTimePlay = false;
-            Debug.Log("[血量系統] 第一次遊戲，血量設為滿血");
+            Debug.Log("[血量系統] 第一次遊戲，血量設為滿血，魔力也設滿");
         }
         else
         {
@@ -119,14 +98,12 @@ public class PlayerController2D : MonoBehaviour
         }
     }
 
-    // === 保存血量方法 ===
     void SaveHealth()
     {
         persistentHealth = currentHealth;
         Debug.Log($"[血量系統] 血量已保存: {persistentHealth}");
     }
 
-    // === 重置血量系統 ===
     public static void ResetHealthSystem()
     {
         persistentHealth = -1;
@@ -134,29 +111,41 @@ public class PlayerController2D : MonoBehaviour
         Debug.Log("[血量系統] 血量系統已重置");
     }
 
+    // <<<<<<<<<<<<<<<< 這是你主要要用來取代的「魔力回復」函式 <<<<<<<<<<<<<<<<<<<<<<
     public void ManaHeal(int manaAmount)
     {
         if (isDead) return;
+        int oldMana = currentMana;
         currentMana += manaAmount;
         currentMana = Mathf.Min(currentMana, maxMana);
-        Debug.Log($"魔力回復了 {manaAmount} 點，現在魔力: {currentMana}/{maxMana}");
+        Debug.Log($"ManaHeal called: 回復 {manaAmount} 魔力，從 {oldMana} 到 {currentMana}");
 
-        ManaBarUI manaBar = FindObjectOfType<ManaBarUI>();
-        if (manaBar != null)
-            manaBar.UpdateManaBar(currentMana, maxMana);
+        // 關鍵：同步 PlayerAttack 物件的魔力（這會影響UI顯示）
+        PlayerAttack attack = GetComponent<PlayerAttack>();
+        if (attack != null)
+        {
+            attack.RestoreMana(manaAmount); // 讓PlayerAttack的魔力也一併加值
+            ManaBarUI manaBar = FindObjectOfType<ManaBarUI>();
+            if (manaBar != null)
+                manaBar.UpdateManaBar(attack.GetCurrentMana(), attack.maxMana);
+            else
+                Debug.LogWarning("找不到 ManaBarUI 組件");
+        }
+        else
+        {
+            Debug.LogWarning("找不到 PlayerAttack 組件");
+        }
     }
+    // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     void Update()
     {
         if (!canControl) return;
-
-        // 原有的遊戲邏輯
         Move();
         HandleJumpInput();
         UpdateWallJumpHangTime();
         CheckWallSliding();
 
-        // 掉落死亡檢測
         if (transform.position.y < fall)
         {
             Fall();
@@ -174,7 +163,6 @@ public class PlayerController2D : MonoBehaviour
         }
     }
 
-    // === 場景切換時保存血量 ===
     void OnDestroy()
     {
         if (!isDead && currentHealth > 0)
@@ -183,7 +171,6 @@ public class PlayerController2D : MonoBehaviour
         }
     }
 
-    // 移動邏輯
     void Move()
     {
         float moveX = Input.GetAxisRaw("Horizontal");
@@ -194,7 +181,6 @@ public class PlayerController2D : MonoBehaviour
         rb.velocity = new Vector2(moveX * moveSpeed, rb.velocity.y);
     }
 
-    // 跳躍輸入處理
     void HandleJumpInput()
     {
         Time.timeScale = 1f;
@@ -211,14 +197,12 @@ public class PlayerController2D : MonoBehaviour
         }
     }
 
-    // 跳躍
     void Jump()
     {
         rb.velocity = new Vector2(rb.velocity.x, jumpForce);
         jumpCount++;
     }
 
-    // 牆跳
     void WallJump()
     {
         rb.velocity = new Vector2(rb.velocity.x, wallJumpForceY);
@@ -227,7 +211,6 @@ public class PlayerController2D : MonoBehaviour
         wallJumpHangCounter = wallJumpHangTime;
     }
 
-    // 更新牆跳掛牆時間
     void UpdateWallJumpHangTime()
     {
         if (wallJumping)
@@ -240,7 +223,6 @@ public class PlayerController2D : MonoBehaviour
         }
     }
 
-    // 檢查牆滑
     void CheckWallSliding()
     {
         Vector2 checkLeft = Vector2.left;
@@ -269,7 +251,6 @@ public class PlayerController2D : MonoBehaviour
         Debug.DrawRay(wallCheck.position, checkRight * wallCheckDistance, Color.red);
     }
 
-    // === 碰撞檢測 ===
     void OnCollisionEnter2D(Collision2D collision)
     {
         if (collision.gameObject.CompareTag("Enemy1"))
