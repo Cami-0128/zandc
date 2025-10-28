@@ -71,6 +71,7 @@ public class PlayerController2D : MonoBehaviour
         Debug.Log($"Game Start. 遊戲開始 - 血量: {currentHealth}/{maxHealth}");
         UpdateHealthUI();
 
+
         if (hourglassTimer == null)
         {
             hourglassTimer = GetComponentInChildren<HourglassTimer>();

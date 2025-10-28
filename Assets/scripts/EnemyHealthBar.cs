@@ -124,6 +124,9 @@ public class EnemyHealthBar : MonoBehaviour
             return;
         }
 
+        if (enemyTransform != null)
+            transform.position = enemyTransform.position + localOffset;
+
         // 面向攝影機（修正反向問題）
         if (alwaysFaceCamera && mainCamera != null)
         {

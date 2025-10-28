@@ -22,7 +22,7 @@ public class HourglassTimer : MonoBehaviour
     private bool hasStarted = false;
 
     public Image hourglassImage;
-    public TextMeshProUGUI timeText; // ✅ 新增時間文字 Text
+    public TextMeshProUGUI timeText; // 時間文字 Text
 
     public PlayerController2D player;
 
@@ -70,7 +70,7 @@ public class HourglassTimer : MonoBehaviour
         else
             SetHourglassSprite(emptyHourglass);
 
-        // ✅ 更新時間文字
+        // 更新時間文字
         if (timeText != null)
         {
             timeText.text = currentTime.ToString("F1");
