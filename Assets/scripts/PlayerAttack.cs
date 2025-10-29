@@ -128,18 +128,16 @@ public class PlayerAttack : MonoBehaviour
         GameObject bullet = Instantiate(heavyBulletPrefab, spawnPosition, Quaternion.identity);
         int direction = playerController ? playerController.LastHorizontalDirection : 1;
 
-        // 設定子彈大小與飛行方向
         float scale = prefabData ? prefabData.bulletScale : 0.6f;
-        bullet.transform.localScale = new Vector3(scale, scale, 1);
+        bullet.transform.localScale = new Vector3(scale * direction, scale, 1);
         HeavyBullet bulletScript = bullet.GetComponent<HeavyBullet>();
         if (bulletScript != null)
         {
             bulletScript.bulletScale = scale;
             bulletScript.SetSpeed(Mathf.Abs(bulletScript.speed) * direction);
-            bulletScript.SetColor(Color.black); // 這裡保險設黑色
+            bulletScript.SetColor(Color.black);
         }
     }
-
 
     private void ConsumeMana(int amount)
     {
@@ -153,8 +151,6 @@ public class PlayerAttack : MonoBehaviour
             manaBar.UpdateManaBar(currentMana, maxMana);
         }
     }
-
-
 
     private IEnumerator ManaRegenerationCoroutine()
     {
@@ -182,7 +178,6 @@ public class PlayerAttack : MonoBehaviour
         if (currentMana >= maxMana)
             return;
 
-        int oldMana = currentMana;
         currentMana += manualRestoreAmount;
         currentMana = Mathf.Min(currentMana, maxMana);
         lastManualRestoreTime = Time.time;
@@ -190,61 +185,10 @@ public class PlayerAttack : MonoBehaviour
 
     public void RestoreMana(int amount)
     {
-        int oldMana = currentMana;
         currentMana += amount;
         currentMana = Mathf.Min(currentMana, maxMana);
     }
 
     public int GetCurrentMana() => currentMana;
     public float GetManaPercentage() => (float)currentMana / maxMana;
-
-    public void TakeDamage(float damage)
-    {
-        currentHealth -= damage;
-        currentHealth = Mathf.Max(0, currentHealth);
-        if (currentHealth <= 0)
-            Die();
-    }
-
-    public void Heal(float healAmount)
-    {
-        float oldHealth = currentHealth;
-        currentHealth += healAmount;
-        currentHealth = Mathf.Min(maxHealth, currentHealth);
-    }
-
-    void Die()
-    {
-    }
-
-    public void SetManaRegen(bool enabled)
-    {
-        if (enabled && !enableManaRegen)
-        {
-            enableManaRegen = true;
-            if (manaRegenCoroutine == null)
-                manaRegenCoroutine = StartCoroutine(ManaRegenerationCoroutine());
-        }
-        else if (!enabled && enableManaRegen)
-        {
-            enableManaRegen = false;
-            if (manaRegenCoroutine != null)
-            {
-                StopCoroutine(manaRegenCoroutine);
-                manaRegenCoroutine = null;
-            }
-        }
-    }
-
-    void OnDisable()
-    {
-        if (manaRegenCoroutine != null)
-            StopCoroutine(manaRegenCoroutine);
-    }
-
-    void OnDestroy()
-    {
-        if (manaRegenCoroutine != null)
-            StopCoroutine(manaRegenCoroutine);
-    }
 }

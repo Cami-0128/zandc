@@ -10,6 +10,8 @@ TagManager:
   - Ground
   - EndPoint
   - Boss
+  - MagicBullet
+  - HeavyBullet
   layers:
   - Default
   - TransparentFX

@@ -27,8 +27,10 @@ public class HeavyBullet : MonoBehaviour
         transform.localScale = new Vector3(bulletScale, bulletScale, 1f);
 
         CircleCollider2D cc = GetComponent<CircleCollider2D>();
-        if (cc != null)
-            cc.radius = 0.5f * bulletScale;
+        if (cc == null)
+            cc = gameObject.AddComponent<CircleCollider2D>();
+        cc.radius = 0.5f * bulletScale;
+        cc.isTrigger = true;
     }
 
     void Start()
@@ -47,41 +49,29 @@ public class HeavyBullet : MonoBehaviour
         rb.velocity = new Vector2(bulletSpeed, 0f);
     }
 
-    void OnTriggerEnter2D(Collider2D other)
-    {
-        if (other.CompareTag("Player"))
-            return;
-
-        Enemy enemy = other.GetComponent<Enemy>();
-        if (enemy != null)
-        {
-            enemy.TakeDamage(damage, "HeavyBullet");
-            CreateHitEffect();
-            Destroy(gameObject);
-            return;
-        }
-
-        if (other.CompareTag("Ground"))
-        {
-            CreateHitEffect();
-            Destroy(gameObject);
-        }
-    }
-
-    void CreateHitEffect()
-    {
-        Debug.Log($"[HeavyBullet] 擊中目標！造成 {damage} 點傷害");
-    }
-
-    public void SetDamage(float newDamage) => damage = newDamage;
-
-    public void SetManaCost(int cost) => manaCost = cost;
-
     public void SetColor(Color color)
     {
         bulletColor = color;
         SpriteRenderer sr = GetComponent<SpriteRenderer>();
         if (sr != null)
             sr.color = color;
+    }
+
+    void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.CompareTag("Boss"))
+        {
+            var boss = other.GetComponent<BossController2D>();
+            if (boss != null)
+            {
+                boss.TakeDamage(damage, "HeavyBullet");
+                Destroy(gameObject);
+            }
+            return;
+        }
+        if (other.CompareTag("Ground"))
+        {
+            Destroy(gameObject);
+        }
     }
 }

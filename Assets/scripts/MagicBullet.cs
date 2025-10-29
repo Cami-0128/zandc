@@ -10,10 +10,23 @@ public class MagicBullet : MonoBehaviour
     public float speed = 10f;
     public float lifetime = 5f;
 
-    [Header("視覺效果")]
     public Color bulletColor = new Color(0.5f, 0.8f, 1f, 1f);
-
     private Rigidbody2D rb;
+
+    void Awake()
+    {
+        rb = GetComponent<Rigidbody2D>();
+        if (rb == null)
+            rb = gameObject.AddComponent<Rigidbody2D>();
+        rb.gravityScale = 0f;
+        rb.freezeRotation = true;
+
+        CircleCollider2D cc = GetComponent<CircleCollider2D>();
+        if (cc == null)
+            cc = gameObject.AddComponent<CircleCollider2D>();
+        cc.radius = 0.4f;
+        cc.isTrigger = true;
+    }
 
     void Start()
     {
@@ -21,64 +34,35 @@ public class MagicBullet : MonoBehaviour
         if (sr != null)
             sr.color = bulletColor;
 
-        rb = GetComponent<Rigidbody2D>();
-        if (rb == null)
-        {
-            rb = gameObject.AddComponent<Rigidbody2D>();
-            rb.gravityScale = 0f;
-            rb.freezeRotation = true;
-        }
-
         float direction = Mathf.Sign(transform.localScale.x);
         rb.velocity = new Vector2(speed * direction, 0f);
 
         Destroy(gameObject, lifetime);
     }
 
-    void OnTriggerEnter2D(Collider2D other)
-    {
-        if (other.CompareTag("Player"))
-            return;
-
-        Enemy enemy = other.GetComponent<Enemy>();
-        if (enemy != null)
-        {
-            enemy.TakeDamage(damage, "MagicBullet");
-            CreateHitEffect();
-            Destroy(gameObject);
-            return;
-        }
-
-        if (other.CompareTag("Ground"))
-        {
-            CreateHitEffect();
-            Destroy(gameObject);
-        }
-    }
-
-    void CreateHitEffect()
-    {
-        Debug.Log($"[MagicBullet] 擊中目標！造成 {damage} 點傷害");
-    }
-
-    public void SetDamage(float newDamage) => damage = newDamage;
-
-    public void SetManaCost(int cost) => manaCost = cost;
-
-    public void SetSpeed(float newSpeed)
-    {
-        speed = newSpeed;
-        if (rb != null)
-        {
-            float direction = Mathf.Sign(transform.localScale.x);
-            rb.velocity = new Vector2(speed * direction, 0f);
-        }
-    }
     public void SetColor(Color color)
     {
         bulletColor = color;
         SpriteRenderer sr = GetComponent<SpriteRenderer>();
         if (sr != null)
             sr.color = color;
+    }
+
+    void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.CompareTag("Boss"))
+        {
+            var boss = other.GetComponent<BossController2D>();
+            if (boss != null)
+            {
+                boss.TakeDamage(damage, "MagicBullet");
+                Destroy(gameObject);
+            }
+            return;
+        }
+        if (other.CompareTag("Ground"))
+        {
+            Destroy(gameObject);
+        }
     }
 }
