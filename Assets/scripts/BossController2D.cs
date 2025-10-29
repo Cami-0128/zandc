@@ -12,7 +12,7 @@ public class BossController2D : MonoBehaviour
     [Header("跳躍與地板判斷")]
     public float jumpForceVertical = 8f;
     public float jumpForceHorizontalMax = 8f;
-    public float jumpCooldown = 0.8f;
+    public float jumpCooldown = 0.7f;
     public float groundCheckRadius = 0.25f;
     public LayerMask groundLayer;
 
@@ -27,6 +27,14 @@ public class BossController2D : MonoBehaviour
     public float hazardCooldown = 1.5f;
     private float lastHazardTime = -999f;
 
+    [Header("【新增】玩家傷害設置")]
+    [Tooltip("劍造成的傷害")]
+    public float swordDamage = 30f;
+    [Tooltip("魔法子彈造成的傷害")]
+    public float magicBulletDamage = 50f;
+    [Tooltip("重型子彈造成的傷害")]
+    public float heavyBulletDamage = 75f;
+
     private Rigidbody2D rb;
     private SpriteRenderer spriteRenderer;
     private Transform playerTransform;
@@ -34,23 +42,25 @@ public class BossController2D : MonoBehaviour
 
     private float lastJumpTime = -999f;
     private float lastAttackTime = -999f;
-
     private bool wasGroundedLastFrame = false;
+
+    // 傷害檢查緩衝 - 防止同一次攻擊多次造成傷害
     private HashSet<GameObject> processedProjectiles = new HashSet<GameObject>();
 
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
         spriteRenderer = GetComponent<SpriteRenderer>();
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
-        if (player != null)
-            playerTransform = player.transform;
+        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+        if (playerObj != null)
+            playerTransform = playerObj.transform;
         currentHealth = maxHealth;
         if (healthBar != null)
         {
             healthBar.Initialize(transform);
             healthBar.UpdateHealthBar(currentHealth, maxHealth);
         }
+        Debug.Log($"[Boss] 初始化完成，最大血量：{maxHealth}");
     }
 
     void Update()
@@ -58,6 +68,7 @@ public class BossController2D : MonoBehaviour
         if (isDying || playerTransform == null)
             return;
 
+        // 持續攻擊射擊
         if (Time.time - lastAttackTime >= attackCooldown)
         {
             ShootFireball();
@@ -70,21 +81,20 @@ public class BossController2D : MonoBehaviour
     {
         bool isGroundedNow = IsGrounded();
 
-        // Boss只要在地面且冷卻到就持續朝玩家跳
+        // Boss只要在地面且冷卻到，就持續朝玩家跳
         if (isGroundedNow && !isDying && enablePlayerTracking && Time.time - lastJumpTime >= jumpCooldown)
         {
             PerformJumpTowardsPlayer();
             lastJumpTime = Time.time;
         }
 
-        // 落地時生成HazardZone（僅剛落地時）
+        // 落地就生成HazardZone（僅剛落地時）
         if (!wasGroundedLastFrame && isGroundedNow && Time.time - lastHazardTime >= hazardCooldown)
         {
             Instantiate(hazardZonePrefab, transform.position + Vector3.down, Quaternion.identity);
             lastHazardTime = Time.time;
             Debug.Log("[Boss] 落地生成HazardZone");
         }
-
         wasGroundedLastFrame = isGroundedNow;
     }
 
@@ -108,12 +118,11 @@ public class BossController2D : MonoBehaviour
 
     private void ShootFireball()
     {
-        if (fireballPrefab == null || firePoint == null) return;
+        if (fireballPrefab == null || firePoint == null || playerTransform == null) return;
 
         GameObject fb = Instantiate(fireballPrefab, firePoint.position, Quaternion.identity);
         Vector2 dir = (playerTransform.position - firePoint.position).normalized;
         fb.transform.right = dir;
-
         Rigidbody2D fbRb = fb.GetComponent<Rigidbody2D>();
         if (fbRb != null)
         {
@@ -127,19 +136,26 @@ public class BossController2D : MonoBehaviour
         if (isDying) return;
         if (other.CompareTag("Player")) return;
 
+        // 【簡化】只處理子彈，劍攻擊由OverlapCircle檢測
         if ((other.CompareTag("MagicBullet") || other.CompareTag("HeavyBullet")) && !processedProjectiles.Contains(other.gameObject))
         {
             processedProjectiles.Add(other.gameObject);
-
             float damage = 0f;
-            var magicBullet = other.GetComponent<MagicBullet>();
-            if (magicBullet != null) damage = magicBullet.damage;
 
-            var heavyBullet = other.GetComponent<HeavyBullet>();
-            if (heavyBullet != null) damage = heavyBullet.damage;
+            if (other.CompareTag("MagicBullet"))
+            {
+                damage = magicBulletDamage;
+            }
+            else if (other.CompareTag("HeavyBullet"))
+            {
+                damage = heavyBulletDamage;
+            }
 
             if (damage > 0)
+            {
                 TakeDamage(damage, "PlayerBullet");
+                Debug.Log($"[Boss] 被子彈擊中！造成 {damage} 點傷害");
+            }
 
             Destroy(other.gameObject);
         }
@@ -148,13 +164,11 @@ public class BossController2D : MonoBehaviour
     public void TakeDamage(float damage, string source = "Unknown")
     {
         if (isDying) return;
-
         currentHealth -= damage;
         currentHealth = Mathf.Max(0, currentHealth);
-
         if (healthBar != null)
             healthBar.UpdateHealthBar(currentHealth, maxHealth);
-
+        Debug.Log($"[Boss] 受到來自 {source} 的 {damage} 點傷害。剩餘血量: {currentHealth}/{maxHealth}");
         if (currentHealth <= 0)
             Die();
     }
@@ -163,6 +177,7 @@ public class BossController2D : MonoBehaviour
     {
         if (isDying) return;
         isDying = true;
+        Debug.Log("[Boss] Boss 已死亡！");
         if (healthBar != null)
             Destroy(healthBar.gameObject);
         rb.velocity = Vector2.zero;
@@ -178,5 +193,18 @@ public class BossController2D : MonoBehaviour
         float dirX = playerTransform.position.x - transform.position.x;
         if (spriteRenderer != null)
             spriteRenderer.flipX = dirX < 0;
+    }
+
+    // 【新增】外部接口 - 用於捕捉技能
+    public void OnCaptured()
+    {
+        Debug.Log("[Boss] Boss 被捕捉了！");
+        Die();
+    }
+
+    // 【新增】獲取當前血量百分比
+    public float GetHealthPercentage()
+    {
+        return currentHealth / maxHealth;
     }
 }

@@ -4,33 +4,53 @@ using UnityEngine;
 public class CaptureBubble : MonoBehaviour
 {
     private GameObject capturedEnemy;
+    private BossController2D capturedBoss;
     private float riseSpeed;
     private float riseHeight;
     private float captureDelay;
-
     private Vector3 startPosition;
     private bool isRising = false;
     private float captureTime;
+    private bool isBoss = false;
 
     public void Initialize(GameObject enemy, float speed, float height, float delay)
     {
         capturedEnemy = enemy;
+        capturedBoss = null;
+        isBoss = false;
         riseSpeed = speed;
         riseHeight = height;
         captureDelay = delay;
-
         startPosition = transform.position;
         captureTime = Time.time;
-
         Debug.Log($"[圓球] 初始化，捕捉敵人：{enemy.name}");
-
         if (capturedEnemy != null)
         {
             DisableEnemy();
             capturedEnemy.transform.SetParent(transform);
             capturedEnemy.transform.localPosition = Vector3.zero;
         }
+        StartCoroutine(AppearAnimation());
+    }
 
+    // 【新增】Boss 初始化方法
+    public void InitializeBoss(GameObject boss, float speed, float height, float delay)
+    {
+        capturedEnemy = null;
+        capturedBoss = boss.GetComponent<BossController2D>();
+        isBoss = true;
+        riseSpeed = speed;
+        riseHeight = height;
+        captureDelay = delay;
+        startPosition = transform.position;
+        captureTime = Time.time;
+        Debug.Log($"[圓球] 初始化，捕捉Boss：{boss.name}");
+        if (capturedBoss != null)
+        {
+            DisableBoss(boss);
+            boss.transform.SetParent(transform);
+            boss.transform.localPosition = Vector3.zero;
+        }
         StartCoroutine(AppearAnimation());
     }
 
@@ -41,15 +61,13 @@ public class CaptureBubble : MonoBehaviour
             isRising = true;
             Debug.Log("[圓球] 開始上升");
         }
-
         if (isRising)
         {
             transform.position += Vector3.up * riseSpeed * Time.deltaTime;
-
             if (transform.position.y >= startPosition.y + riseHeight)
             {
                 Debug.Log("[圓球] 達到目標高度，準備銷毀");
-                DestroyBubbleAndEnemy();
+                DestroyBubbleAndTarget();
             }
         }
     }
@@ -57,20 +75,17 @@ public class CaptureBubble : MonoBehaviour
     void DisableEnemy()
     {
         if (capturedEnemy == null) return;
-
         Rigidbody2D rb = capturedEnemy.GetComponent<Rigidbody2D>();
         if (rb != null)
         {
             rb.velocity = Vector2.zero;
             rb.bodyType = RigidbodyType2D.Kinematic;
         }
-
         Collider2D[] colliders = capturedEnemy.GetComponents<Collider2D>();
         foreach (var col in colliders)
         {
             col.enabled = false;
         }
-
         MonoBehaviour[] scripts = capturedEnemy.GetComponents<MonoBehaviour>();
         foreach (var script in scripts)
         {
@@ -81,18 +96,41 @@ public class CaptureBubble : MonoBehaviour
                 script.enabled = false;
             }
         }
-
         Debug.Log($"[捕捉系統] 已禁用敵人組件：{capturedEnemy.name}");
+    }
+
+    // 【新增】禁用Boss的方法
+    void DisableBoss(GameObject boss)
+    {
+        if (boss == null) return;
+        Rigidbody2D rb = boss.GetComponent<Rigidbody2D>();
+        if (rb != null)
+        {
+            rb.velocity = Vector2.zero;
+            rb.bodyType = RigidbodyType2D.Kinematic;
+        }
+        Collider2D[] colliders = boss.GetComponents<Collider2D>();
+        foreach (var col in colliders)
+        {
+            col.enabled = false;
+        }
+        MonoBehaviour[] scripts = boss.GetComponents<MonoBehaviour>();
+        foreach (var script in scripts)
+        {
+            if (script != null && !script.GetType().Name.Equals("CaptureBubble"))
+            {
+                script.enabled = false;
+            }
+        }
+        Debug.Log($"[捕捉系統] 已禁用Boss組件：{boss.name}");
     }
 
     IEnumerator AppearAnimation()
     {
         Vector3 targetScale = transform.localScale;
         transform.localScale = Vector3.zero;
-
         float duration = 0.3f;
         float elapsed = 0f;
-
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
@@ -100,11 +138,10 @@ public class CaptureBubble : MonoBehaviour
             transform.localScale = Vector3.Lerp(Vector3.zero, targetScale, t);
             yield return null;
         }
-
         transform.localScale = targetScale;
     }
 
-    void DestroyBubbleAndEnemy()
+    void DestroyBubbleAndTarget()
     {
         StartCoroutine(DisappearAnimation());
     }
@@ -114,13 +151,11 @@ public class CaptureBubble : MonoBehaviour
         float duration = 0.2f;
         float elapsed = 0f;
         Vector3 startScale = transform.localScale;
-
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
             float t = elapsed / duration;
             transform.localScale = Vector3.Lerp(startScale, Vector3.zero, t);
-
             SpriteRenderer sr = GetComponent<SpriteRenderer>();
             if (sr != null)
             {
@@ -128,16 +163,19 @@ public class CaptureBubble : MonoBehaviour
                 c.a = 1f - t;
                 sr.color = c;
             }
-
             yield return null;
         }
-
+        // 【修改】根據捕捉的是敵人還是Boss分別處理
         if (capturedEnemy != null)
         {
             Debug.Log($"[捕捉系統] 敵人已被消除：{capturedEnemy.name}");
             Destroy(capturedEnemy);
         }
-
+        else if (capturedBoss != null)
+        {
+            Debug.Log($"[捕捉系統] Boss已被消除");
+            capturedBoss.OnCaptured(); // 調用Boss的捕捉事件
+        }
         Destroy(gameObject);
     }
 
@@ -146,6 +184,14 @@ public class CaptureBubble : MonoBehaviour
         if (capturedEnemy != null)
         {
             Destroy(capturedEnemy);
+        }
+        else if (capturedBoss != null)
+        {
+            GameObject bossGO = capturedBoss.gameObject;
+            if (bossGO != null)
+            {
+                Destroy(bossGO);
+            }
         }
     }
 }

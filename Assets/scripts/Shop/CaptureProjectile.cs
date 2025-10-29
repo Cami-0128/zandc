@@ -44,7 +44,6 @@ public class CaptureProjectile : MonoBehaviour
 
         spriteRenderer = GetComponent<SpriteRenderer>();
 
-        // 確認碰撞體設置
         BoxCollider2D col = GetComponent<BoxCollider2D>();
         if (col != null)
         {
@@ -55,7 +54,6 @@ public class CaptureProjectile : MonoBehaviour
             Debug.LogError("[射線初始化] 找不到 BoxCollider2D！");
         }
 
-        // 確認 Rigidbody2D
         Rigidbody2D rb = GetComponent<Rigidbody2D>();
         if (rb == null)
         {
@@ -67,24 +65,20 @@ public class CaptureProjectile : MonoBehaviour
     {
         if (hasHit) return;
 
-        // 移動
         float moveAmount = speed * Time.deltaTime;
         transform.position += Vector3.right * direction * moveAmount;
         traveledDistance += moveAmount;
 
-        // 更新視覺
         if (lineRenderer != null)
         {
             lineRenderer.SetPosition(1, transform.position);
         }
 
-        // 每 0.5 秒輸出一次位置
         if (Time.frameCount % 30 == 0)
         {
             Debug.Log($"[射線移動] 當前位置：{transform.position}，已移動：{traveledDistance:F2}");
         }
 
-        // 超過最大距離
         if (traveledDistance >= maxDistance)
         {
             Debug.Log($"[射線] 已飛行 {traveledDistance:F2} 單位，超過最大距離 {maxDistance}，銷毀");
@@ -92,13 +86,24 @@ public class CaptureProjectile : MonoBehaviour
         }
     }
 
-    // ⭐ 最重要：Trigger 碰撞檢測
+    // ⭐ Trigger 碰撞檢測
     void OnTriggerEnter2D(Collider2D other)
     {
         Debug.Log($"[射線 Trigger] ⚡ 碰到物件！名稱：{other.gameObject.name}，Tag：{other.gameObject.tag}，Layer：{LayerMask.LayerToName(other.gameObject.layer)}");
 
         if (hasHit) return;
 
+        // 【新增】Boss 捕捉判斷
+        if (other.gameObject.CompareTag("Boss"))
+        {
+            Debug.Log($"[射線] ✅ Boss Tag 匹配成功！開始捕捉：{other.gameObject.name}");
+            hasHit = true;
+            CaptureBoss(other.gameObject);
+            Destroy(gameObject, 0.1f);
+            return;
+        }
+
+        // 普通敵人捕捉
         if (other.gameObject.CompareTag("Enemy") || other.gameObject.CompareTag("Enemy1"))
         {
             Debug.Log($"[射線] ✅ Tag 匹配成功！開始捕捉：{other.gameObject.name}");
@@ -119,6 +124,16 @@ public class CaptureProjectile : MonoBehaviour
 
         if (hasHit) return;
 
+        // 【新增】Boss 捕捉判斷
+        if (collision.gameObject.CompareTag("Boss"))
+        {
+            Debug.Log($"[射線 Collision] ✅ Boss 匹配成功！");
+            hasHit = true;
+            CaptureBoss(collision.gameObject);
+            Destroy(gameObject, 0.1f);
+            return;
+        }
+
         if (collision.gameObject.CompareTag("Enemy") || collision.gameObject.CompareTag("Enemy1"))
         {
             Debug.Log($"[射線 Collision] ✅ 匹配成功！");
@@ -126,6 +141,31 @@ public class CaptureProjectile : MonoBehaviour
             CaptureEnemy(collision.gameObject);
             Destroy(gameObject, 0.1f);
         }
+    }
+
+    // 【新增】捕捉Boss的方法
+    void CaptureBoss(GameObject boss)
+    {
+        Debug.Log($"[捕捉技能] 🎯 成功捕捉Boss：{boss.name}");
+
+        GameObject bubble;
+
+        if (bubblePrefab != null)
+        {
+            bubble = Instantiate(bubblePrefab, boss.transform.position, Quaternion.identity);
+        }
+        else
+        {
+            bubble = CreateDefaultBubble(boss.transform.position);
+        }
+
+        CaptureBubble bubbleScript = bubble.GetComponent<CaptureBubble>();
+        if (bubbleScript == null)
+        {
+            bubbleScript = bubble.AddComponent<CaptureBubble>();
+        }
+
+        bubbleScript.InitializeBoss(boss, bubbleRiseSpeed, bubbleRiseHeight, captureDelay);
     }
 
     void CaptureEnemy(GameObject enemy)

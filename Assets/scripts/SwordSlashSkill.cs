@@ -19,9 +19,17 @@ public class SwordSlashSkill : MonoBehaviour
     public float cooldown = 0.5f;
     public KeyCode slashKey = KeyCode.W;
 
-    [Header("傷害設置")]
-    public float swordDamage = 30f;
-    public LayerMask enemyLayer;
+    [Header("【新增】傷害設置（可在Inspector調整）")]
+    [Tooltip("對普通敵人的傷害")]
+    public float normalEnemyDamage = 30f;
+    [Tooltip("對Boss的傷害")]
+    public float bossDamage = 50f;
+
+    [Header("【新增】攻擊檢測（使用物理OverlapCircle）")]
+    [Tooltip("劍的攻擊範圍半徑")]
+    public float slashDetectionRadius = 1f;
+    [Tooltip("用於檢測的LayerMask（建議選擇Enemy和Boss層）")]
+    public LayerMask detectionLayerMask = -1;
 
     [Header("殘影設定")]
     public bool enableTrail = true;
@@ -35,7 +43,7 @@ public class SwordSlashSkill : MonoBehaviour
 
     [Header("軸心調整")]
     [Range(0f, 1f)]
-    public float pivotOffsetRatio = 0.95f; // 0.95 表示更靠近劍尾
+    public float pivotOffsetRatio = 0.95f;
 
     private bool isSlashing = false;
     private float slashTimer = 0f;
@@ -43,10 +51,11 @@ public class SwordSlashSkill : MonoBehaviour
     private SlashPhase currentPhase = SlashPhase.None;
     private Vector3 originalSwordLocalPosition;
     private SpriteRenderer swordSpriteRenderer;
-    private Collider2D swordCollider;
-    private HashSet<GameObject> hitEnemies = new HashSet<GameObject>();
     private PlayerController2D playerController;
     private AudioSource audioSource;
+
+    // 【新增】本次揮劍已擊中的敵人集合
+    private HashSet<GameObject> hitThisSlash = new HashSet<GameObject>();
 
     private enum SlashPhase { None, SlashingDown, Holding, Returning }
 
@@ -79,27 +88,25 @@ public class SwordSlashSkill : MonoBehaviour
 
     void InitializeSword()
     {
-        if (swordObject == null) return;
+        if (swordObject == null)
+        {
+            Debug.LogError("[SwordSlashSkill] 劍物件未設定！");
+            return;
+        }
 
-        // 設定旋轉軸心在劍柄(尾端) - 使用可調整的比例
         SpriteRenderer sr = swordObject.GetComponent<SpriteRenderer>();
         if (sr != null && sr.sprite != null)
         {
-            // 計算劍柄位置 (使用 pivotOffsetRatio 來更精確地定位劍尾)
             Bounds bounds = sr.bounds;
-            // pivotOffsetRatio = 0.95 表示軸心點在距離底部 95% 的位置（更靠近劍尾）
             Vector3 pivotOffset = new Vector3(0, -bounds.extents.y * pivotOffsetRatio, 0);
 
-            // 創建一個父物件作為旋轉軸心
             GameObject pivotObject = new GameObject("SwordPivot");
             pivotObject.transform.SetParent(transform);
             pivotObject.transform.localPosition = swordObject.transform.localPosition;
 
-            // 將劍設為 pivot 的子物件
             swordObject.transform.SetParent(pivotObject.transform);
             swordObject.transform.localPosition = pivotOffset;
 
-            // 更新引用
             originalSwordLocalPosition = pivotObject.transform.localPosition;
             swordObject = pivotObject;
         }
@@ -109,29 +116,8 @@ public class SwordSlashSkill : MonoBehaviour
         }
 
         swordSpriteRenderer = swordObject.GetComponentInChildren<SpriteRenderer>();
-        swordCollider = swordObject.GetComponentInChildren<Collider2D>();
 
-        if (swordCollider == null)
-        {
-            GameObject swordChild = swordObject.transform.childCount > 0 ?
-                swordObject.transform.GetChild(0).gameObject : swordObject;
-            BoxCollider2D boxCollider = swordChild.AddComponent<BoxCollider2D>();
-            boxCollider.isTrigger = true;
-            swordCollider = boxCollider;
-        }
-        else
-        {
-            swordCollider.isTrigger = true;
-        }
-        swordCollider.enabled = false;
-
-        GameObject colliderObject = swordCollider.gameObject;
-        SwordCollisionHandler collisionHandler = colliderObject.GetComponent<SwordCollisionHandler>();
-        if (collisionHandler == null)
-        {
-            collisionHandler = colliderObject.AddComponent<SwordCollisionHandler>();
-        }
-        collisionHandler.skill = this;
+        Debug.Log("[SwordSlashSkill] 劍已初始化（使用OverlapCircle檢測）");
     }
 
     void Update()
@@ -160,13 +146,11 @@ public class SwordSlashSkill : MonoBehaviour
 
         if (playerController.LastHorizontalDirection == -1)
         {
-            // 角色向左,劍握成 \ (120度)
             newLocalPosition.x = -Mathf.Abs(originalSwordLocalPosition.x);
             swordObject.transform.localEulerAngles = new Vector3(0, 0, 120f);
         }
         else
         {
-            // 角色向右,劍握成 / (60度)
             newLocalPosition.x = Mathf.Abs(originalSwordLocalPosition.x);
             swordObject.transform.localEulerAngles = new Vector3(0, 0, 60f);
         }
@@ -197,12 +181,7 @@ public class SwordSlashSkill : MonoBehaviour
         slashTimer = 0f;
         currentPhase = SlashPhase.SlashingDown;
         lastSlashTime = Time.time;
-        hitEnemies.Clear();
-
-        if (swordCollider != null)
-        {
-            swordCollider.enabled = true;
-        }
+        hitThisSlash.Clear();
 
         if (audioSource != null && slashSound != null)
         {
@@ -245,6 +224,9 @@ public class SwordSlashSkill : MonoBehaviour
             float easedProgress = 1f - Mathf.Pow(1f - progress, 3f);
             swordObject.transform.localEulerAngles = GetSlashRotation(easedProgress);
 
+            // 【新增】在揮劍下降時進行碰撞檢測
+            DetectSlashHits();
+
             if (enableTrail && progress % (1f / trailCount) < Time.deltaTime / slashDownDuration)
             {
                 CreateTrail();
@@ -272,18 +254,63 @@ public class SwordSlashSkill : MonoBehaviour
             slashTimer = 0f;
             UpdateSwordPosition();
 
-            if (swordCollider != null)
-            {
-                swordCollider.enabled = false;
-            }
-
             Debug.Log("[SwordSlashSkill] 揮劍結束！");
         }
         else
         {
-            // 使用相同的 easing 函數，但是逆向進行
             float easedProgress = 1f - Mathf.Pow(1f - progress, 3f);
             swordObject.transform.localEulerAngles = GetReturnRotation(easedProgress);
+        }
+    }
+
+    // 【核心方法】使用OverlapCircle檢測攻擊範圍內的敵人
+    void DetectSlashHits()
+    {
+        if (swordObject == null) return;
+
+        Vector3 swordPos = swordObject.transform.position;
+
+        // 使用OverlapCircle檢測範圍內的所有碰撞體
+        Collider2D[] hitColliders = Physics2D.OverlapCircleAll(swordPos, slashDetectionRadius, detectionLayerMask);
+
+        foreach (Collider2D col in hitColliders)
+        {
+            // 跳過已經擊中過的敵人
+            if (hitThisSlash.Contains(col.gameObject))
+                continue;
+
+            // 跳過玩家自己
+            if (col.CompareTag("Player"))
+                continue;
+
+            // 檢測Boss
+            BossController2D boss = col.GetComponent<BossController2D>();
+            if (boss != null)
+            {
+                hitThisSlash.Add(col.gameObject);
+                boss.TakeDamage(bossDamage, "PlayerSword");
+                Debug.Log($"[SwordSlashSkill] ✅ 劍擊中Boss！造成 {bossDamage} 點傷害");
+
+                if (audioSource != null && hitSound != null)
+                {
+                    audioSource.PlayOneShot(hitSound);
+                }
+                continue;
+            }
+
+            // 檢測普通敵人
+            Enemy enemy = col.GetComponent<Enemy>();
+            if (enemy != null)
+            {
+                hitThisSlash.Add(col.gameObject);
+                enemy.TakeDamage(normalEnemyDamage, "PlayerSword");
+                Debug.Log($"[SwordSlashSkill] ✅ 劍擊中敵人！造成 {normalEnemyDamage} 點傷害");
+
+                if (audioSource != null && hitSound != null)
+                {
+                    audioSource.PlayOneShot(hitSound);
+                }
+            }
         }
     }
 
@@ -291,13 +318,11 @@ public class SwordSlashSkill : MonoBehaviour
     {
         if (playerController != null && playerController.LastHorizontalDirection == -1)
         {
-            // 角色向左: 從 120° 到 240° (順時針)
             float angle = Mathf.Lerp(120f, 240f, progress);
             return new Vector3(0, 0, angle);
         }
         else
         {
-            // 角色向右: 從 60° (/) 順時針到 -60° (\)
             float angle = Mathf.Lerp(60f, -60f, progress);
             return new Vector3(0, 0, angle);
         }
@@ -307,12 +332,10 @@ public class SwordSlashSkill : MonoBehaviour
     {
         if (playerController != null && playerController.LastHorizontalDirection == -1)
         {
-            // 角色向左: 240°
             return new Vector3(0, 0, 240f);
         }
         else
         {
-            // 角色向右: 300° (也就是 -60°)
             return new Vector3(0, 0, 300f);
         }
     }
@@ -321,13 +344,11 @@ public class SwordSlashSkill : MonoBehaviour
     {
         if (playerController != null && playerController.LastHorizontalDirection == -1)
         {
-            // 角色向左: 從 240° 逆向回到 120° (沿著原本軌跡返回)
             float angle = Mathf.Lerp(240f, 120f, progress);
             return new Vector3(0, 0, angle);
         }
         else
         {
-            // 角色向右: 從 -60° (300°) 逆向回到 60° (沿著原本軌跡返回)
             float angle = Mathf.Lerp(-60f, 60f, progress);
             return new Vector3(0, 0, angle);
         }
@@ -356,43 +377,6 @@ public class SwordSlashSkill : MonoBehaviour
 
         SwordTrailFade fade = trail.AddComponent<SwordTrailFade>();
         fade.fadeDuration = trailFadeDuration;
-    }
-
-    public void OnSwordHitEnemy(GameObject enemy)
-    {
-        if (hitEnemies.Contains(enemy))
-        {
-            return;
-        }
-
-        hitEnemies.Add(enemy);
-
-        Enemy enemyScript = enemy.GetComponent<Enemy>();
-        if (enemyScript != null)
-        {
-            enemyScript.TakeDamage(swordDamage, "PlayerSword");
-
-            if (audioSource != null && hitSound != null)
-            {
-                audioSource.PlayOneShot(hitSound);
-            }
-        }
-    }
-}
-
-public class SwordCollisionHandler : MonoBehaviour
-{
-    public SwordSlashSkill skill;
-
-    void OnTriggerEnter2D(Collider2D other)
-    {
-        if (other.CompareTag("Enemy") || other.CompareTag("Enemy1"))
-        {
-            if (skill != null)
-            {
-                skill.OnSwordHitEnemy(other.gameObject);
-            }
-        }
     }
 }
 

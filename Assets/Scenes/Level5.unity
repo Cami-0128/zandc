@@ -1943,7 +1943,7 @@ MonoBehaviour:
   enablePlayerTracking: 1
   maxHealth: 10000
   healthBar: {fileID: 1802716224}
-  jumpForceVertical: 6
+  jumpForceVertical: 7
   jumpForceHorizontalMax: 3
   jumpCooldown: 0.5
   groundCheckRadius: 1.1
@@ -1956,6 +1956,9 @@ MonoBehaviour:
   attackCooldown: 3
   hazardZonePrefab: {fileID: 4522345290748097493, guid: 0562bbd418452be4389385fb8254f040, type: 3}
   hazardCooldown: 1.5
+  swordDamage: 30
+  magicBulletDamage: 50
+  heavyBulletDamage: 75
 --- !u!212 &349197397
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -4294,6 +4297,7 @@ GameObject:
   m_Component:
   - component: {fileID: 870451725}
   - component: {fileID: 870451726}
+  - component: {fileID: 870451727}
   m_Layer: 8
   m_Name: sword
   m_TagString: Untagged
@@ -4368,6 +4372,32 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!61 &870451727
+BoxCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 870451724}
+  m_Enabled: 1
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IsTrigger: 1
+  m_UsedByEffector: 0
+  m_UsedByComposite: 0
+  m_Offset: {x: 0, y: 0}
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0.5, y: 0.5}
+    oldSize: {x: 1, y: 1}
+    newSize: {x: 1, y: 1}
+    adaptiveTilingThreshold: 0.5
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  serializedVersion: 2
+  m_Size: {x: 1, y: 1}
+  m_EdgeRadius: 0
 --- !u!1 &929383924
 GameObject:
   m_ObjectHideFlags: 0
@@ -6509,10 +6539,12 @@ MonoBehaviour:
   returnDuration: 0.1
   cooldown: 0.5
   slashKey: 119
-  swordDamage: 30
-  enemyLayer:
+  normalEnemyDamage: 30
+  bossDamage: 50
+  slashDetectionRadius: 1
+  detectionLayerMask:
     serializedVersion: 2
-    m_Bits: 128
+    m_Bits: 4294967295
   enableTrail: 1
   trailCount: 5
   trailColor: {r: 0.7, g: 0.7, b: 0.7, a: 0.5}
@@ -6550,6 +6582,18 @@ MonoBehaviour:
   maxHealth: 100
   currentHealth: 0
   invincibleCooldown: 0.5
+--- !u!114 &1320464353
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 529941144}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 362ff585dbd775c4ea5daff7bf46484c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1331268943
 GameObject:
   m_ObjectHideFlags: 0
