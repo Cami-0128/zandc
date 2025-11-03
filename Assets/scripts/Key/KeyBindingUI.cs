@@ -1,100 +1,110 @@
-using System.Collections;
+ï»¿using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
 /// <summary>
-/// «öÁä³]©w UI ¬É­±±±¨î¾¹
+/// æŒ‰éµç¶å®š UI ç®¡ç†å™¨
 /// </summary>
 public class KeyBindingUI : MonoBehaviour
 {
-    [Header("UI °Ñ¦Ò")]
-    [SerializeField] private GameObject keyBindingPanel;
-    [SerializeField] private Transform buttonContainer;
-    [SerializeField] private GameObject keyBindingButtonPrefab;
-    [SerializeField] private Button resetButton;
-    [SerializeField] private Button closeButton;
-    [SerializeField] private GameObject waitingForKeyPanel;
-    [SerializeField] private TextMeshProUGUI waitingText;
+    [Header("UI åƒè€ƒ")]
+    public GameObject keyBindingPanel;
+    public Transform buttonContainer;
+    public GameObject keyBindingButtonPrefab;
+    public Button resetButton;
+    public Button closeButton;
+    public GameObject waitingForKeyPanel;
+    public TextMeshProUGUI waitingText;
+
+    [Header("æµç¨‹æ§åˆ¶")]
+    public StartManger startManager;
 
     private KeyBindingManager.ActionType currentWaitingAction;
     private bool isWaitingForKey = false;
+    private bool isInitialized = false;
 
     void Start()
     {
-        Debug.Log("[KeyBindingUI] ªì©l¤Æ¶}©l");
-
-        // ³]¸m«ö¶s¨Æ¥ó
-        if (resetButton != null)
-            resetButton.onClick.AddListener(ResetAllBindings);
-        else
-            Debug.LogError("[KeyBindingUI] ResetButton ¬O null!");
-
-        if (closeButton != null)
-            closeButton.onClick.AddListener(ClosePanel);
-        else
-            Debug.LogError("[KeyBindingUI] CloseButton ¬O null!");
-
-        // ªì©l¤Æ¬É­±
-        CreateKeyBindingButtons();
-
-        // ¹CÀ¸¶}©l®ÉÅã¥Ü³]©w¬É­±
-        ShowPanel();
+        InitializeUI();
     }
 
     /// <summary>
-    /// ³Ğ«Ø©Ò¦³«öÁä³]©w«ö¶s
+    /// åˆå§‹åŒ– UI (åªåŸ·è¡Œä¸€æ¬¡)
     /// </summary>
-    void CreateKeyBindingButtons()
+    void InitializeUI()
     {
-        if (buttonContainer == null)
-        {
-            Debug.LogError("[KeyBindingUI] Button Container ¬O null!");
-            return;
-        }
+        if (isInitialized) return;
 
+        Debug.Log("[KeyBindingUI] ========== åˆå§‹åŒ–é–‹å§‹ ==========");
+
+        // æª¢æŸ¥å¿…è¦çµ„ä»¶
         if (keyBindingButtonPrefab == null)
         {
-            Debug.LogError("[KeyBindingUI] KeyBindingButton Prefab ¬O null!");
+            Debug.LogError("[KeyBindingUI] âŒ Prefab æ˜¯ null!");
             return;
         }
 
-        if (KeyBindingManager.Instance == null)
+        // è¨­ç½®æŒ‰éˆ•äº‹ä»¶
+        if (resetButton != null)
         {
-            Debug.LogError("[KeyBindingUI] KeyBindingManager.Instance ¬O null!");
+            resetButton.onClick.RemoveAllListeners();
+            resetButton.onClick.AddListener(ResetAllBindings);
+        }
+
+        if (closeButton != null)
+        {
+            closeButton.onClick.RemoveAllListeners();
+            closeButton.onClick.AddListener(ClosePanel);
+        }
+
+        // å‰µå»ºæŒ‰éµæŒ‰éˆ•
+        CreateKeyBindingButtons();
+
+        isInitialized = true;
+
+        Debug.Log("[KeyBindingUI] ========== åˆå§‹åŒ–å®Œæˆ ==========");
+    }
+
+    void CreateKeyBindingButtons()
+    {
+        if (buttonContainer == null || KeyBindingManager.Instance == null)
+        {
+            Debug.LogError("[KeyBindingUI] ButtonContainer æˆ– KeyBindingManager æ˜¯ null!");
             return;
         }
 
-        // ²M°£²{¦³«ö¶s
+        // æ¸…é™¤ç¾æœ‰æŒ‰éˆ•
         foreach (Transform child in buttonContainer)
         {
             Destroy(child.gameObject);
         }
 
-        // ¬°¨C­Ó°Ê§@³Ğ«Ø«ö¶s
         var actions = KeyBindingManager.Instance.GetAllActions();
-        Debug.Log($"[KeyBindingUI] ¶}©l³Ğ«Ø {actions.Length} ­Ó«ö¶s");
+        Debug.Log($"[KeyBindingUI] å‰µå»º {actions.Length} å€‹æŒ‰éˆ•");
 
         foreach (var action in actions)
         {
             GameObject buttonObj = Instantiate(keyBindingButtonPrefab, buttonContainer);
-            KeyBindingButton buttonScript = buttonObj.GetComponent<KeyBindingButton>();
+            buttonObj.SetActive(true);
 
+            KeyBindingButton buttonScript = buttonObj.GetComponent<KeyBindingButton>();
             if (buttonScript != null)
             {
                 buttonScript.Initialize(action, this);
-                Debug.Log($"[KeyBindingUI] ¤w³Ğ«Ø«ö¶s: {KeyBindingManager.Instance.GetActionName(action)}");
+                Debug.Log($"[KeyBindingUI] âœ“ å‰µå»ºæŒ‰éˆ•: {KeyBindingManager.Instance.GetActionName(action)}");
             }
             else
             {
-                Debug.LogError($"[KeyBindingUI] KeyBindingButton Prefab ¤W¨S¦³ KeyBindingButton ¸}¥»!");
+                Debug.LogError("[KeyBindingUI] âŒ Prefab æ²’æœ‰ KeyBindingButton è…³æœ¬!");
             }
         }
+
+        // å¼·åˆ¶æ›´æ–°ä½ˆå±€
+        Canvas.ForceUpdateCanvases();
+        LayoutRebuilder.ForceRebuildLayoutImmediate(buttonContainer as RectTransform);
     }
 
-    /// <summary>
-    /// ¶}©lµ¥«İª±®a«ö¤U·s«öÁä
-    /// </summary>
     public void StartWaitingForKey(KeyBindingManager.ActionType action)
     {
         currentWaitingAction = action;
@@ -102,53 +112,36 @@ public class KeyBindingUI : MonoBehaviour
 
         if (waitingForKeyPanel != null)
             waitingForKeyPanel.SetActive(true);
-        else
-            Debug.LogError("[KeyBindingUI] WaitingForKeyPanel ¬O null!");
 
         if (waitingText != null)
-            waitingText.text = $"½Ğ«ö¤U [{KeyBindingManager.Instance.GetActionName(action)}] ªº·s«öÁä\n\n«ö ESC ¨ú®ø";
+        {
+            string actionName = KeyBindingManager.Instance.GetActionName(action);
+            waitingText.text = $"è«‹æŒ‰ä¸‹ [{actionName}] çš„æ–°æŒ‰éµ\n\næŒ‰ ESC å–æ¶ˆ";
+        }
 
         StartCoroutine(WaitForKeyInput());
     }
 
-    /// <summary>
-    /// µ¥«İª±®a¿é¤J·s«öÁä
-    /// </summary>
     IEnumerator WaitForKeyInput()
     {
-        Debug.Log("[KeyBindingUI] µ¥«İ«öÁä¿é¤J...");
-
         while (isWaitingForKey)
         {
-            // ÀË¬d ESC ¨ú®ø
+            // ESC å–æ¶ˆ
             if (Input.GetKeyDown(KeyCode.Escape))
             {
-                Debug.Log("[KeyBindingUI] ¨ú®ø«öÁä³]©w");
                 CancelWaiting();
                 yield break;
             }
 
-            // ÀË¬d¥ô¦ó«öÁä¿é¤J
+            // åµæ¸¬æ‰€æœ‰æŒ‰éµ
             foreach (KeyCode keyCode in System.Enum.GetValues(typeof(KeyCode)))
             {
                 if (Input.GetKeyDown(keyCode))
                 {
-                    // ±Æ°£¤@¨Ç¤£¾A¦Xªº«öÁä
                     if (IsValidKey(keyCode))
                     {
-                        // ÀË¬d«öÁä¬O§_¤w³Q¨Ï¥Î
-                        if (KeyBindingManager.Instance.IsKeyUsed(keyCode, currentWaitingAction))
-                        {
-                            Debug.LogWarning($"[KeyBindingUI] «öÁä {keyCode} ¤w³Q¨ä¥L¥\¯à¨Ï¥Î!");
-                            // ¦pªG­n¤¹³\­«½Æ¨Ï¥Î,¥i¥H²¾°£³o­Ó§PÂ_
-                        }
-
-                        // ³]©w·s«öÁä
                         KeyBindingManager.Instance.SetKey(currentWaitingAction, keyCode);
-
-                        // §ó·s UI
                         UpdateAllButtons();
-
                         CancelWaiting();
                         yield break;
                     }
@@ -159,25 +152,14 @@ public class KeyBindingUI : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// ÀË¬d«öÁä¬O§_¦³®Ä(±Æ°£ Escape, Mouse µ¥¯S®í«öÁä)
-    /// </summary>
     bool IsValidKey(KeyCode keyCode)
     {
-        // ±Æ°£·Æ¹««öÁä
-        if (keyCode >= KeyCode.Mouse0 && keyCode <= KeyCode.Mouse6)
-            return false;
-
-        // ±Æ°£ Escape
-        if (keyCode == KeyCode.Escape)
-            return false;
-
+        // éæ¿¾æ‰æ»‘é¼ æŒ‰éµå’Œ ESC
+        if (keyCode >= KeyCode.Mouse0 && keyCode <= KeyCode.Mouse6) return false;
+        if (keyCode == KeyCode.Escape) return false;
         return true;
     }
 
-    /// <summary>
-    /// ¨ú®øµ¥«İ¿é¤J
-    /// </summary>
     void CancelWaiting()
     {
         isWaitingForKey = false;
@@ -185,61 +167,63 @@ public class KeyBindingUI : MonoBehaviour
             waitingForKeyPanel.SetActive(false);
     }
 
-    /// <summary>
-    /// §ó·s©Ò¦³«ö¶sÅã¥Ü
-    /// </summary>
     void UpdateAllButtons()
     {
-        if (buttonContainer == null) return;
-
         KeyBindingButton[] buttons = buttonContainer.GetComponentsInChildren<KeyBindingButton>();
         foreach (var button in buttons)
         {
             button.UpdateDisplay();
         }
-
-        Debug.Log("[KeyBindingUI] ¤w§ó·s©Ò¦³«ö¶sÅã¥Ü");
     }
 
-    /// <summary>
-    /// ­«¸m©Ò¦³«öÁä¸j©w
-    /// </summary>
     void ResetAllBindings()
     {
         KeyBindingManager.Instance.ResetToDefault();
         UpdateAllButtons();
-        Debug.Log("[KeyBindingUI] ¤w­«¸m©Ò¦³«öÁä");
+        Debug.Log("[KeyBindingUI] å·²é‡ç½®æ‰€æœ‰æŒ‰éµ");
     }
 
     /// <summary>
-    /// Åã¥Ü³]©w­±ªO
+    /// é¡¯ç¤ºæŒ‰éµè¨­å®šé¢æ¿ (å¾ Info æˆ–å…¶ä»–åœ°æ–¹å‘¼å«)
     /// </summary>
     public void ShowPanel()
     {
         if (keyBindingPanel != null)
         {
             keyBindingPanel.SetActive(true);
-            Debug.Log("[KeyBindingUI] Åã¥Ü³]©w­±ªO");
-        }
-        else
-        {
-            Debug.LogError("[KeyBindingUI] KeyBindingPanel ¬O null!");
+            Debug.Log("[KeyBindingUI] é¡¯ç¤ºæŒ‰éµè¨­å®šé¢æ¿");
         }
 
-        Time.timeScale = 0f; // ¼È°±¹CÀ¸
+        // æš«åœéŠæˆ²
+        Time.timeScale = 0f;
+
+        // ç¦ç”¨ç©å®¶æ§åˆ¶
+        if (startManager != null)
+        {
+            startManager.DisableAllControls();
+        }
     }
 
     /// <summary>
-    /// Ãö³¬³]©w­±ªO
+    /// é—œé–‰æŒ‰éµè¨­å®šé¢æ¿ (å®Œæˆè¨­å®šæ™‚)
     /// </summary>
-    public void ClosePanel()
+    void ClosePanel()
     {
         if (keyBindingPanel != null)
         {
             keyBindingPanel.SetActive(false);
-            Debug.Log("[KeyBindingUI] Ãö³¬³]©w­±ªO");
+            Debug.Log("[KeyBindingUI] é—œé–‰æŒ‰éµè¨­å®šé¢æ¿");
         }
 
-        Time.timeScale = 1f; // «ì´_¹CÀ¸
+        // é€šçŸ¥ StartManager æŒ‰éµè¨­å®šå·²å®Œæˆ
+        if (startManager != null)
+        {
+            startManager.OnKeyBindingComplete();
+        }
+        else
+        {
+            Debug.LogWarning("[KeyBindingUI] StartManager æœªè¨­å®š,ç›´æ¥æ¢å¾©éŠæˆ²");
+            Time.timeScale = 1f;
+        }
     }
 }

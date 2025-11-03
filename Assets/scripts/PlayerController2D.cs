@@ -52,6 +52,9 @@ public class PlayerController2D : MonoBehaviour
 
     public int LastHorizontalDirection { get; private set; } = 1;
 
+    // ========== 按鍵綁定管理器 ==========
+    private KeyBindingManager keyManager;
+
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -62,6 +65,13 @@ public class PlayerController2D : MonoBehaviour
             audioSource.playOnAwake = false;
         }
 
+        // ========== 初始化按鍵管理器 ==========
+        keyManager = KeyBindingManager.Instance;
+        if (keyManager == null)
+        {
+            Debug.LogWarning("[PlayerController2D] KeyBindingManager 未找到，使用傳統按鍵");
+        }
+
         ManaBarUI manaBar = FindObjectOfType<ManaBarUI>();
         if (manaBar != null)
             manaBar.UpdateManaBar(currentMana, maxMana);
@@ -70,7 +80,6 @@ public class PlayerController2D : MonoBehaviour
         Time.timeScale = 1f;
         Debug.Log($"Game Start. 遊戲開始 - 血量: {currentHealth}/{maxHealth}");
         UpdateHealthUI();
-
 
         if (hourglassTimer == null)
         {
@@ -112,7 +121,6 @@ public class PlayerController2D : MonoBehaviour
         Debug.Log("[血量系統] 血量系統已重置");
     }
 
-    // <<<<<<<<<<<<<<<< 這是你主要要用來取代的「魔力回復」函式 <<<<<<<<<<<<<<<<<<<<<<
     public void ManaHeal(int manaAmount)
     {
         if (isDead) return;
@@ -121,11 +129,10 @@ public class PlayerController2D : MonoBehaviour
         currentMana = Mathf.Min(currentMana, maxMana);
         Debug.Log($"ManaHeal called: 回復 {manaAmount} 魔力，從 {oldMana} 到 {currentMana}");
 
-        // 關鍵：同步 PlayerAttack 物件的魔力（這會影響UI顯示）
         PlayerAttack attack = GetComponent<PlayerAttack>();
         if (attack != null)
         {
-            attack.RestoreMana(manaAmount); // 讓PlayerAttack的魔力也一併加值
+            attack.RestoreMana(manaAmount);
             ManaBarUI manaBar = FindObjectOfType<ManaBarUI>();
             if (manaBar != null)
                 manaBar.UpdateManaBar(attack.GetCurrentMana(), attack.maxMana);
@@ -137,7 +144,6 @@ public class PlayerController2D : MonoBehaviour
             Debug.LogWarning("找不到 PlayerAttack 組件");
         }
     }
-    // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     void Update()
     {
@@ -172,9 +178,36 @@ public class PlayerController2D : MonoBehaviour
         }
     }
 
+    // ========== 修改：整合自定義按鍵移動 + 完整回退 ==========
     void Move()
     {
-        float moveX = Input.GetAxisRaw("Horizontal");
+        float moveX = 0f;
+
+        // 優先使用自定義按鍵
+        if (keyManager != null)
+        {
+            if (keyManager.GetKeyPressed(KeyBindingManager.ActionType.MoveLeft))
+            {
+                moveX = -1f;
+            }
+            else if (keyManager.GetKeyPressed(KeyBindingManager.ActionType.MoveRight))
+            {
+                moveX = 1f;
+            }
+        }
+        else
+        {
+            // 完整回退到傳統按鍵 (支援 WASD + 方向鍵)
+            if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow))
+            {
+                moveX = -1f;
+            }
+            else if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow))
+            {
+                moveX = 1f;
+            }
+        }
+
         if (moveX != 0)
         {
             LastHorizontalDirection = (int)Mathf.Sign(moveX);
@@ -182,10 +215,27 @@ public class PlayerController2D : MonoBehaviour
         rb.velocity = new Vector2(moveX * moveSpeed, rb.velocity.y);
     }
 
+    // ========== 修改：整合自定義按鍵跳躍 + 完整回退 ==========
     void HandleJumpInput()
     {
         Time.timeScale = 1f;
-        if (Input.GetKeyDown(KeyCode.Space))
+
+        bool jumpPressed = false;
+
+        // 優先使用自定義按鍵
+        if (keyManager != null)
+        {
+            jumpPressed = keyManager.GetKeyDown(KeyBindingManager.ActionType.Jump);
+        }
+        else
+        {
+            // 完整回退到傳統按鍵 (支援 W + Space + 上方向鍵)
+            jumpPressed = Input.GetKeyDown(KeyCode.W) ||
+                         Input.GetKeyDown(KeyCode.Space) ||
+                         Input.GetKeyDown(KeyCode.UpArrow);
+        }
+
+        if (jumpPressed)
         {
             if (isTouchingWall && !isGrounded && Time.time - lastWallJumpTime >= wallJumpCooldown)
             {

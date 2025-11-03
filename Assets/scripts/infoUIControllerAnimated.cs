@@ -2,16 +2,22 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
 
+/// <summary>
+/// 資訊 UI 控制器 - 帶動畫效果
+/// </summary>
 public class infoUIControllerAnimated : MonoBehaviour
 {
     [Header("UI References")]
-    public GameObject infoPanel;        // 玩法說明面板
-    public Button toggleButton;         // 右上角的按鈕（顯示面板用）
-    public Button closeButton;          // infoPanel上的叉叉按鈕（關閉面板用）
-    public CanvasGroup infoPanelCanvasGroup;  // 用於淡入淡出效果
+    public GameObject infoPanel;
+    public Button toggleButton;
+    public Button closeButton;
+    public CanvasGroup infoPanelCanvasGroup;
 
-    [Header("Settings")]
-    public KeyCode toggleKey = KeyCode.I;  // 切換UI的按鍵，預設為 I
+    [Header("InfoPanel 腳本")]
+    public InfoPanel infoPanelScript; // InfoPanel.cs 腳本
+
+    [Header("按鍵設定")]
+    public KeyBindingUI keyBindingUI; // 按鍵設定 UI
 
     [Header("Animation Settings")]
     public bool useAnimation = true;
@@ -24,28 +30,29 @@ public class infoUIControllerAnimated : MonoBehaviour
 
     public enum AnimationType
     {
-        Fade,              // 淡入淡出
-        Scale,             // 縮放
-        SlideFromTop,      // 從上方滑入
-        SlideFromRight,    // 從右方滑入
-        ScaleWithFade      // 縮放+淡入淡出組合
+        Fade,
+        Scale,
+        SlideFromTop,
+        SlideFromRight,
+        ScaleWithFade
     }
 
     private bool isInfoPanelVisible = false;
     private bool isAnimating = false;
     private Vector3 originalScale;
     private Vector3 originalPosition;
-    private AudioSource audioSource;
+    private AudioSource infoAudioSource;
+    private KeyBindingManager keyManager;
 
     void Start()
     {
-        // 儲存原始數值
+        keyManager = KeyBindingManager.Instance;
+
         if (infoPanel != null)
         {
             originalScale = infoPanel.transform.localScale;
             originalPosition = infoPanel.transform.localPosition;
 
-            // 初始隱藏InfoPanel
             if (useAnimation)
             {
                 SetupInitialState();
@@ -55,31 +62,13 @@ public class infoUIControllerAnimated : MonoBehaviour
                 infoPanel.SetActive(false);
             }
         }
-        else
-        {
-            Debug.LogError("InfoPanel is not assigned!");
-        }
 
-        // 設置按鈕事件
         if (toggleButton != null)
-        {
             toggleButton.onClick.AddListener(ShowInfoPanel);
-        }
-        else
-        {
-            Debug.LogWarning("Toggle button is not assigned!");
-        }
 
         if (closeButton != null)
-        {
             closeButton.onClick.AddListener(HideInfoPanel);
-        }
-        else
-        {
-            Debug.LogWarning("Close button is not assigned!");
-        }
 
-        // 自動獲取或添加CanvasGroup
         if (infoPanelCanvasGroup == null && infoPanel != null)
         {
             infoPanelCanvasGroup = infoPanel.GetComponent<CanvasGroup>();
@@ -89,43 +78,64 @@ public class infoUIControllerAnimated : MonoBehaviour
             }
         }
 
-        // 設置音效
-        audioSource = GetComponent<AudioSource>();
-        if (audioSource == null && (openSound != null || closeSound != null))
+        infoAudioSource = GetComponent<AudioSource>();
+        if (infoAudioSource == null && (openSound != null || closeSound != null))
         {
-            audioSource = gameObject.AddComponent<AudioSource>();
+            infoAudioSource = gameObject.AddComponent<AudioSource>();
+        }
+
+        // 如果有 InfoPanel 腳本,也連接它
+        if (infoPanelScript != null)
+        {
+            infoPanelScript.keyBindingUI = keyBindingUI;
         }
     }
 
     void Update()
     {
-        // 只有在沒有動畫進行時才響應按鍵
         if (isAnimating) return;
 
-        // I鍵只能開啟面板
-        if (Input.GetKeyDown(toggleKey) && !isInfoPanelVisible)
+        bool infoKeyPressed = false;
+
+        // 使用自定義按鍵
+        if (keyManager != null)
         {
-            ShowInfoPanel();
+            infoKeyPressed = keyManager.GetKeyDown(KeyBindingManager.ActionType.OpenInfo);
+        }
+        else
+        {
+            infoKeyPressed = Input.GetKeyDown(KeyCode.I);
         }
 
-        // ESC鍵關閉面板
+        if (infoKeyPressed)
+        {
+            if (!isInfoPanelVisible)
+                ShowInfoPanel();
+            else
+                HideInfoPanel();
+        }
+
         if (Input.GetKeyDown(KeyCode.Escape) && isInfoPanelVisible)
         {
             HideInfoPanel();
         }
     }
 
-    /// <summary>
-    /// 顯示InfoPanel
-    /// </summary>
     public void ShowInfoPanel()
     {
         if (infoPanel == null || isInfoPanelVisible || isAnimating) return;
 
         isInfoPanelVisible = true;
-
-        // 播放開啟音效
         PlaySound(openSound);
+
+        // 暫停遊戲
+        Time.timeScale = 0f;
+
+        // 如果有 InfoPanel 腳本,更新文字
+        if (infoPanelScript != null)
+        {
+            infoPanelScript.UpdateInfoText();
+        }
 
         if (useAnimation)
         {
@@ -139,17 +149,15 @@ public class infoUIControllerAnimated : MonoBehaviour
         Debug.Log("InfoPanel opened");
     }
 
-    /// <summary>
-    /// 隱藏InfoPanel
-    /// </summary>
     public void HideInfoPanel()
     {
         if (infoPanel == null || !isInfoPanelVisible || isAnimating) return;
 
         isInfoPanelVisible = false;
-
-        // 播放關閉音效
         PlaySound(closeSound);
+
+        // 恢復遊戲
+        Time.timeScale = 1f;
 
         if (useAnimation)
         {
@@ -161,6 +169,23 @@ public class infoUIControllerAnimated : MonoBehaviour
         }
 
         Debug.Log("InfoPanel closed");
+    }
+
+    /// <summary>
+    /// 重新設定按鍵 (從 Info Panel 的按鈕呼叫)
+    /// </summary>
+    public void OnReconfigureKeysClicked()
+    {
+        HideInfoPanel();
+
+        if (keyBindingUI != null)
+        {
+            keyBindingUI.ShowPanel();
+        }
+        else
+        {
+            Debug.LogError("[InfoUI] KeyBindingUI 未設定!");
+        }
     }
 
     private void SetupInitialState()
@@ -202,9 +227,7 @@ public class infoUIControllerAnimated : MonoBehaviour
         isAnimating = true;
 
         if (show)
-        {
             infoPanel.SetActive(true);
-        }
 
         switch (animationType)
         {
@@ -230,9 +253,7 @@ public class infoUIControllerAnimated : MonoBehaviour
         }
 
         if (!show)
-        {
             infoPanel.SetActive(false);
-        }
 
         isAnimating = false;
     }
@@ -247,7 +268,7 @@ public class infoUIControllerAnimated : MonoBehaviour
 
         while (elapsed < animationDuration)
         {
-            elapsed += Time.deltaTime;
+            elapsed += Time.unscaledDeltaTime;
             float t = elapsed / animationDuration;
             t = show ? EaseOutQuart(t) : EaseInQuart(t);
 
@@ -266,7 +287,7 @@ public class infoUIControllerAnimated : MonoBehaviour
 
         while (elapsed < animationDuration)
         {
-            elapsed += Time.deltaTime;
+            elapsed += Time.unscaledDeltaTime;
             float t = elapsed / animationDuration;
             t = show ? EaseOutBack(t) : EaseInBack(t);
 
@@ -286,7 +307,7 @@ public class infoUIControllerAnimated : MonoBehaviour
 
         while (elapsed < animationDuration)
         {
-            elapsed += Time.deltaTime;
+            elapsed += Time.unscaledDeltaTime;
             float t = elapsed / animationDuration;
             t = show ? EaseOutQuart(t) : EaseInQuart(t);
 
@@ -299,7 +320,6 @@ public class infoUIControllerAnimated : MonoBehaviour
 
     private IEnumerator AnimateScaleWithFade(bool show)
     {
-        // 同時進行縮放和淡入淡出
         Vector3 startScale = show ? Vector3.zero : originalScale;
         Vector3 endScale = show ? originalScale : Vector3.zero;
         float startAlpha = show ? 0f : 1f;
@@ -308,14 +328,12 @@ public class infoUIControllerAnimated : MonoBehaviour
 
         while (elapsed < animationDuration)
         {
-            elapsed += Time.deltaTime;
+            elapsed += Time.unscaledDeltaTime;
             float t = elapsed / animationDuration;
 
-            // 縮放使用彈性效果
             float scaleT = show ? EaseOutBack(t) : EaseInBack(t);
             infoPanel.transform.localScale = Vector3.Lerp(startScale, endScale, scaleT);
 
-            // 淡入淡出使用平滑效果
             float fadeT = show ? EaseOutQuart(t) : EaseInQuart(t);
             if (infoPanelCanvasGroup != null)
             {
@@ -334,13 +352,12 @@ public class infoUIControllerAnimated : MonoBehaviour
 
     private void PlaySound(AudioClip clip)
     {
-        if (audioSource != null && clip != null)
+        if (infoAudioSource != null && clip != null)
         {
-            audioSource.PlayOneShot(clip);
+            infoAudioSource.PlayOneShot(clip);
         }
     }
 
-    // 緩動函數
     private float EaseOutBack(float t)
     {
         const float c1 = 1.70158f;
@@ -365,17 +382,11 @@ public class infoUIControllerAnimated : MonoBehaviour
         return t * t * t * t;
     }
 
-    /// <summary>
-    /// 獲取InfoPanel當前顯示狀態
-    /// </summary>
     public bool IsInfoPanelVisible()
     {
         return isInfoPanelVisible;
     }
 
-    /// <summary>
-    /// 切換動畫類型（可在遊戲中動態調用）
-    /// </summary>
     public void SetAnimationType(AnimationType newType)
     {
         if (!isAnimating)

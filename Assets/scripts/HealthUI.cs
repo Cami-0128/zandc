@@ -7,32 +7,40 @@ public class HealthUI : MonoBehaviour
     public Slider healthSlider;
     public Text healthText;
 
-    private PlayerAttack playerAttack;
+    private PlayerController2D playerController;
 
     void Start()
     {
-        playerAttack = FindObjectOfType<PlayerAttack>();
+        // 改為從 PlayerController2D 取得血量
+        playerController = FindObjectOfType<PlayerController2D>();
+
+        if (playerController == null)
+        {
+            Debug.LogError("[HealthUI] 找不到 PlayerController2D!");
+            return;
+        }
 
         if (healthSlider != null)
         {
-            healthSlider.maxValue = playerAttack.maxHealth;
+            healthSlider.maxValue = playerController.maxHealth;
+            healthSlider.value = playerController.currentHealth;
         }
     }
 
     void Update()
     {
-        if (playerAttack != null)
+        if (playerController != null)
         {
             // 更新血量條
             if (healthSlider != null)
             {
-                healthSlider.value = playerAttack.currentHealth;
+                healthSlider.value = playerController.currentHealth;
             }
 
             // 更新血量文字
             if (healthText != null)
             {
-                healthText.text = $"{playerAttack.currentHealth:F0}/{playerAttack.maxHealth}";
+                healthText.text = $"{playerController.currentHealth}/{playerController.maxHealth}";
             }
         }
     }

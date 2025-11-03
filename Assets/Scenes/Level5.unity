@@ -5190,7 +5190,7 @@ RectTransform:
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 0.9999999}
+  m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 20, y: 20}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -6466,7 +6466,8 @@ MonoBehaviour:
   toggleButton: {fileID: 250222102}
   closeButton: {fileID: 1342696797}
   infoPanelCanvasGroup: {fileID: 0}
-  toggleKey: 105
+  infoPanelScript: {fileID: 0}
+  keyBindingUI: {fileID: 0}
   useAnimation: 0
   animationDuration: 0.3
   animationType: 0
@@ -6589,7 +6590,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 529941144}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 362ff585dbd775c4ea5daff7bf46484c, type: 3}
   m_Name: 
@@ -8481,7 +8482,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1063903325}
   m_HandleRect: {fileID: 1063903324}
   m_Direction: 2
-  m_Value: 1
+  m_Value: 0
   m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -11376,8 +11377,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   startPanel: {fileID: 142654285}
+  keyBindingPanel: {fileID: 0}
   player: {fileID: 1320464339}
   ball: {fileID: 0}
+  shopManager: {fileID: 0}
 --- !u!4 &1994681888
 Transform:
   m_ObjectHideFlags: 0
@@ -11579,6 +11582,7 @@ MonoBehaviour:
   closeButton: {fileID: 1444262889}
   waitingForKeyPanel: {fileID: 1975996848}
   waitingText: {fileID: 665299508}
+  startManager: {fileID: 1994681887}
 --- !u!1 &2039962653
 GameObject:
   m_ObjectHideFlags: 0

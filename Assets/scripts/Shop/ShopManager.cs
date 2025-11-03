@@ -54,7 +54,20 @@ public class ShopManager : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.S))
+        bool shopKeyPressed = false;
+
+        // 優先使用自定義按鍵
+        if (KeyBindingManager.Instance != null)
+        {
+            shopKeyPressed = KeyBindingManager.Instance.GetKeyDown(KeyBindingManager.ActionType.OpenShop);
+        }
+        else
+        {
+            // 回退到傳統按鍵
+            shopKeyPressed = Input.GetKeyDown(KeyCode.S);
+        }
+
+        if (shopKeyPressed)
         {
             if (player == null || player.isDead) return;
             ToggleShopPanel();

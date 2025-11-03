@@ -10,11 +10,11 @@ public class PlayerAttack : MonoBehaviour
 
     [Header("音效")]
     public AudioClip magicCastSound;
-    private AudioSource audioSource;
+    private AudioSource attackAudioSource;
 
     [Header("主角血量")]
-    public float currentHealth = 100f;
-    public float maxHealth = 100f;
+    public float playerCurrentHealth = 100f;
+    public float playerMaxHealth = 100f;
 
     [Header("魔力系統")]
     public int maxMana = 100;
@@ -34,18 +34,17 @@ public class PlayerAttack : MonoBehaviour
     private float lastManaUseTime;
     private float lastManualRestoreTime = -999f;
 
-    [Header("按鍵設定")]
-    public KeyCode normalAttackKey = KeyCode.M;
-    public KeyCode heavyAttackKey = KeyCode.N;
-
     private PlayerController2D playerController;
     private Coroutine manaRegenCoroutine;
 
+    // ========== 新增：按鍵綁定管理器 ==========
+    private KeyBindingManager keyManager;
+
     void Start()
     {
-        audioSource = GetComponent<AudioSource>();
-        if (audioSource == null)
-            audioSource = gameObject.AddComponent<AudioSource>();
+        attackAudioSource = GetComponent<AudioSource>();
+        if (attackAudioSource == null)
+            attackAudioSource = gameObject.AddComponent<AudioSource>();
 
         if (firePoint == null)
         {
@@ -55,10 +54,17 @@ public class PlayerAttack : MonoBehaviour
             firePoint = firePointObj.transform;
         }
 
-        currentHealth = maxHealth;
+        playerCurrentHealth = playerMaxHealth;
         currentMana = maxMana;
 
         playerController = GetComponent<PlayerController2D>();
+
+        // ========== 初始化按鍵管理器 ==========
+        keyManager = KeyBindingManager.Instance;
+        if (keyManager == null)
+        {
+            Debug.LogWarning("[PlayerAttack] KeyBindingManager 未找到，使用傳統按鍵");
+        }
 
         if (enableManaRegen)
             manaRegenCoroutine = StartCoroutine(ManaRegenerationCoroutine());
@@ -69,10 +75,26 @@ public class PlayerAttack : MonoBehaviour
         if (playerController != null && playerController.isDead)
             return;
 
-        if (Input.GetKeyDown(normalAttackKey))
+        // ========== 修改：整合自定義按鍵攻擊 ==========
+        bool attack1Pressed = false;
+        bool attack2Pressed = false;
+
+        if (keyManager != null)
+        {
+            attack1Pressed = keyManager.GetKeyDown(KeyBindingManager.ActionType.Attack1);
+            attack2Pressed = keyManager.GetKeyDown(KeyBindingManager.ActionType.Attack2);
+        }
+        else
+        {
+            // 回退到傳統按鍵
+            attack1Pressed = Input.GetKeyDown(KeyCode.N);
+            attack2Pressed = Input.GetKeyDown(KeyCode.M);
+        }
+
+        if (attack1Pressed)
             CastNormalAttack();
 
-        if (Input.GetKeyDown(heavyAttackKey))
+        if (attack2Pressed)
             CastHeavyAttack();
 
         if (enableManualRestore && Input.GetKeyDown(manualRestoreKey))
@@ -93,8 +115,8 @@ public class PlayerAttack : MonoBehaviour
 
         ConsumeMana(manaCost);
 
-        if (magicCastSound != null && audioSource != null)
-            audioSource.PlayOneShot(magicCastSound);
+        if (magicCastSound != null && attackAudioSource != null)
+            attackAudioSource.PlayOneShot(magicCastSound);
 
         Vector3 spawnPosition = firePoint.position;
         GameObject bullet = Instantiate(magicBulletPrefab, spawnPosition, Quaternion.identity);
@@ -121,8 +143,8 @@ public class PlayerAttack : MonoBehaviour
 
         ConsumeMana(manaCost);
 
-        if (magicCastSound != null && audioSource != null)
-            audioSource.PlayOneShot(magicCastSound);
+        if (magicCastSound != null && attackAudioSource != null)
+            attackAudioSource.PlayOneShot(magicCastSound);
 
         Vector3 spawnPosition = firePoint.position;
         GameObject bullet = Instantiate(heavyBulletPrefab, spawnPosition, Quaternion.identity);
@@ -130,6 +152,7 @@ public class PlayerAttack : MonoBehaviour
 
         float scale = prefabData ? prefabData.bulletScale : 0.6f;
         bullet.transform.localScale = new Vector3(scale * direction, scale, 1);
+
         HeavyBullet bulletScript = bullet.GetComponent<HeavyBullet>();
         if (bulletScript != null)
         {
@@ -191,4 +214,35 @@ public class PlayerAttack : MonoBehaviour
 
     public int GetCurrentMana() => currentMana;
     public float GetManaPercentage() => (float)currentMana / maxMana;
+
+    public void SetManaRegen(bool enabled)
+    {
+        if (enabled && !enableManaRegen)
+        {
+            enableManaRegen = true;
+            if (manaRegenCoroutine == null)
+                manaRegenCoroutine = StartCoroutine(ManaRegenerationCoroutine());
+        }
+        else if (!enabled && enableManaRegen)
+        {
+            enableManaRegen = false;
+            if (manaRegenCoroutine != null)
+            {
+                StopCoroutine(manaRegenCoroutine);
+                manaRegenCoroutine = null;
+            }
+        }
+    }
+
+    void OnDisable()
+    {
+        if (manaRegenCoroutine != null)
+            StopCoroutine(manaRegenCoroutine);
+    }
+
+    void OnDestroy()
+    {
+        if (manaRegenCoroutine != null)
+            StopCoroutine(manaRegenCoroutine);
+    }
 }

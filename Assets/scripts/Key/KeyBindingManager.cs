@@ -3,33 +3,35 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// 按鍵綁定管理器 - 使用單例模式,管理所有按鍵設定
+/// 按鍵綁定管理器 - 單例模式
 /// </summary>
 public class KeyBindingManager : MonoBehaviour
 {
     public static KeyBindingManager Instance { get; private set; }
 
-    // 定義所有可用的動作類型
+    /// <summary>
+    /// 可綁定的動作類型
+    /// </summary>
     public enum ActionType
     {
-        MoveLeft,
-        MoveRight,
-        Jump,
-        OpenShop,
-        OpenInfo,
-        Attack1,
-        Attack2,
-        Skill1
+        MoveLeft,      // 向左移動
+        MoveRight,     // 向右移動
+        Jump,          // 跳躍
+        OpenShop,      // 開關商店
+        OpenInfo,      // 開關資訊
+        Attack1,       // 攻擊1
+        Attack2,       // 攻擊2
+        Skill1         // 技能1
     }
 
-    // 儲存每個動作對應的按鍵
+    // 按鍵綁定字典
     private Dictionary<ActionType, KeyCode> keyBindings = new Dictionary<ActionType, KeyCode>();
 
     // 預設按鍵設定
     private Dictionary<ActionType, KeyCode> defaultBindings = new Dictionary<ActionType, KeyCode>()
     {
-        { ActionType.MoveLeft, KeyCode.LeftArrow },
-        { ActionType.MoveRight, KeyCode.RightArrow },
+        { ActionType.MoveLeft, KeyCode.A },
+        { ActionType.MoveRight, KeyCode.D },
         { ActionType.Jump, KeyCode.W },
         { ActionType.OpenShop, KeyCode.S },
         { ActionType.OpenInfo, KeyCode.I },
@@ -38,7 +40,7 @@ public class KeyBindingManager : MonoBehaviour
         { ActionType.Skill1, KeyCode.B }
     };
 
-    // 動作的中文顯示名稱
+    // 動作名稱對應 (中文顯示)
     private Dictionary<ActionType, string> actionNames = new Dictionary<ActionType, string>()
     {
         { ActionType.MoveLeft, "向左移動" },
@@ -51,12 +53,12 @@ public class KeyBindingManager : MonoBehaviour
         { ActionType.Skill1, "技能1" }
     };
 
-    // 當按鍵綁定改變時觸發的事件
+    // 按鍵改變事件
     public event Action OnBindingsChanged;
 
     void Awake()
     {
-        // 單例模式設置
+        // 單例模式
         if (Instance == null)
         {
             Instance = this;
@@ -71,121 +73,138 @@ public class KeyBindingManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 從 PlayerPrefs 載入按鍵設定,如果沒有則使用預設值
+    /// 載入按鍵設定 (從 PlayerPrefs 或使用預設值)
     /// </summary>
     void LoadBindings()
     {
-        foreach (ActionType action in Enum.GetValues(typeof(ActionType)))
+        keyBindings.Clear();
+
+        foreach (var action in defaultBindings.Keys)
         {
             string key = "KeyBinding_" + action.ToString();
+
             if (PlayerPrefs.HasKey(key))
             {
-                KeyCode savedKey = (KeyCode)PlayerPrefs.GetInt(key);
-                keyBindings[action] = savedKey;
+                int keyCodeValue = PlayerPrefs.GetInt(key);
+                keyBindings[action] = (KeyCode)keyCodeValue;
             }
             else
             {
                 keyBindings[action] = defaultBindings[action];
             }
         }
+
+        Debug.Log("[KeyBindingManager] 按鍵設定已載入");
     }
 
     /// <summary>
-    /// 儲存所有按鍵設定到 PlayerPrefs
+    /// 儲存按鍵設定到 PlayerPrefs
     /// </summary>
-    public void SaveBindings()
+    void SaveBindings()
     {
         foreach (var binding in keyBindings)
         {
             string key = "KeyBinding_" + binding.Key.ToString();
             PlayerPrefs.SetInt(key, (int)binding.Value);
         }
+
         PlayerPrefs.Save();
-        Debug.Log("[KeyBindingManager] 按鍵設定已保存");
+        Debug.Log("[KeyBindingManager] 按鍵設定已儲存");
     }
 
     /// <summary>
-    /// 獲取指定動作的按鍵代碼
+    /// 設定按鍵
+    /// </summary>
+    public void SetKey(ActionType action, KeyCode key)
+    {
+        keyBindings[action] = key;
+        SaveBindings();
+        OnBindingsChanged?.Invoke();
+        Debug.Log($"[KeyBindingManager] {action} 設定為 {key}");
+    }
+
+    /// <summary>
+    /// 獲取按鍵
     /// </summary>
     public KeyCode GetKeyCode(ActionType action)
     {
-        return keyBindings.ContainsKey(action) ? keyBindings[action] : KeyCode.None;
+        if (keyBindings.ContainsKey(action))
+        {
+            return keyBindings[action];
+        }
+        return KeyCode.None;
     }
 
     /// <summary>
-    /// 設定指定動作的按鍵
-    /// </summary>
-    public void SetKey(ActionType action, KeyCode newKey)
-    {
-        keyBindings[action] = newKey;
-        SaveBindings();
-        OnBindingsChanged?.Invoke();
-        Debug.Log($"[KeyBindingManager] {GetActionName(action)} 設定為: {newKey}");
-    }
-
-    /// <summary>
-    /// 獲取動作的顯示名稱
+    /// 獲取動作名稱
     /// </summary>
     public string GetActionName(ActionType action)
     {
-        return actionNames.ContainsKey(action) ? actionNames[action] : action.ToString();
-    }
-
-    /// <summary>
-    /// 檢查某個按鍵是否已被其他動作使用
-    /// </summary>
-    public bool IsKeyUsed(KeyCode key, ActionType excludeAction)
-    {
-        foreach (var binding in keyBindings)
+        if (actionNames.ContainsKey(action))
         {
-            if (binding.Key != excludeAction && binding.Value == key)
-            {
-                return true;
-            }
+            return actionNames[action];
         }
-        return false;
+        return action.ToString();
     }
 
     /// <summary>
-    /// 重置所有按鍵為預設值
+    /// 重置為預設按鍵
     /// </summary>
     public void ResetToDefault()
     {
-        keyBindings = new Dictionary<ActionType, KeyCode>(defaultBindings);
+        keyBindings.Clear();
+
+        foreach (var binding in defaultBindings)
+        {
+            keyBindings[binding.Key] = binding.Value;
+        }
+
         SaveBindings();
         OnBindingsChanged?.Invoke();
         Debug.Log("[KeyBindingManager] 已重置為預設按鍵");
     }
 
     /// <summary>
-    /// 獲取所有動作類型(用於 UI 顯示)
+    /// 獲取所有動作類型
     /// </summary>
     public ActionType[] GetAllActions()
     {
-        return (ActionType[])Enum.GetValues(typeof(ActionType));
+        return (ActionType[])System.Enum.GetValues(typeof(ActionType));
     }
 
     /// <summary>
-    /// 檢查指定動作的按鍵是否被按下(單次)
+    /// 檢查按鍵是否按下 (替代 Input.GetKeyDown)
     /// </summary>
     public bool GetKeyDown(ActionType action)
     {
-        return Input.GetKeyDown(GetKeyCode(action));
+        if (keyBindings.ContainsKey(action))
+        {
+            return Input.GetKeyDown(keyBindings[action]);
+        }
+        return false;
     }
 
     /// <summary>
-    /// 檢查指定動作的按鍵是否持續按住
+    /// 檢查按鍵是否持續按住 (替代 Input.GetKey)
     /// </summary>
     public bool GetKeyPressed(ActionType action)
     {
-        return Input.GetKey(GetKeyCode(action));
+        if (keyBindings.ContainsKey(action))
+        {
+            return Input.GetKey(keyBindings[action]);
+        }
+        return false;
     }
 
     /// <summary>
-    /// 檢查指定動作的按鍵是否被放開
+    /// 檢查按鍵是否放開 (替代 Input.GetKeyUp)
     /// </summary>
     public bool GetKeyUp(ActionType action)
     {
-        return Input.GetKeyUp(GetKeyCode(action));
+        if (keyBindings.ContainsKey(action))
+        {
+            return Input.GetKeyUp(keyBindings[action]);
+        }
+        return false;
     }
 }

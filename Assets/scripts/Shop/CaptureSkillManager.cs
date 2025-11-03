@@ -72,7 +72,20 @@ public class CaptureSkillManager : MonoBehaviour
         if (skillCount <= 0 || player == null || player.isDead || !player.canControl)
             return;
 
-        if (Input.GetKeyDown(KeyCode.B))
+        bool skillKeyPressed = false;
+
+        // 優先使用自定義按鍵
+        if (KeyBindingManager.Instance != null)
+        {
+            skillKeyPressed = KeyBindingManager.Instance.GetKeyDown(KeyBindingManager.ActionType.Skill1);
+        }
+        else
+        {
+            // 回退到傳統按鍵
+            skillKeyPressed = Input.GetKeyDown(KeyCode.B);
+        }
+
+        if (skillKeyPressed)
         {
             UseSkill();
         }
