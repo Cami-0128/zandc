@@ -6,7 +6,7 @@ using TMPro;
 /// <summary>
 /// 按鍵綁定 UI 管理器
 /// </summary>
-public class KeyBindingUI : MonoBehaviour
+public class KeyBindingUI : MonoBehaviour // 221 203
 {
     [Header("UI 參考")]
     public GameObject keyBindingPanel;
@@ -200,7 +200,7 @@ public class KeyBindingUI : MonoBehaviour
         // 禁用玩家控制
         if (startManager != null)
         {
-            startManager.DisableAllControls();
+            //startManager.DisableAllControls();
         }
     }
 
@@ -218,7 +218,7 @@ public class KeyBindingUI : MonoBehaviour
         // 通知 StartManager 按鍵設定已完成
         if (startManager != null)
         {
-            startManager.OnKeyBindingComplete();
+            //startManager.OnKeyBindingComplete();
         }
         else
         {

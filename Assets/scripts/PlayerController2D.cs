@@ -302,8 +302,19 @@ public class PlayerController2D : MonoBehaviour
         Debug.DrawRay(wallCheck.position, checkRight * wallCheckDistance, Color.red);
     }
 
+    // ========== 修改：添加彈簧邏輯 ==========
     void OnCollisionEnter2D(Collision2D collision)
     {
+        // 檢查是否踩到彈簧
+        Bouncer bouncer = collision.gameObject.GetComponent<Bouncer>();
+        if (bouncer != null)
+        {
+            Debug.Log("[PlayerController2D] 踩到彈簧！");
+            // 彈簧會自己處理彈跳邏輯，玩家這邊只需要記錄
+            return;
+        }
+
+        // 原有的敵人碰撞邏輯
         if (collision.gameObject.CompareTag("Enemy1"))
         {
             Debug.Log("碰到Enemy1，直接死亡！");
@@ -317,6 +328,8 @@ public class PlayerController2D : MonoBehaviour
                 TakeDamage(enemyDamage);
             }
         }
+
+        // 地面碰撞邏輯
         foreach (ContactPoint2D contact in collision.contacts)
         {
             if (contact.normal.y > 0.5f)
