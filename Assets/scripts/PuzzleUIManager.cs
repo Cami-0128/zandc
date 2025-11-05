@@ -6,21 +6,39 @@ using UnityEngine.EventSystems;
 
 /// <summary>
 /// 放在Canvas上，管理問題UI的顯示和互動
-/// 改進版：增強除錯、修正按鈕問題、支援UI縮放
+/// World Space 版本 - UI 跟著方塊移動，不暫停遊戲
 /// </summary>
 public class PuzzleUIManager : MonoBehaviour
 {
     [Header("UI 組件 - 必須拖入")]
     public GameObject puzzlePanel;
     public TextMeshProUGUI questionText;
-    public Button[] answerButtons;  // 最多4個按鈕
+    public Text questionTextLegacy; // 如果使用舊版 Text
+
+    [Header("答案按鈕 - 請拖入 4 個按鈕")]
+    public Button answerButton1;
+    public Button answerButton2;
+    public Button answerButton3;
+    public Button answerButton4;
+
+    [Header("反饋組件")]
     public TextMeshProUGUI feedbackText;
+    public Text feedbackTextLegacy; // 如果使用舊版 Text
     public GameObject feedbackPanel;
 
-    [Header("UI 尺寸設定")]
-    [Tooltip("問題面板的縮放比例 (0.5 = 50%大小, 1 = 100%大小)")]
-    [Range(0.3f, 1.5f)]
-    public float panelScale = 0.6f;
+    [Header("UI 跟隨設定")]
+    [Tooltip("UI 相對於方塊的偏移位置")]
+    public Vector3 uiOffset = new Vector3(0, 2, 0);
+
+    [Tooltip("UI 的縮放大小")]
+    public float uiScale = 0.01f;
+
+    [Header("遊戲控制設定")]
+    [Tooltip("顯示UI時是否暫停遊戲（建議不勾選）")]
+    public bool pauseGameWhenShow = false;
+
+    [Tooltip("顯示UI時是否停止玩家控制")]
+    public bool stopPlayerControl = false;
 
     [Header("音效 (可選)")]
     public AudioClip correctSound;
@@ -35,29 +53,28 @@ public class PuzzleUIManager : MonoBehaviour
     [Header("除錯模式")]
     public bool debugMode = true;
 
+    [Tooltip("啟用 T 鍵測試功能")]
+    public bool enableTestKey = false;
+
     private PuzzleQuestion currentQuestion;
     private PuzzleBlock currentBlock;
     private PlayerController2D playerController;
     private bool isAnswering = false;
+    private Button[] answerButtons;
+    private Transform followTarget; // 要跟隨的目標
+    private Canvas canvas;
 
     void Awake()
     {
-        // 確保 Canvas 設定正確
-        Canvas canvas = GetComponentInParent<Canvas>();
-        if (canvas != null)
-        {
-            if (canvas.renderMode != RenderMode.ScreenSpaceOverlay)
-            {
-                Debug.LogWarning("[PuzzleUI] Canvas 建議設為 Screen Space - Overlay");
-            }
+        // 取得 Canvas
+        canvas = GetComponentInParent<Canvas>();
 
-            // 確保有 GraphicRaycaster
-            if (canvas.GetComponent<GraphicRaycaster>() == null)
-            {
-                canvas.gameObject.AddComponent<GraphicRaycaster>();
-                Debug.Log("[PuzzleUI] 自動添加 GraphicRaycaster");
-            }
-        }
+        // 組合按鈕陣列
+        answerButtons = new Button[4];
+        answerButtons[0] = answerButton1;
+        answerButtons[1] = answerButton2;
+        answerButtons[2] = answerButton3;
+        answerButtons[3] = answerButton4;
     }
 
     void Start()
@@ -76,13 +93,10 @@ public class PuzzleUIManager : MonoBehaviour
         }
         audioSource.playOnAwake = false;
 
-        // 設定面板縮放和隱藏
+        // 隱藏UI
         if (puzzlePanel != null)
         {
-            puzzlePanel.transform.localScale = Vector3.one * panelScale;
             puzzlePanel.SetActive(false);
-            if (debugMode)
-                Debug.Log($"[PuzzleUI] 面板縮放設為 {panelScale}");
         }
 
         if (feedbackPanel != null)
@@ -96,13 +110,50 @@ public class PuzzleUIManager : MonoBehaviour
 
         // 取得玩家控制器
         playerController = FindObjectOfType<PlayerController2D>();
-        if (playerController == null)
+        if (playerController == null && debugMode)
         {
             Debug.LogWarning("[PuzzleUI] 找不到 PlayerController2D");
         }
 
         if (debugMode)
             Debug.Log("========== [PuzzleUI] 初始化完成 ==========");
+    }
+
+    void Update()
+    {
+        // UI 跟隨目標移動
+        if (followTarget != null && puzzlePanel != null && puzzlePanel.activeSelf)
+        {
+            UpdateUIPosition();
+        }
+
+        // 測試用：按 T 鍵手動觸發第一個按鈕
+        if (debugMode && Input.GetKeyDown(KeyCode.T))
+        {
+            if (puzzlePanel != null && puzzlePanel.activeSelf)
+            {
+                Debug.Log("[PuzzleUI] 🧪 測試：手動觸發按鈕 0");
+                OnAnswerSelected(0);
+            }
+        }
+    }
+
+    /// <summary>
+    /// 更新UI位置，使其跟隨目標
+    /// </summary>
+    void UpdateUIPosition()
+    {
+        if (canvas.renderMode == RenderMode.WorldSpace)
+        {
+            // World Space 模式：直接設定世界座標
+            puzzlePanel.transform.position = followTarget.position + uiOffset;
+        }
+        else
+        {
+            // Screen Space 模式：轉換為螢幕座標
+            Vector3 screenPos = Camera.main.WorldToScreenPoint(followTarget.position + uiOffset);
+            puzzlePanel.transform.position = screenPos;
+        }
     }
 
     /// <summary>
@@ -118,39 +169,33 @@ public class PuzzleUIManager : MonoBehaviour
             hasError = true;
         }
 
-        if (questionText == null)
+        if (questionText == null && questionTextLegacy == null)
         {
             Debug.LogError("[PuzzleUI] ❌ QuestionText 未設定！");
             hasError = true;
         }
 
-        if (answerButtons == null || answerButtons.Length == 0)
+        // 檢查按鈕
+        int buttonCount = 0;
+        for (int i = 0; i < answerButtons.Length; i++)
         {
-            Debug.LogError("[PuzzleUI] ❌ AnswerButtons 未設定！");
-            hasError = true;
-        }
-        else
-        {
-            for (int i = 0; i < answerButtons.Length; i++)
+            if (answerButtons[i] != null)
             {
-                if (answerButtons[i] == null)
-                {
-                    Debug.LogWarning($"[PuzzleUI] ⚠️ AnswerButton[{i}] 為空");
-                }
+                buttonCount++;
             }
         }
 
-        if (feedbackText == null)
+        if (buttonCount == 0)
         {
-            Debug.LogWarning("[PuzzleUI] ⚠️ FeedbackText 未設定");
+            Debug.LogError("[PuzzleUI] ❌ AnswerButtons 未設定！請在 Inspector 中拖入按鈕");
+            hasError = true;
+        }
+        else if (debugMode)
+        {
+            Debug.Log($"[PuzzleUI] ✓ 已設定 {buttonCount} 個按鈕");
         }
 
-        if (feedbackPanel == null)
-        {
-            Debug.LogWarning("[PuzzleUI] ⚠️ FeedbackPanel 未設定");
-        }
-
-        if (!hasError)
+        if (!hasError && debugMode)
         {
             Debug.Log("[PuzzleUI] ✓ 所有必要組件已設定");
         }
@@ -169,10 +214,9 @@ public class PuzzleUIManager : MonoBehaviour
             esObj.AddComponent<StandaloneInputModule>();
             Debug.Log("[PuzzleUI] ✓ 自動創建 EventSystem");
         }
-        else
+        else if (debugMode)
         {
-            if (debugMode)
-                Debug.Log("[PuzzleUI] ✓ EventSystem 存在");
+            Debug.Log("[PuzzleUI] ✓ EventSystem 存在");
         }
     }
 
@@ -202,14 +246,14 @@ public class PuzzleUIManager : MonoBehaviour
             });
 
             // 驗證按鈕設定
-            if (!answerButtons[i].interactable)
+            if (!answerButtons[i].interactable && debugMode)
             {
                 Debug.LogWarning($"[PuzzleUI] 按鈕 {i} 的 Interactable 未勾選");
             }
 
             // 檢查按鈕是否有 Image
             Image btnImage = answerButtons[i].GetComponent<Image>();
-            if (btnImage == null)
+            if (btnImage == null && debugMode)
             {
                 Debug.LogWarning($"[PuzzleUI] 按鈕 {i} 沒有 Image 組件，可能無法點擊");
             }
@@ -243,27 +287,46 @@ public class PuzzleUIManager : MonoBehaviour
         currentBlock = block;
         isAnswering = false;
 
-        // 暫停遊戲（使用 unscaled time）
-        Time.timeScale = 0f;
-        if (debugMode)
-            Debug.Log("[PuzzleUI] ⏸️ 遊戲已暫停");
+        // 設定跟隨目標
+        followTarget = block.transform;
 
-        // 停止玩家控制
-        if (playerController != null)
+        // 根據設定決定是否暫停遊戲
+        if (pauseGameWhenShow)
         {
-            playerController.canControl = false;
+            Time.timeScale = 0f;
+            if (debugMode)
+                Debug.Log("[PuzzleUI] ⏸️ 遊戲已暫停");
+        }
+        else if (debugMode)
+        {
+            Debug.Log("[PuzzleUI] ▶️ 遊戲繼續運行");
         }
 
-        // 顯示問題面板
+        // 根據設定決定是否停止玩家控制
+        if (stopPlayerControl && playerController != null)
+        {
+            playerController.canControl = false;
+            if (debugMode)
+                Debug.Log("[PuzzleUI] 🚫 玩家控制已停止");
+        }
+
+        // 顯示並定位問題面板
         puzzlePanel.SetActive(true);
+        puzzlePanel.transform.localScale = Vector3.one * uiScale;
+        UpdateUIPosition();
 
         // 設定問題文字
         if (questionText != null)
         {
             questionText.text = question.questionText;
-            if (debugMode)
-                Debug.Log($"[PuzzleUI] 問題: {question.questionText}");
         }
+        else if (questionTextLegacy != null)
+        {
+            questionTextLegacy.text = question.questionText;
+        }
+
+        if (debugMode)
+            Debug.Log($"[PuzzleUI] 問題: {question.questionText}");
 
         // 設定答案按鈕
         SetupAnswerButtons(question);
@@ -336,7 +399,8 @@ public class PuzzleUIManager : MonoBehaviour
             return;
         }
 
-        Debug.LogWarning($"[PuzzleUI] 按鈕 {button.name} 找不到文字組件");
+        if (debugMode)
+            Debug.LogWarning($"[PuzzleUI] 按鈕 {button.name} 找不到文字組件");
     }
 
     /// <summary>
@@ -412,10 +476,6 @@ public class PuzzleUIManager : MonoBehaviour
         {
             currentBlock.GiveReward();
         }
-        else
-        {
-            Debug.LogWarning("[PuzzleUI] currentBlock 為空");
-        }
 
         // 顯示反饋
         ShowFeedback(currentQuestion.correctMessage, correctColor);
@@ -440,10 +500,6 @@ public class PuzzleUIManager : MonoBehaviour
         {
             currentBlock.ApplyPenalty();
         }
-        else
-        {
-            Debug.LogWarning("[PuzzleUI] currentBlock 為空");
-        }
 
         // 顯示反饋
         ShowFeedback(currentQuestion.wrongMessage, wrongColor);
@@ -464,6 +520,11 @@ public class PuzzleUIManager : MonoBehaviour
             feedbackText.text = message;
             feedbackText.color = color;
         }
+        else if (feedbackTextLegacy != null)
+        {
+            feedbackTextLegacy.text = message;
+            feedbackTextLegacy.color = color;
+        }
 
         if (debugMode)
             Debug.Log($"[PuzzleUI] 顯示反饋: {message}");
@@ -474,8 +535,15 @@ public class PuzzleUIManager : MonoBehaviour
     /// </summary>
     IEnumerator ShowFeedbackAndClose(bool isCorrect)
     {
-        // 使用 unscaled time 因為遊戲已暫停
-        yield return new WaitForSecondsRealtime(feedbackDisplayTime);
+        // 根據是否暫停遊戲使用不同的等待方式
+        if (pauseGameWhenShow)
+        {
+            yield return new WaitForSecondsRealtime(feedbackDisplayTime);
+        }
+        else
+        {
+            yield return new WaitForSeconds(feedbackDisplayTime);
+        }
 
         // 關閉UI
         ClosePuzzle();
@@ -508,10 +576,13 @@ public class PuzzleUIManager : MonoBehaviour
             feedbackPanel.SetActive(false);
 
         // 恢復遊戲
-        Time.timeScale = 1f;
+        if (pauseGameWhenShow)
+        {
+            Time.timeScale = 1f;
+        }
 
         // 恢復玩家控制
-        if (playerController != null)
+        if (stopPlayerControl && playerController != null)
         {
             playerController.canControl = true;
         }
@@ -519,20 +590,6 @@ public class PuzzleUIManager : MonoBehaviour
         // 清除當前問題
         currentQuestion = null;
         currentBlock = null;
-    }
-
-    /// <summary>
-    /// 測試用：按 T 鍵手動觸發第一個按鈕
-    /// </summary>
-    void Update()
-    {
-        if (debugMode && Input.GetKeyDown(KeyCode.T))
-        {
-            if (puzzlePanel != null && puzzlePanel.activeSelf)
-            {
-                Debug.Log("[PuzzleUI] 🧪 測試：手動觸發按鈕 0");
-                OnAnswerSelected(0);
-            }
-        }
+        followTarget = null;
     }
 }

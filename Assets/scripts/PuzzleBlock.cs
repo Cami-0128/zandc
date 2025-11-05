@@ -23,6 +23,7 @@ public class PuzzleBlock : MonoBehaviour
     public AudioClip triggerSound;
 
     private bool hasBeenTriggered = false;
+    private bool hasAnsweredCorrectly = false; // 新增：記錄是否已答對
     private SpriteRenderer spriteRenderer;
     private Color originalColor;
     private AudioSource audioSource;
