@@ -1,5 +1,5 @@
 // ============= Bouncer.cs =============
-// 彈簧物件主要腳本
+// 彈簧物件主要腳本 - 改進版本，含視覺效果和隨機力度
 using System.Collections;
 using UnityEngine;
 
@@ -9,17 +9,24 @@ public class Bouncer : MonoBehaviour
     public float bounceForce = 20f;
     public float bounceUpForce = 25f;
 
+    [Header("=== 隨機力度設定 ===")]
+    public bool enableRandomForce = false;
+    public float minForce = 15f;
+    public float maxForce = 35f;
+
     [Header("=== 使用次數設定 ===")]
     public bool unlimitedUses = true;
     public int maxUses = 5;
     private int currentUses = 0;
 
     [Header("=== 視覺效果設定 ===")]
-    public float compressScale = 0.6f;  // 壓縮時的縮放
-    public float expandScale = 1.2f;     // 反彈時的膨脹
-    public float animationDuration = 0.3f;
-    public bool enableTrail = true;
-    public Color trailColor = new Color(1f, 0.8f, 0f, 0.5f);
+    public float compressScale = 0.5f;  // 壓縮時的縮放
+    public float expandScale = 1.3f;     // 反彈時的膨脹
+    public float animationDuration = 0.4f;
+    public bool enableColorChange = true;
+    public Color compressColor = new Color(1f, 0f, 0f, 1f); // 紅色 - 被壓縮時
+    public Color expandColor = new Color(0f, 1f, 0f, 1f);   // 綠色 - 反彈時
+    public Color normalColor = Color.white;                  // 白色 - 正常
 
     [Header("=== 外觀設定 ===")]
     public Color activeColor = Color.white;
@@ -35,6 +42,9 @@ public class Bouncer : MonoBehaviour
     private Rigidbody2D lastBouncedObject = null;
     private float lastBounceTime = -999f;
     private float bounceCooldown = 0.1f;
+
+    // 記錄上次的力度
+    private float lastBounceForce = 0f;
 
     void Start()
     {
@@ -87,11 +97,15 @@ public class Bouncer : MonoBehaviour
         lastBouncedObject = rb;
         lastBounceTime = Time.time;
 
+        // 計算實際彈跳力度
+        float actualForce = GetBounceForce();
+        lastBounceForce = actualForce;
+
         // 應用彈跳力
         rb.velocity = new Vector2(rb.velocity.x, 0); // 重置 Y 速度
-        rb.velocity += Vector2.up * bounceUpForce;
+        rb.velocity += Vector2.up * actualForce;
 
-        Debug.Log($"[Bouncer] {rb.gameObject.name} 被彈起！力度: {bounceUpForce}");
+        Debug.Log($"[Bouncer] {rb.gameObject.name} 被彈起！力度: {actualForce:F1}");
 
         // 使用次數邏輯
         if (!unlimitedUses)
@@ -109,46 +123,93 @@ public class Bouncer : MonoBehaviour
         UpdateVisuals();
     }
 
+    // 計算彈跳力度
+    float GetBounceForce()
+    {
+        if (enableRandomForce)
+        {
+            return Random.Range(minForce, maxForce);
+        }
+        else
+        {
+            return bounceUpForce;
+        }
+    }
+
     IEnumerator BounceAnimation()
     {
         if (isAnimating) yield break;
         isAnimating = true;
 
         float elapsedTime = 0f;
+        Color originalColor = spriteRenderer.color;
 
-        // 壓縮階段 (下去)
-        while (elapsedTime < animationDuration * 0.5f)
+        // ========== 壓縮階段 (下去) ==========
+        while (elapsedTime < animationDuration * 0.4f)
         {
             elapsedTime += Time.deltaTime;
-            float progress = elapsedTime / (animationDuration * 0.5f);
+            float progress = elapsedTime / (animationDuration * 0.4f);
+
+            // 縮放：正常 → 壓縮
             transform.localScale = Vector3.Lerp(originalScale, originalScale * compressScale, progress);
+
+            // 顏色：正常 → 紅色（壓縮色）
+            if (enableColorChange && spriteRenderer != null)
+            {
+                spriteRenderer.color = Color.Lerp(normalColor, compressColor, progress);
+            }
+
             yield return null;
         }
 
         elapsedTime = 0f;
 
-        // 反彈階段 (上來 + 膨脹超調)
-        while (elapsedTime < animationDuration * 0.5f)
+        // ========== 反彈階段 (上來 + 膨脹) ==========
+        while (elapsedTime < animationDuration * 0.4f)
         {
             elapsedTime += Time.deltaTime;
-            float progress = elapsedTime / (animationDuration * 0.5f);
+            float progress = elapsedTime / (animationDuration * 0.4f);
             float easeOutProgress = 1f - Mathf.Pow(1f - progress, 2f); // 緩動曲線
+
+            // 縮放：壓縮 → 膨脹超調
             transform.localScale = Vector3.Lerp(originalScale * compressScale, originalScale * expandScale, easeOutProgress);
+
+            // 顏色：紅色 → 綠色（反彈色）
+            if (enableColorChange && spriteRenderer != null)
+            {
+                spriteRenderer.color = Color.Lerp(compressColor, expandColor, easeOutProgress);
+            }
+
             yield return null;
         }
 
         elapsedTime = 0f;
 
-        // 回到原始大小
-        while (elapsedTime < animationDuration * 0.3f)
+        // ========== 回到原始大小 ==========
+        while (elapsedTime < animationDuration * 0.2f)
         {
             elapsedTime += Time.deltaTime;
-            float progress = elapsedTime / (animationDuration * 0.3f);
+            float progress = elapsedTime / (animationDuration * 0.2f);
+
+            // 縮放：膨脹 → 正常
             transform.localScale = Vector3.Lerp(originalScale * expandScale, originalScale, progress);
+
+            // 顏色：綠色 → 正常
+            if (enableColorChange && spriteRenderer != null)
+            {
+                spriteRenderer.color = Color.Lerp(expandColor, normalColor, progress);
+            }
+
             yield return null;
         }
 
+        // 確保回到初始狀態
         transform.localScale = originalScale;
+        if (enableColorChange && spriteRenderer != null)
+        {
+            spriteRenderer.color = normalColor;
+        }
+
         isAnimating = false;
     }
 
@@ -171,6 +232,10 @@ public class Bouncer : MonoBehaviour
         currentUses = 0;
         isEnabled = true;
         transform.localScale = originalScale;
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.color = normalColor;
+        }
         UpdateVisuals();
         Debug.Log($"[Bouncer] {gameObject.name} 已重置");
     }
@@ -180,11 +245,20 @@ public class Bouncer : MonoBehaviour
     public int GetMaxUses() => maxUses;
     public bool IsEnabled() => isEnabled;
     public float GetUsagePercentage() => unlimitedUses ? 1f : (float)currentUses / maxUses;
+    public float GetLastBounceForce() => lastBounceForce;
 
     // Gizmo 視覺化（方便調試）
     void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireCube(transform.position, transform.localScale * 1.2f);
+
+        // 如果啟用隨機力度，顯示力度範圍
+        if (enableRandomForce)
+        {
+            Gizmos.color = new Color(1f, 0.5f, 0f, 0.5f);
+            Gizmos.DrawLine(transform.position, transform.position + Vector3.up * (minForce / 10f));
+            Gizmos.DrawLine(transform.position, transform.position + Vector3.up * (maxForce / 10f));
+        }
     }
 }

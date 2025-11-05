@@ -3345,13 +3345,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   bounceForce: 20
   bounceUpForce: 25
-  unlimitedUses: 0
+  enableRandomForce: 1
+  minForce: 15
+  maxForce: 35
+  unlimitedUses: 1
   maxUses: 5
   compressScale: 0.6
   expandScale: 1.2
   animationDuration: 0.3
-  enableTrail: 1
-  trailColor: {r: 1, g: 0.8, b: 0, a: 0.5}
+  enableColorChange: 1
+  compressColor: {r: 1, g: 0, b: 0, a: 1}
+  expandColor: {r: 0, g: 1, b: 0, a: 1}
+  normalColor: {r: 1, g: 1, b: 1, a: 1}
   activeColor: {r: 1, g: 1, b: 1, a: 1}
   disabledColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
 --- !u!50 &627136453
