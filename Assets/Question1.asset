@@ -12,19 +12,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 731cf39e832d87641b7c080f1a703cf2, type: 3}
   m_Name: Question1
   m_EditorClassIdentifier: 
-  questionText: A=B?
+  questionText: ARE YOU SMART?
   answerOptions:
-  - Y
-  - N
-  - J
-  - K
-  correctAnswerIndex: 0
-  rewardType: 1
+  - (A) Emmm...
+  - (B) SURE.
+  - (C) IDK.
+  - (D) .
+  correctAnswerIndex: 3
+  rewardType: 4
   rewardAmount: 10
   barrierTag: Barrier
   hasPenalty: 1
   penaltyType: 1
   penaltyAmount: 50
-  destroyBlockAfterAnswer: 1
-  correctMessage: "\u7B54\u5C0D\u4E86\uFF01\u7372\u5F97\u734E\u52F5\uFF01"
-  wrongMessage: "\u7B54\u932F\u4E86\uFF01\u4F60\u500B\u50BB\u903C\uFF01"
+  destroyBlockAfterAnswer: 0
+  correctMessage: YOU REALLY SMART!
+  wrongMessage: BYE~~~

@@ -12,6 +12,7 @@ TagManager:
   - Boss
   - MagicBullet
   - HeavyBullet
+  - Barrier
   layers:
   - Default
   - TransparentFX

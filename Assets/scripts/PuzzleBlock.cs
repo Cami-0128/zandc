@@ -1,90 +1,91 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 
 /// <summary>
-/// ©ñ¦bÄ²µo°İÃDªº¤è¶ô¤W
-/// »İ­n²K¥[ Collider2D ¨Ã¤Ä¿ï Is Trigger
+/// æ”¾åœ¨è§¸ç™¼å•é¡Œçš„æ–¹å¡Šä¸Š
+/// éœ€è¦æ·»åŠ  Collider2D ä¸¦å‹¾é¸ Is Trigger
+/// ç‰ˆæœ¬ï¼šä¿®æ­£ç‰ˆ - ç­”å°å¾Œä¸å†é¡¯ç¤ºï¼Œç­”éŒ¯å¯é‡ç­”
 /// </summary>
 [RequireComponent(typeof(Collider2D))]
 public class PuzzleBlock : MonoBehaviour
 {
-    [Header("°İÃD³]©w")]
-    [Tooltip("«ü©w³o­Ó¤è¶ôÄ²µoªº°İÃD")]
+    [Header("å•é¡Œè¨­å®š")]
+    [Tooltip("æŒ‡å®šé€™å€‹æ–¹å¡Šè§¸ç™¼çš„å•é¡Œ")]
     public PuzzleQuestion puzzleQuestion;
 
-    [Header("µøÄ±®ÄªG")]
+    [Header("è¦–è¦ºæ•ˆæœ")]
     public Color highlightColor = Color.yellow;
+    public Color completedColor = Color.gray;
     public bool enableHighlight = true;
 
-    [Header("¸ô»Ùª«¥ó (¦pªG¼úÀy¬O²¾°£¸ô»Ù)")]
-    [Tooltip("­n²¾°£ªº¸ô»Ùª«¥ó¡A¯dªÅ«h®Ú¾ÚTag´M§ä")]
+    [Header("è·¯éšœç‰©ä»¶ (å¦‚æœçå‹µæ˜¯ç§»é™¤è·¯éšœ)")]
+    [Tooltip("è¦ç§»é™¤çš„è·¯éšœç‰©ä»¶ï¼Œç•™ç©ºå‰‡æ ¹æ“šTagå°‹æ‰¾")]
     public GameObject barrierObject;
 
-    [Header("­µ®Ä (¥i¿ï)")]
+    [Header("éŸ³æ•ˆ (å¯é¸)")]
     public AudioClip triggerSound;
 
-    private bool hasBeenTriggered = false;
-    private bool hasAnsweredCorrectly = false; // ·s¼W¡G°O¿ı¬O§_¤wµª¹ï
+    private bool hasAnsweredCorrectly = false; // æ˜¯å¦å·²ç­”å°
     private SpriteRenderer spriteRenderer;
     private Color originalColor;
     private AudioSource audioSource;
 
     void Start()
     {
-        // ½T«O¦³ Collider2D ¥B³]¬° Trigger
+        // ç¢ºä¿æœ‰ Collider2D ä¸”è¨­ç‚º Trigger
         Collider2D col = GetComponent<Collider2D>();
         if (col != null)
         {
             col.isTrigger = true;
         }
 
-        // ¨ú±oÃC¦â²Õ¥ó
+        // å–å¾—é¡è‰²çµ„ä»¶
         spriteRenderer = GetComponent<SpriteRenderer>();
         if (spriteRenderer != null)
         {
             originalColor = spriteRenderer.color;
         }
 
-        // ­µ®Ä³]©w
+        // éŸ³æ•ˆè¨­å®š
         audioSource = GetComponent<AudioSource>();
         if (audioSource == null && triggerSound != null)
         {
             audioSource = gameObject.AddComponent<AudioSource>();
         }
 
-        // ÅçÃÒ°İÃD³]©w
+        // é©—è­‰å•é¡Œè¨­å®š
         if (puzzleQuestion == null)
         {
-            Debug.LogWarning($"[PuzzleBlock] {gameObject.name} ¨S¦³³]©w°İÃD¡I");
+            Debug.LogWarning($"[PuzzleBlock] {gameObject.name} æ²’æœ‰è¨­å®šå•é¡Œï¼");
         }
     }
 
     void OnTriggerEnter2D(Collider2D other)
     {
-        // ÀË¬d¬O§_¬°ª±®a
+        // æª¢æŸ¥æ˜¯å¦ç‚ºç©å®¶
         if (!other.CompareTag("Player"))
             return;
 
-        // ÀË¬d¬O§_¤wÄ²µo¹L
-        if (hasBeenTriggered)
-            return;
-
-        // ÀË¬d¬O§_¦³³]©w°İÃD
-        if (puzzleQuestion == null)
+        // å¦‚æœå·²ç¶“ç­”å°ï¼Œä¸å†é¡¯ç¤ºå•é¡Œ
+        if (hasAnsweredCorrectly)
         {
-            Debug.LogError($"[PuzzleBlock] {gameObject.name} ¨S¦³³]©w°İÃD¸ê®Æ¡I");
+            Debug.Log($"[PuzzleBlock] {gameObject.name} å·²ç¶“ç­”å°éäº†ï¼Œä¸å†é¡¯ç¤ºå•é¡Œ");
             return;
         }
 
-        // ¼Ğ°O¬°¤wÄ²µo
-        hasBeenTriggered = true;
+        // æª¢æŸ¥æ˜¯å¦æœ‰è¨­å®šå•é¡Œ
+        if (puzzleQuestion == null)
+        {
+            Debug.LogError($"[PuzzleBlock] {gameObject.name} æ²’æœ‰è¨­å®šå•é¡Œè³‡æ–™ï¼");
+            return;
+        }
 
-        // ¼½©ñ­µ®Ä
+        // æ’­æ”¾éŸ³æ•ˆ
         if (triggerSound != null && audioSource != null)
         {
             audioSource.PlayOneShot(triggerSound);
         }
 
-        // Åã¥Ü°İÃDUI
+        // é¡¯ç¤ºå•é¡ŒUI
         PuzzleUIManager uiManager = FindObjectOfType<PuzzleUIManager>();
         if (uiManager != null)
         {
@@ -92,16 +93,16 @@ public class PuzzleBlock : MonoBehaviour
         }
         else
         {
-            Debug.LogError("[PuzzleBlock] §ä¤£¨ì PuzzleUIManager¡I½Ğ½T«O³õ´º¤¤¦³¦¹²Õ¥ó¡C");
+            Debug.LogError("[PuzzleBlock] æ‰¾ä¸åˆ° PuzzleUIManagerï¼è«‹ç¢ºä¿å ´æ™¯ä¸­æœ‰æ­¤çµ„ä»¶ã€‚");
         }
 
-        Debug.Log($"[PuzzleBlock] Ä²µo°İÃD: {puzzleQuestion.questionText}");
+        Debug.Log($"[PuzzleBlock] è§¸ç™¼å•é¡Œ: {puzzleQuestion.questionText}");
     }
 
     void OnTriggerStay2D(Collider2D other)
     {
-        // ·íª±®a°±¯d¦b¤è¶ô¤W®É¡A¥i¥HÅã¥Ü°ª«G®ÄªG
-        if (other.CompareTag("Player") && !hasBeenTriggered && enableHighlight)
+        // ç•¶ç©å®¶åœç•™åœ¨æ–¹å¡Šä¸Šæ™‚ï¼Œé¡¯ç¤ºé«˜äº®æ•ˆæœ
+        if (other.CompareTag("Player") && !hasAnsweredCorrectly && enableHighlight)
         {
             if (spriteRenderer != null)
             {
@@ -112,10 +113,10 @@ public class PuzzleBlock : MonoBehaviour
 
     void OnTriggerExit2D(Collider2D other)
     {
-        // ª±®aÂ÷¶}®É«ì´_ÃC¦â
+        // ç©å®¶é›¢é–‹æ™‚æ¢å¾©é¡è‰²
         if (other.CompareTag("Player") && enableHighlight)
         {
-            if (spriteRenderer != null)
+            if (spriteRenderer != null && !hasAnsweredCorrectly)
             {
                 spriteRenderer.color = originalColor;
             }
@@ -123,7 +124,7 @@ public class PuzzleBlock : MonoBehaviour
     }
 
     /// <summary>
-    /// µ¹¤©¼úÀy
+    /// çµ¦äºˆçå‹µ
     /// </summary>
     public void GiveReward()
     {
@@ -134,7 +135,11 @@ public class PuzzleBlock : MonoBehaviour
                 if (coinManager != null)
                 {
                     coinManager.AddMoney(puzzleQuestion.rewardAmount);
-                    Debug.Log($"[¼úÀy] Àò±o {puzzleQuestion.rewardAmount} ª÷¹ô");
+                    Debug.Log($"[çå‹µ] ç²å¾— {puzzleQuestion.rewardAmount} é‡‘å¹£");
+                }
+                else
+                {
+                    Debug.LogWarning("[çå‹µ] æ‰¾ä¸åˆ° CoinManager");
                 }
                 break;
 
@@ -143,7 +148,11 @@ public class PuzzleBlock : MonoBehaviour
                 if (player != null)
                 {
                     player.Heal(puzzleQuestion.rewardAmount);
-                    Debug.Log($"[¼úÀy] ¦^´_ {puzzleQuestion.rewardAmount} ¦å¶q");
+                    Debug.Log($"[çå‹µ] å›å¾© {puzzleQuestion.rewardAmount} è¡€é‡");
+                }
+                else
+                {
+                    Debug.LogWarning("[çå‹µ] æ‰¾ä¸åˆ° PlayerController2D");
                 }
                 break;
 
@@ -152,7 +161,11 @@ public class PuzzleBlock : MonoBehaviour
                 if (playerForMana != null)
                 {
                     playerForMana.ManaHeal(puzzleQuestion.rewardAmount);
-                    Debug.Log($"[¼úÀy] ¦^´_ {puzzleQuestion.rewardAmount} Å]¤O");
+                    Debug.Log($"[çå‹µ] å›å¾© {puzzleQuestion.rewardAmount} é­”åŠ›");
+                }
+                else
+                {
+                    Debug.LogWarning("[çå‹µ] æ‰¾ä¸åˆ° PlayerController2D");
                 }
                 break;
 
@@ -161,24 +174,23 @@ public class PuzzleBlock : MonoBehaviour
                 break;
 
             case RewardType.None:
-                Debug.Log("[¼úÀy] µL¼úÀy");
+                Debug.Log("[çå‹µ] ç„¡çå‹µ");
                 break;
 
             case RewardType.Custom:
-                // ¥i¦b³o¸Ì²K¥[¦Û©w¸q¼úÀyÅŞ¿è
-                Debug.Log("[¼úÀy] ¦Û©w¸q¼úÀy¡]½Ğ¦bµ{¦¡½X¤¤¹ê§@¡^");
+                Debug.Log("[çå‹µ] è‡ªå®šç¾©çå‹µï¼ˆè«‹åœ¨ç¨‹å¼ç¢¼ä¸­å¯¦ä½œï¼‰");
                 break;
         }
     }
 
     /// <summary>
-    /// ¬I¥[Ãg»@
+    /// æ–½åŠ æ‡²ç½°
     /// </summary>
     public void ApplyPenalty()
     {
         if (!puzzleQuestion.hasPenalty)
         {
-            Debug.Log("[Ãg»@] µLÃg»@");
+            Debug.Log("[æ‡²ç½°] ç„¡æ‡²ç½°");
             return;
         }
 
@@ -189,7 +201,11 @@ public class PuzzleBlock : MonoBehaviour
                 if (player != null)
                 {
                     player.TakeDamage(puzzleQuestion.penaltyAmount);
-                    Debug.Log($"[Ãg»@] ¦©°£ {puzzleQuestion.penaltyAmount} ¦å¶q");
+                    Debug.Log($"[æ‡²ç½°] æ‰£é™¤ {puzzleQuestion.penaltyAmount} è¡€é‡");
+                }
+                else
+                {
+                    Debug.LogWarning("[æ‡²ç½°] æ‰¾ä¸åˆ° PlayerController2D");
                 }
                 break;
 
@@ -199,9 +215,17 @@ public class PuzzleBlock : MonoBehaviour
                 {
                     int currentMana = attack.GetCurrentMana();
                     int newMana = Mathf.Max(0, currentMana - puzzleQuestion.penaltyAmount);
-                    // ¦]¬°¨S¦³ SetMana¡A©Ò¥H¥Î­t¼Æ¦^´_
-                    attack.RestoreMana(-(puzzleQuestion.penaltyAmount));
-                    Debug.Log($"[Ãg»@] ¦©°£ {puzzleQuestion.penaltyAmount} Å]¤O");
+                    // ä½¿ç”¨è² æ•¸ä¾†æ‰£é™¤é­”åŠ›
+                    int actualReduction = currentMana - newMana;
+                    if (actualReduction > 0)
+                    {
+                        attack.RestoreMana(-actualReduction);
+                    }
+                    Debug.Log($"[æ‡²ç½°] æ‰£é™¤ {actualReduction} é­”åŠ›");
+                }
+                else
+                {
+                    Debug.LogWarning("[æ‡²ç½°] æ‰¾ä¸åˆ° PlayerAttack");
                 }
                 break;
 
@@ -210,54 +234,100 @@ public class PuzzleBlock : MonoBehaviour
                 if (coinManager != null)
                 {
                     coinManager.SpendMoney(puzzleQuestion.penaltyAmount);
-                    Debug.Log($"[Ãg»@] ¦©°£ {puzzleQuestion.penaltyAmount} ª÷¹ô");
+                    Debug.Log($"[æ‡²ç½°] æ‰£é™¤ {puzzleQuestion.penaltyAmount} é‡‘å¹£");
+                }
+                else
+                {
+                    Debug.LogWarning("[æ‡²ç½°] æ‰¾ä¸åˆ° CoinManager");
                 }
                 break;
 
             case PenaltyType.None:
-                Debug.Log("[Ãg»@] µLÃg»@");
+                Debug.Log("[æ‡²ç½°] ç„¡æ‡²ç½°");
                 break;
 
             case PenaltyType.Custom:
-                Debug.Log("[Ãg»@] ¦Û©w¸qÃg»@¡]½Ğ¦bµ{¦¡½X¤¤¹ê§@¡^");
+                Debug.Log("[æ‡²ç½°] è‡ªå®šç¾©æ‡²ç½°ï¼ˆè«‹åœ¨ç¨‹å¼ç¢¼ä¸­å¯¦ä½œï¼‰");
                 break;
         }
     }
 
     /// <summary>
-    /// ²¾°£¸ô»Ù
+    /// ç§»é™¤è·¯éšœ
     /// </summary>
     private void RemoveBarrier()
     {
-        // Àu¥ı¨Ï¥Î«ü©wªº¸ô»Ùª«¥ó
+        // å„ªå…ˆä½¿ç”¨æŒ‡å®šçš„è·¯éšœç‰©ä»¶
         if (barrierObject != null)
         {
-            Debug.Log($"[¼úÀy] ²¾°£¸ô»Ù: {barrierObject.name}");
+            Debug.Log($"[çå‹µ] ç§»é™¤è·¯éšœ: {barrierObject.name}");
             Destroy(barrierObject);
             return;
         }
 
-        // ®Ú¾Ú Tag ´M§ä¸ô»Ù
+        // æ ¹æ“š Tag å°‹æ‰¾è·¯éšœ
         GameObject barrier = GameObject.FindGameObjectWithTag(puzzleQuestion.barrierTag);
         if (barrier != null)
         {
-            Debug.Log($"[¼úÀy] ®Ú¾ÚTag²¾°£¸ô»Ù: {barrier.name}");
+            Debug.Log($"[çå‹µ] æ ¹æ“šTagç§»é™¤è·¯éšœ: {barrier.name}");
             Destroy(barrier);
         }
         else
         {
-            Debug.LogWarning($"[¼úÀy] §ä¤£¨ìTag¬° '{puzzleQuestion.barrierTag}' ªº¸ô»Ùª«¥ó");
+            Debug.LogWarning($"[çå‹µ] æ‰¾ä¸åˆ°Tagç‚º '{puzzleQuestion.barrierTag}' çš„è·¯éšœç‰©ä»¶");
         }
     }
 
     /// <summary>
-    /// µªÃD«á²M²z
+    /// ç­”é¡Œå¾Œè™•ç†ï¼ˆç”± UIManager èª¿ç”¨ï¼‰
     /// </summary>
-    public void OnAnswered()
+    /// <param name="isCorrect">æ˜¯å¦ç­”å°</param>
+    public void OnAnswered(bool isCorrect)
     {
-        if (puzzleQuestion.destroyBlockAfterAnswer)
+        if (isCorrect)
         {
-            Destroy(gameObject);
+            // ç­”å°äº†ï¼Œæ¨™è¨˜ç‚ºå·²å®Œæˆ
+            hasAnsweredCorrectly = true;
+            Debug.Log($"[PuzzleBlock] âœ“ {gameObject.name} ç­”å°äº†ï¼æ­¤æ–¹å¡Šä¸å†é¡¯ç¤ºå•é¡Œ");
+
+            // å¦‚æœè¨­å®šç‚ºç­”å°å¾ŒéŠ·æ¯€æ–¹å¡Š
+            if (puzzleQuestion.destroyBlockAfterAnswer)
+            {
+                Debug.Log($"[PuzzleBlock] éŠ·æ¯€æ–¹å¡Š: {gameObject.name}");
+                Destroy(gameObject);
+            }
+            else
+            {
+                // æ”¹è®Šé¡è‰²è¡¨ç¤ºå·²å®Œæˆ
+                if (spriteRenderer != null)
+                {
+                    spriteRenderer.color = completedColor;
+                }
+            }
         }
+        else
+        {
+            // ç­”éŒ¯äº†ï¼Œå¯ä»¥é‡æ–°ä½œç­”
+            Debug.Log($"[PuzzleBlock] âœ— {gameObject.name} ç­”éŒ¯äº†ï¼Œå¯ä»¥é‡æ–°è§¸ç¢°ä½œç­”");
+
+            // æ¢å¾©åŸæœ¬é¡è‰²
+            if (spriteRenderer != null)
+            {
+                spriteRenderer.color = originalColor;
+            }
+        }
+    }
+
+    /// <summary>
+    /// é‡ç½®æ–¹å¡Šç‹€æ…‹ï¼ˆä¾›å¤–éƒ¨èª¿ç”¨ï¼Œä¾‹å¦‚é‡æ–°é–‹å§‹é—œå¡ï¼‰
+    /// </summary>
+    public void ResetBlock()
+    {
+        hasAnsweredCorrectly = false;
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.color = originalColor;
+        }
+        Debug.Log($"[PuzzleBlock] {gameObject.name} ç‹€æ…‹å·²é‡ç½®");
     }
 }
