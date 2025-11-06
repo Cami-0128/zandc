@@ -19,7 +19,7 @@ MonoBehaviour:
   - (C) IDK.
   - (D) .
   correctAnswerIndex: 3
-  rewardType: 4
+  rewardType: 1
   rewardAmount: 10
   barrierTag: Barrier
   hasPenalty: 1
