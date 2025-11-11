@@ -56,6 +56,11 @@ public class PuzzleUIManager : MonoBehaviour
     private Transform followTarget;
     private Canvas canvas;
 
+    // 儲存原始顏色和字體大小
+    private Color originalPanelColor;
+    private Color originalQuestionColor;
+    private float originalQuestionFontSize;
+
     void Awake()
     {
         canvas = GetComponentInParent<Canvas>();
@@ -82,15 +87,32 @@ public class PuzzleUIManager : MonoBehaviour
         if (puzzlePanel != null)
         {
             puzzlePanel.SetActive(false);
+
+            // 儲存原始面板顏色
+            Image panelImage = puzzlePanel.GetComponent<Image>();
+            if (panelImage != null)
+            {
+                originalPanelColor = panelImage.color;
+                Debug.Log($"[PuzzleUI] 儲存原始面板顏色: {originalPanelColor}");
+            }
+        }
+
+        // 儲存原始問題文字顏色和字體大小
+        if (questionText != null)
+        {
+            originalQuestionColor = questionText.color;
+            originalQuestionFontSize = questionText.fontSize;
+            Debug.Log($"[PuzzleUI] 儲存原始問題顏色: {originalQuestionColor}, 字體大小: {originalQuestionFontSize}");
+        }
+        else if (questionTextLegacy != null)
+        {
+            originalQuestionColor = questionTextLegacy.color;
+            originalQuestionFontSize = questionTextLegacy.fontSize;
         }
 
         if (feedbackPanel != null)
         {
             feedbackPanel.SetActive(false);
-        }
-        else
-        {
-            Debug.LogError("[PuzzleUI] ❌ FeedbackPanel 未設定！反饋訊息將無法顯示！");
         }
 
         CheckEventSystem();
@@ -164,27 +186,6 @@ public class PuzzleUIManager : MonoBehaviour
             Debug.Log($"[PuzzleUI] ✓ 已設定 {buttonCount} 個按鈕");
         }
 
-        // 檢查反饋組件
-        if (feedbackPanel == null)
-        {
-            Debug.LogError("[PuzzleUI] ❌ FeedbackPanel 未設定！答案結果將無法顯示！");
-            hasError = true;
-        }
-        else
-        {
-            Debug.Log("[PuzzleUI] ✓ FeedbackPanel 已設定");
-        }
-
-        if (feedbackText == null && feedbackTextLegacy == null)
-        {
-            Debug.LogError("[PuzzleUI] ❌ FeedbackText 未設定！答案結果將無法顯示！");
-            hasError = true;
-        }
-        else
-        {
-            Debug.Log("[PuzzleUI] ✓ FeedbackText 已設定");
-        }
-
         if (!hasError)
         {
             Debug.Log("[PuzzleUI] ✓ 所有必要組件已設定");
@@ -256,6 +257,9 @@ public class PuzzleUIManager : MonoBehaviour
             playerController.canControl = false;
         }
 
+        // 恢復原始顏色和大小
+        RestoreOriginalAppearance();
+
         puzzlePanel.SetActive(true);
         puzzlePanel.transform.localScale = Vector3.one * uiScale;
         UpdateUIPosition();
@@ -265,22 +269,26 @@ public class PuzzleUIManager : MonoBehaviour
         {
             questionText.gameObject.SetActive(true);
             questionText.text = question.questionText;
+            questionText.color = originalQuestionColor;
+            questionText.fontSize = originalQuestionFontSize;
         }
         else if (questionTextLegacy != null)
         {
             questionTextLegacy.gameObject.SetActive(true);
             questionTextLegacy.text = question.questionText;
+            questionTextLegacy.color = originalQuestionColor;
+            questionTextLegacy.fontSize = (int)originalQuestionFontSize;
         }
 
         Debug.Log($"[PuzzleUI] 問題: {question.questionText}");
+        Debug.Log($"[PuzzleUI] 已恢復原始顏色和字體");
 
         SetupAnswerButtons(question);
 
-        // 確保反饋面板初始隱藏
+        // 確保反饋面板隱藏
         if (feedbackPanel != null)
         {
             feedbackPanel.SetActive(false);
-            Debug.Log("[PuzzleUI] FeedbackPanel 初始隱藏");
         }
 
         Debug.Log("========== [PuzzleUI] 問題顯示完成 ==========");
@@ -516,21 +524,8 @@ public class PuzzleUIManager : MonoBehaviour
         if (puzzlePanel != null)
             puzzlePanel.SetActive(false);
 
-        // 恢復問題面板的背景色
-        if (puzzlePanel != null)
-        {
-            Image panelImage = puzzlePanel.GetComponent<Image>();
-            if (panelImage != null)
-            {
-                panelImage.color = Color.white; // 恢復原色
-            }
-        }
-
-        // 恢復問題文字的字體大小
-        if (questionText != null)
-        {
-            questionText.fontSize = 36; // 恢復原始大小
-        }
+        // 恢復原始外觀（已在 ShowPuzzle 中處理，這裡保險起見再做一次）
+        RestoreOriginalAppearance();
 
         if (feedbackPanel != null)
             feedbackPanel.SetActive(false);
@@ -560,5 +555,35 @@ public class PuzzleUIManager : MonoBehaviour
         currentQuestion = null;
         currentBlock = null;
         followTarget = null;
+    }
+
+    /// <summary>
+    /// 恢復面板和文字的原始外觀
+    /// </summary>
+    void RestoreOriginalAppearance()
+    {
+        // 恢復面板背景色
+        if (puzzlePanel != null)
+        {
+            Image panelImage = puzzlePanel.GetComponent<Image>();
+            if (panelImage != null)
+            {
+                panelImage.color = originalPanelColor;
+                Debug.Log($"[PuzzleUI] 恢復面板原始顏色: {originalPanelColor}");
+            }
+        }
+
+        // 恢復問題文字顏色和字體大小
+        if (questionText != null)
+        {
+            questionText.color = originalQuestionColor;
+            questionText.fontSize = originalQuestionFontSize;
+            Debug.Log($"[PuzzleUI] 恢復問題文字原始顏色: {originalQuestionColor}, 字體: {originalQuestionFontSize}");
+        }
+        else if (questionTextLegacy != null)
+        {
+            questionTextLegacy.color = originalQuestionColor;
+            questionTextLegacy.fontSize = (int)originalQuestionFontSize;
+        }
     }
 }

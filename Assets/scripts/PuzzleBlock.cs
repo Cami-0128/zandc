@@ -17,6 +17,12 @@ public class PuzzleBlock : MonoBehaviour
     public Color completedColor = Color.gray;
     public bool enableHighlight = true;
 
+    [Header("答對後的物理設定")]
+    [Tooltip("答對後是否變成實體平台（可站立）")]
+    public bool becomeSolidAfterCorrect = true;
+    [Tooltip("答對後的碰撞層（留空則使用 Default）")]
+    public string solidLayer = "Default";
+
     [Header("路障物件 (如果獎勵是移除路障)")]
     [Tooltip("要移除的路障物件，留空則根據Tag尋找")]
     public GameObject barrierObject;
@@ -28,14 +34,20 @@ public class PuzzleBlock : MonoBehaviour
     private SpriteRenderer spriteRenderer;
     private Color originalColor;
     private AudioSource audioSource;
+    private Collider2D blockCollider;
 
     void Start()
     {
         // 確保有 Collider2D 且設為 Trigger
-        Collider2D col = GetComponent<Collider2D>();
-        if (col != null)
+        blockCollider = GetComponent<Collider2D>();
+        if (blockCollider != null)
         {
-            col.isTrigger = true;
+            blockCollider.isTrigger = true;
+            Debug.Log($"[PuzzleBlock] {gameObject.name} Collider 設為 Trigger");
+        }
+        else
+        {
+            Debug.LogWarning($"[PuzzleBlock] {gameObject.name} 沒有 Collider2D 組件！");
         }
 
         // 取得顏色組件
@@ -288,7 +300,7 @@ public class PuzzleBlock : MonoBehaviour
         {
             // 答對了，標記為已完成
             hasAnsweredCorrectly = true;
-            Debug.Log($"[PuzzleBlock] ✓ {gameObject.name} 答對了！此方塊不再顯示問題");
+            Debug.Log($"[PuzzleBlock] ✓ {gameObject.name} 答對了！");
 
             // 如果設定為答對後銷毀方塊
             if (puzzleQuestion.destroyBlockAfterAnswer)
@@ -298,10 +310,19 @@ public class PuzzleBlock : MonoBehaviour
             }
             else
             {
-                // 改變顏色表示已完成
-                if (spriteRenderer != null)
+                // 變成實體平台
+                if (becomeSolidAfterCorrect)
                 {
-                    spriteRenderer.color = completedColor;
+                    ConvertToSolidPlatform();
+                }
+                else
+                {
+                    // 只改變顏色，保持 Trigger
+                    if (spriteRenderer != null)
+                    {
+                        spriteRenderer.color = completedColor;
+                    }
+                    Debug.Log($"[PuzzleBlock] {gameObject.name} 保持為 Trigger，不再顯示問題");
                 }
             }
         }
@@ -316,6 +337,40 @@ public class PuzzleBlock : MonoBehaviour
                 spriteRenderer.color = originalColor;
             }
         }
+    }
+
+    /// <summary>
+    /// 將方塊轉換為實體平台
+    /// </summary>
+    void ConvertToSolidPlatform()
+    {
+        if (blockCollider == null)
+        {
+            Debug.LogWarning($"[PuzzleBlock] {gameObject.name} 沒有 Collider，無法轉換為平台");
+            return;
+        }
+
+        // 將 Trigger 改為實體碰撞
+        blockCollider.isTrigger = false;
+
+        // 改變顏色表示已完成
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.color = completedColor;
+        }
+
+        // 設定碰撞層（可選）
+        if (!string.IsNullOrEmpty(solidLayer))
+        {
+            int layer = LayerMask.NameToLayer(solidLayer);
+            if (layer != -1)
+            {
+                gameObject.layer = layer;
+                Debug.Log($"[PuzzleBlock] {gameObject.name} 層級設為: {solidLayer}");
+            }
+        }
+
+        Debug.Log($"[PuzzleBlock] ✓ {gameObject.name} 已轉換為實體平台（可站立）");
     }
 
     /// <summary>
