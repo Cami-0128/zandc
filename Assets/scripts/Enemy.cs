@@ -290,10 +290,15 @@ public class Enemy : MonoBehaviour
 
             GameObject coin = Instantiate(coinPrefab, spawnPos, Quaternion.identity);
 
+            // 修正：使用 SetCoinValue 方法設定金幣數值
             CoinPickup coinPickup = coin.GetComponent<CoinPickup>();
             if (coinPickup != null)
             {
-                coinPickup.value = 1;
+                coinPickup.SetCoinValue(1);
+            }
+            else
+            {
+                Debug.LogWarning("[Enemy] 金幣 Prefab 未掛載 CoinPickup 腳本！");
             }
 
             Rigidbody2D coinRb = coin.GetComponent<Rigidbody2D>();

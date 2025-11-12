@@ -1,87 +1,141 @@
+using System.Collections;
 using UnityEngine;
 
-/// <summary>
-/// 金幣拾取腳本
-/// 整合版 - 配合現有的 CoinFlip 和 CoinManager
-/// </summary>
 public class CoinPickup : MonoBehaviour
 {
     [Header("金幣設定")]
-    [Tooltip("錢幣價值")]
-    public int value = 1;
+    [SerializeField]
+    private int coinValue = 1;
 
-    [Header("自動消失")]
-    [Tooltip("金幣存在時間（秒），0 = 永不消失")]
-    public float lifetime = 0f;
+    [Tooltip("拾取音效")]
+    public AudioClip pickupSound;
+    [Tooltip("是否自動吸取到玩家")]
+    public bool autoAbsorb = true;
+    [Tooltip("吸取速度")]
+    public float absorbSpeed = 10f;
 
-    [Header("飛向玩家設定（可選）")]
-    [Tooltip("是否自動飛向玩家")]
-    public bool flyToPlayer = false;
-
-    [Tooltip("飛行速度")]
-    public float flySpeed = 5f;
-
-    [Tooltip("開始飛向玩家的延遲時間")]
-    public float flyDelay = 0.5f;
-
+    private bool collected = false;
     private Transform playerTransform;
-    private bool isFlying = false;
+    private SpriteRenderer spriteRenderer;
+    private Color originalColor;
+    private Rigidbody2D rb;
+    private Vector3 startPosition;
 
     void Start()
     {
-        // 自動消失
-        if (lifetime > 0)
-        {
-            Destroy(gameObject, lifetime);
-        }
+        spriteRenderer = GetComponent<SpriteRenderer>();
+        if (spriteRenderer != null)
+            originalColor = spriteRenderer.color;
 
-        // 如果啟用飛向玩家功能
-        if (flyToPlayer)
-        {
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
-            if (player != null)
-            {
-                playerTransform = player.transform;
-                Invoke("StartFlyingToPlayer", flyDelay);
-            }
-        }
+        rb = GetComponent<Rigidbody2D>();
+        startPosition = transform.position;
     }
 
     void Update()
     {
-        // 飛向玩家
-        if (isFlying && playerTransform != null)
+        // 自動吸取
+        if (autoAbsorb && playerTransform != null && !collected)
         {
-            Vector3 direction = (playerTransform.position - transform.position).normalized;
-            transform.position += direction * flySpeed * Time.deltaTime;
-        }
-    }
-
-    void StartFlyingToPlayer()
-    {
-        isFlying = true;
-
-        // 禁用重力和物理（如果有 Rigidbody2D）
-        Rigidbody2D rb = GetComponent<Rigidbody2D>();
-        if (rb != null)
-        {
-            rb.gravityScale = 0f;
-            rb.velocity = Vector2.zero;
-        }
-    }
-
-    private void OnTriggerEnter2D(Collider2D collision)
-    {
-        if (collision.CompareTag("Player"))
-        {
-            // 給予金幣
-            if (CoinManager.Instance != null)
+            float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
+            if (distanceToPlayer < 0.5f)
             {
-                CoinManager.Instance.AddMoney(value);
+                Collect();
             }
+            else if (distanceToPlayer < 5f)
+            {
+                // 朝玩家移動
+                Vector3 direction = (playerTransform.position - transform.position).normalized;
+                if (rb != null)
+                    rb.velocity = direction * absorbSpeed;
+            }
+        }
+    }
 
-            // 銷毀金幣
+    void LateUpdate()
+    {
+        // 浮動和旋轉動畫（參考你的 HealthPickup 風格）
+        if (!collected)
+        {
+            // 浮動
+            float newY = startPosition.y + Mathf.Sin(Time.time * 2f) * 0.3f;
+            transform.position = new Vector3(transform.position.x, newY, transform.position.z);
+        }
+    }
+
+    void OnTriggerEnter2D(Collider2D other)
+    {
+        if (collected)
+            return;
+
+        if (other.CompareTag("Player"))
+        {
+            PlayerController2D player = other.GetComponent<PlayerController2D>();
+            if (player != null)
+            {
+                playerTransform = other.transform;
+
+                if (!autoAbsorb)
+                {
+                    Collect();
+                }
+            }
+        }
+    }
+
+    void Collect()
+    {
+        if (collected)
+            return;
+
+        collected = true;
+
+        // 透過 CoinManager 增加金幣
+        if (CoinManager.Instance != null)
+        {
+            CoinManager.Instance.AddMoney(coinValue);
+            Debug.Log($"[CoinPickup] 玩家拾取 {coinValue} 個金幣！");
+        }
+        else
+        {
+            Debug.LogWarning("[CoinPickup] CoinManager 未初始化！");
+        }
+
+        // 播放音效
+        if (pickupSound != null)
+            AudioSource.PlayClipAtPoint(pickupSound, transform.position);
+
+        // 視覺效果 - 變色並消失
+        if (spriteRenderer != null)
+        {
+            StartCoroutine(FadeOut());
+        }
+        else
+        {
             Destroy(gameObject);
         }
+    }
+
+    /// <summary>
+    /// 設定金幣數值（敵人掉落時使用）
+    /// </summary>
+    public void SetCoinValue(int value)
+    {
+        coinValue = value;
+    }
+
+    IEnumerator FadeOut()
+    {
+        float elapsed = 0f;
+        float duration = 0.3f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float alpha = Mathf.Lerp(1f, 0f, elapsed / duration);
+            spriteRenderer.color = new Color(originalColor.r, originalColor.g, originalColor.b, alpha);
+            yield return null;
+        }
+
+        Destroy(gameObject);
     }
 }
