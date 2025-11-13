@@ -10,9 +10,9 @@ GameObject:
   m_Component:
   - component: {fileID: 7705093974044766837}
   - component: {fileID: 1062179675479536951}
+  - component: {fileID: 5489482378869990568}
   - component: {fileID: 108419918437156424}
   - component: {fileID: 517799570430618472}
-  - component: {fileID: 5489482378869990568}
   m_Layer: 0
   m_Name: ManaPotionPickup
   m_TagString: Untagged
@@ -87,6 +87,30 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &5489482378869990568
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7719398469118768508}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 84eb14c2bd0e4454db96bb6dd27510c1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  manaRestoreAmount: 30
+  potionColor: {r: 1, g: 1, b: 1, a: 1}
+  pickupEffectPrefab: {fileID: 0}
+  pickupSound: {fileID: 0}
+  enableRotation: 1
+  rotationSpeed: 90
+  enableFloating: 1
+  floatHeight: 0.3
+  floatSpeed: 2
+  autoAbsorb: 0
+  absorbSpeed: 10
+  useCheckManaFull: 1
 --- !u!58 &108419918437156424
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -124,25 +148,3 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 4
---- !u!114 &5489482378869990568
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7719398469118768508}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 84eb14c2bd0e4454db96bb6dd27510c1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  manaRestoreAmount: 30
-  potionColor: {r: 1, g: 1, b: 1, a: 1}
-  pickupEffectPrefab: {fileID: 0}
-  pickupSound: {fileID: 0}
-  enableRotation: 1
-  rotationSpeed: 90
-  enableFloating: 1
-  floatHeight: 0.3
-  floatSpeed: 2
-  useCheckManaFull: 1

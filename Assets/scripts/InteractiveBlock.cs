@@ -42,11 +42,25 @@ public class InteractiveBlock : MonoBehaviour
     public int bulletCount = 3;
     public float bulletSpeedMultiplier = 1f;
     public float spreadAngle = 30f;
+    [Tooltip("子彈發射延遲時間（秒）- 建議 0.3 ~ 1.0")]
+    public float bulletFireDelay = 0.5f;
+    [Tooltip("每發子彈之間的時間間隔（秒）- 建議 0.2 ~ 0.5")]
+    public float bulletFireInterval = 0.3f;
+    [Tooltip("發射完成後是否自動銷毀方塊")]
+    public bool destroyAfterFire = true;
 
     [Header("生成敵人設定")]
     public GameObject enemyPrefab;
     public int enemyCount = 1;
     public float spawnRadius = 2f;
+
+    [Header("自訂掉落物設定")]
+    [Tooltip("自訂掉落物數量")]
+    public int customDropCount = 0;
+    [Tooltip("自訂掉落物 Prefab")]
+    public GameObject customDropPrefab;
+    [Tooltip("自訂掉落物的拋出速度")]
+    public float customDropThrowForce = 2f;
 
     [Header("視覺效果")]
     [Tooltip("方塊觸發後的顏色")]
@@ -150,6 +164,10 @@ public class InteractiveBlock : MonoBehaviour
         if (spawnEnemy)
             SpawnEnemies();
 
+        // 執行自訂掉落物
+        if (customDropCount > 0 && customDropPrefab != null)
+            DropCustomItems();
+
         hasTriggered = true;
 
         Debug.Log("[InteractiveBlock] 方塊已觸發！");
@@ -234,28 +252,48 @@ public class InteractiveBlock : MonoBehaviour
     void FireAttack()
     {
         if (bulletPrefab == null)
+        {
+            Debug.LogError("[InteractiveBlock] 【重大錯誤】子彈 Prefab 未設定！");
             return;
+        }
 
+        Debug.Log($"[InteractiveBlock] ========== 開始發射攻擊 ==========");
+        Debug.Log($"[InteractiveBlock] 延遲: {bulletFireDelay}秒, 間隔: {bulletFireInterval}秒, 數量: {bulletCount}");
+
+        // 直接發射所有子彈，不用延遲
         for (int i = 0; i < bulletCount; i++)
         {
-            float angleStep = spreadAngle / (bulletCount > 1 ? bulletCount - 1 : 1);
+            float angleStep = bulletCount > 1 ? spreadAngle / (bulletCount - 1) : 0;
             float angle = (angleStep * i) - (spreadAngle / 2f);
 
-            // 改從方塊下方發射
             Vector3 spawnPos = transform.position + Vector3.down * 0.5f;
             GameObject bullet = Instantiate(bulletPrefab, spawnPos, Quaternion.identity);
 
-            // 設定子彈方向和速度
+            Debug.Log($"[InteractiveBlock] 【立即】發射第 {i + 1} 發子彈 - 角度: {angle}°");
+
             Rigidbody2D bulletRb = bullet.GetComponent<Rigidbody2D>();
             if (bulletRb != null)
             {
                 float radians = angle * Mathf.Deg2Rad;
                 Vector2 direction = new Vector2(Mathf.Cos(radians), Mathf.Sin(radians));
                 bulletRb.velocity = direction * 5f * bulletSpeedMultiplier;
+
+                Debug.Log($"[InteractiveBlock] 子彈 {i + 1} 速度: {bulletRb.velocity}");
+            }
+            else
+            {
+                Debug.LogError($"[InteractiveBlock] 子彈 Prefab 沒有 Rigidbody2D 組件！");
             }
         }
 
-        Debug.Log($"[InteractiveBlock] 發射 {bulletCount} 發子彈（從下方發出）");
+        Debug.Log($"[InteractiveBlock] 完成發射 {bulletCount} 發子彈");
+        Debug.Log($"[InteractiveBlock] ========== 發射完成 ==========");
+
+        // 立即銷毀方塊
+        if (destroyOnTrigger && !canTriggerMultipleTimes)
+        {
+            Destroy(gameObject);
+        }
     }
 
     void SpawnEnemies()
@@ -350,5 +388,34 @@ public class InteractiveBlock : MonoBehaviour
     {
         Gizmos.color = Color.cyan;
         Gizmos.DrawWireCube(transform.position, Vector3.one * 0.5f);
+    }
+
+    /// <summary>
+    /// 掉落自訂物品（通用方法，可用於任何自訂掉落物）
+    /// </summary>
+    void DropCustomItems()
+    {
+        if (customDropPrefab == null)
+        {
+            Debug.LogWarning("[InteractiveBlock] 自訂掉落物 Prefab 未設定！");
+            return;
+        }
+
+        for (int i = 0; i < customDropCount; i++)
+        {
+            Vector3 spawnPos = transform.position + new Vector3(Random.Range(-0.5f, 0.5f), 0.5f, 0);
+            spawnPos.z = 0;
+
+            GameObject customItem = Instantiate(customDropPrefab, spawnPos, Quaternion.identity);
+
+            Rigidbody2D itemRb = customItem.GetComponent<Rigidbody2D>();
+            if (itemRb != null)
+            {
+                Vector2 randomForce = Random.insideUnitCircle.normalized * customDropThrowForce;
+                itemRb.velocity = randomForce;
+            }
+        }
+
+        Debug.Log($"[InteractiveBlock] 掉落 {customDropCount} 個自訂物品");
     }
 }

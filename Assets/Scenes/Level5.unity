@@ -2159,9 +2159,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   coinValue: 1
+  floatHeight: 0.15
+  floatSpeed: 2
   pickupSound: {fileID: 0}
   autoAbsorb: 1
   absorbSpeed: 10
+  absorbRange: 8
 --- !u!58 &250696876
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -3629,9 +3632,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   coinValue: 1
+  floatHeight: 0.15
+  floatSpeed: 2
   pickupSound: {fileID: 0}
   autoAbsorb: 1
   absorbSpeed: 10
+  absorbRange: 8
 --- !u!58 &452734379
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -4419,6 +4425,10 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 870451724, guid: ab37e94afdfafb945983830d1ada8425, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 1320464341, guid: ab37e94afdfafb945983830d1ada8425, type: 3}
       propertyPath: closeButton
       value: 
@@ -5436,6 +5446,9 @@ MonoBehaviour:
   enableFloating: 1
   floatSpeed: 2
   floatHeight: 0.5
+  autoAbsorb: 1
+  absorbSpeed: 10
+  absorbRange: 8
   useCheckHealthFull: 1
 --- !u!61 &745273201
 BoxCollider2D:
@@ -5523,7 +5536,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 745273199}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 42.81, y: 16, z: 0}
+  m_LocalPosition: {x: 25.7, y: 16, z: 0}
   m_LocalScale: {x: 1, y: 0.5, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -6130,7 +6143,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &837040684
 RectTransform:
   m_ObjectHideFlags: 0
@@ -6170,7 +6183,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &842342742
 RectTransform:
   m_ObjectHideFlags: 0
@@ -6340,10 +6353,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1853305665493748139, guid: dbb84c4e43e48d5438050309b2a61b24, type: 3}
       propertyPath: fireAttack
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1853305665493748139, guid: dbb84c4e43e48d5438050309b2a61b24, type: 3}
-      propertyPath: spawnEnemy
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1853305665493748139, guid: dbb84c4e43e48d5438050309b2a61b24, type: 3}
@@ -6351,8 +6360,16 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1853305665493748139, guid: dbb84c4e43e48d5438050309b2a61b24, type: 3}
+      propertyPath: bulletFireDelay
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1853305665493748139, guid: dbb84c4e43e48d5438050309b2a61b24, type: 3}
       propertyPath: dropHealthPickup
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1853305665493748139, guid: dbb84c4e43e48d5438050309b2a61b24, type: 3}
+      propertyPath: bulletFireInterval
+      value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 4198986779178376342, guid: dbb84c4e43e48d5438050309b2a61b24, type: 3}
       propertyPath: m_RootOrder
@@ -6360,11 +6377,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4198986779178376342, guid: dbb84c4e43e48d5438050309b2a61b24, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 39.86
+      value: 22.46
       objectReference: {fileID: 0}
     - target: {fileID: 4198986779178376342, guid: dbb84c4e43e48d5438050309b2a61b24, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 17.4
+      value: 14.83
       objectReference: {fileID: 0}
     - target: {fileID: 4198986779178376342, guid: dbb84c4e43e48d5438050309b2a61b24, type: 3}
       propertyPath: m_LocalPosition.z
@@ -6422,7 +6439,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &907508038
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6943,9 +6960,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   coinValue: 1
+  floatHeight: 0.15
+  floatSpeed: 2
   pickupSound: {fileID: 0}
   autoAbsorb: 1
   absorbSpeed: 10
+  absorbRange: 8
 --- !u!58 &955916637
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -7830,6 +7850,9 @@ MonoBehaviour:
   enableFloating: 1
   floatHeight: 0.3
   floatSpeed: 2
+  autoAbsorb: 1
+  absorbSpeed: 10
+  absorbRange: 8
   useCheckManaFull: 1
 --- !u!212 &1065531536
 SpriteRenderer:
@@ -8292,7 +8315,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1137746081
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12705,7 +12728,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 127.6, y: 130.39996}
+  m_AnchoredPosition: {x: 192, y: 140.2}
   m_SizeDelta: {x: 30, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1595026710
@@ -13287,9 +13310,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   coinValue: 1
+  floatHeight: 0.15
+  floatSpeed: 2
   pickupSound: {fileID: 0}
   autoAbsorb: 1
   absorbSpeed: 10
+  absorbRange: 8
 --- !u!58 &1646685020
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -14281,7 +14307,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1830086275
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -15206,7 +15232,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1956330745
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -16006,9 +16032,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   coinValue: 1
+  floatHeight: 0.15
+  floatSpeed: 2
   pickupSound: {fileID: 0}
   autoAbsorb: 1
   absorbSpeed: 10
+  absorbRange: 8
 --- !u!58 &1992454847
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -17470,6 +17499,10 @@ PrefabInstance:
       propertyPath: m_Camera
       value: 
       objectReference: {fileID: 486476823}
+    - target: {fileID: 1827985896, guid: 341efe7a63c9cbf42959752ac2d74d21, type: 3}
+      propertyPath: coinDropRadius
+      value: 0.5
+      objectReference: {fileID: 0}
     - target: {fileID: 4373213459656665256, guid: 341efe7a63c9cbf42959752ac2d74d21, type: 3}
       propertyPath: m_RootOrder
       value: 19
@@ -17520,7 +17553,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4373213459656665261, guid: 341efe7a63c9cbf42959752ac2d74d21, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 341efe7a63c9cbf42959752ac2d74d21, type: 3}

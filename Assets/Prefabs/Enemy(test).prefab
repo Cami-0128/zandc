@@ -427,10 +427,10 @@ GameObject:
   m_Component:
   - component: {fileID: 4373213459656665256}
   - component: {fileID: 4373213459656665257}
+  - component: {fileID: 1827985896}
   - component: {fileID: 4373213459656665258}
   - component: {fileID: 4373213459656665259}
   - component: {fileID: 1827985902}
-  - component: {fileID: 1827985896}
   m_Layer: 7
   m_Name: Enemy(test)
   m_TagString: Enemy
@@ -506,6 +506,41 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &1827985896
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4373213459656665261}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a81a905535b0ccc4781f637da10b8354, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHealth: 200
+  currentHealth: 0
+  healthBar: {fileID: 298253316}
+  jumpForceVertical: 6
+  jumpForceHorizontalMax: 3
+  jumpCooldown: 0.5
+  groundCheckRadius: 0.2
+  enablePlayerTracking: 1
+  trackingRange: 100
+  maxJumpCount: 1
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 64
+  enemyColor: {r: 1, g: 0, b: 0, a: 1}
+  fragmentCount: 15
+  fragmentSpeed: 5
+  fragmentPrefab: {fileID: 0}
+  coinPrefab: {fileID: 4003330360852413863, guid: 9b1541601c792244391766eed91ccb35, type: 3}
+  dropCoins: 1
+  minCoins: 2
+  maxCoins: 5
+  coinDropRadius: 1
+  debugMode: 1
 --- !u!58 &4373213459656665258
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -569,38 +604,3 @@ BoxCollider2D:
   serializedVersion: 2
   m_Size: {x: 1, y: 1}
   m_EdgeRadius: 0
---- !u!114 &1827985896
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4373213459656665261}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a81a905535b0ccc4781f637da10b8354, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  maxHealth: 200
-  currentHealth: 0
-  healthBar: {fileID: 298253316}
-  jumpForceVertical: 6
-  jumpForceHorizontalMax: 3
-  jumpCooldown: 0.5
-  groundCheckRadius: 0.2
-  enablePlayerTracking: 1
-  trackingRange: 100
-  maxJumpCount: 1
-  groundLayer:
-    serializedVersion: 2
-    m_Bits: 64
-  enemyColor: {r: 1, g: 0, b: 0, a: 1}
-  fragmentCount: 15
-  fragmentSpeed: 5
-  fragmentPrefab: {fileID: 0}
-  coinPrefab: {fileID: 4003330360852413863, guid: 9b1541601c792244391766eed91ccb35, type: 3}
-  dropCoins: 1
-  minCoins: 2
-  maxCoins: 5
-  coinDropRadius: 1
-  debugMode: 1

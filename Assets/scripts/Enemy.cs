@@ -290,7 +290,6 @@ public class Enemy : MonoBehaviour
 
             GameObject coin = Instantiate(coinPrefab, spawnPos, Quaternion.identity);
 
-            // 修正：使用 SetCoinValue 方法設定金幣數值
             CoinPickup coinPickup = coin.GetComponent<CoinPickup>();
             if (coinPickup != null)
             {
@@ -403,19 +402,32 @@ public class Enemy : MonoBehaviour
 
         if (other.CompareTag("Player"))
         {
+            // 玩家不傷害自己或反應
             return;
         }
 
-        MagicBullet bullet = other.GetComponent<MagicBullet>();
-        if (bullet != null)
+        MagicBullet magicBullet = other.GetComponent<MagicBullet>();
+        if (magicBullet != null)
         {
             if (processedBullets.Contains(other.gameObject))
             {
                 return;
             }
-
             processedBullets.Add(other.gameObject);
-            TakeDamage(bullet.damage, "MagicBullet");
+            TakeDamage(magicBullet.damage, "MagicBullet");
+            Destroy(other.gameObject);
+            return;
+        }
+
+        HeavyBullet heavyBullet = other.GetComponent<HeavyBullet>();
+        if (heavyBullet != null)
+        {
+            if (processedBullets.Contains(other.gameObject))
+            {
+                return;
+            }
+            processedBullets.Add(other.gameObject);
+            TakeDamage(heavyBullet.damage, "HeavyBullet");
             Destroy(other.gameObject);
             return;
         }

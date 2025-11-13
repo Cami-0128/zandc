@@ -1,18 +1,25 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class HealthPickup : MonoBehaviour
 {
     [Header("血包設定")]
-    public int healAmount = 25;              // 回復的血量
-    public AudioClip pickupSound;            // 拾取音效
-    public GameObject pickupEffect;          // 拾取特效（可選）
+    public int healAmount = 25;
+    public AudioClip pickupSound;
+    public GameObject pickupEffect;
 
     [Header("動畫設定")]
-    public bool enableFloating = true;       // 是否啟用浮動動畫
-    public float floatSpeed = 2f;           // 浮動速度
-    public float floatHeight = 0.5f;        // 浮動高度
+    public bool enableFloating = true;
+    public float floatSpeed = 2f;
+    public float floatHeight = 0.15f;  // 改為較小的浮動幅度
+
+    [Header("自動吸取設定")]
+    [Tooltip("是否自動吸取到玩家")]
+    public bool autoAbsorb = true;
+    [Tooltip("吸取速度")]
+    public float absorbSpeed = 10f;
+    [Tooltip("吸取範圍")]
+    public float absorbRange = 8f;
 
     [Header("功能設定")]
     [Tooltip("是否啟用滿血判斷，若滿血則不拾取血包")]
@@ -20,12 +27,15 @@ public class HealthPickup : MonoBehaviour
 
     private Vector3 startPosition;
     private AudioSource audioSource;
+    private bool collected = false;
+    private Transform playerTransform;
+    private Rigidbody2D rb;
 
     void Start()
     {
         startPosition = transform.position;
+        rb = GetComponent<Rigidbody2D>();
 
-        // 獲取或添加AudioSource組件
         audioSource = GetComponent<AudioSource>();
         if (audioSource == null && pickupSound != null)
         {
@@ -36,48 +46,108 @@ public class HealthPickup : MonoBehaviour
 
     void Update()
     {
-        // 浮動動畫
+        if (collected) return;
+
+        // 浮動動畫 - 只改變 Y 軸
         if (enableFloating)
         {
             float newY = startPosition.y + Mathf.Sin(Time.time * floatSpeed) * floatHeight;
             transform.position = new Vector3(transform.position.x, newY, transform.position.z);
         }
+
+        // 自動吸取
+        if (autoAbsorb && !collected)
+        {
+            // 尋找玩家
+            if (playerTransform == null)
+            {
+                GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+                if (playerObj != null)
+                {
+                    playerTransform = playerObj.transform;
+                }
+            }
+
+            if (playerTransform != null)
+            {
+                float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
+
+                if (distanceToPlayer < 0.3f)
+                {
+                    // 接觸到玩家，立即拾取
+                    PlayerController2D player = playerTransform.GetComponent<PlayerController2D>();
+                    if (player != null)
+                    {
+                        if (useCheckHealthFull && player.GetCurrentHealth() >= player.GetMaxHealth())
+                        {
+                            playerTransform = null;
+                            return;
+                        }
+
+                        Collect(player);
+                    }
+                }
+                else if (distanceToPlayer < absorbRange)
+                {
+                    // 朝玩家移動
+                    Vector3 direction = (playerTransform.position - transform.position).normalized;
+                    if (rb != null)
+                    {
+                        rb.velocity = new Vector2(direction.x * absorbSpeed, rb.velocity.y);
+                    }
+                }
+                else
+                {
+                    // 超出範圍，停止吸取
+                    if (rb != null)
+                    {
+                        rb.velocity = new Vector2(0, rb.velocity.y);
+                    }
+                    playerTransform = null;
+                }
+            }
+        }
     }
 
     void OnTriggerEnter2D(Collider2D other)
     {
-        // 檢查是否碰到玩家
+        if (collected) return;
+
         if (other.CompareTag("Player"))
         {
-            PlayerController2D player = other.GetComponent<PlayerController2D>();
-
-            if (player != null)
+            // 如果沒啟用自動吸取，立即拾取
+            if (!autoAbsorb)
             {
-                if (useCheckHealthFull)
+                PlayerController2D player = other.GetComponent<PlayerController2D>();
+                if (player != null)
                 {
-                    // 檢查玩家是否已經滿血
-                    if (player.GetCurrentHealth() >= player.GetMaxHealth())
+                    if (useCheckHealthFull && player.GetCurrentHealth() >= player.GetMaxHealth())
                     {
-                        Debug.Log("玩家血量已滿，無法使用血包！");
-                        return; // 血量滿時不拾取，保留血包
+                        return;
                     }
+                    Collect(player);
                 }
-
-                // 治療玩家
-                player.Heal(healAmount);
-
-                // 播放音效
-                PlayPickupSound();
-
-                // 播放特效
-                PlayPickupEffect();
-
-                // 顯示提示訊息（可選）
-                Debug.Log($"玩家拾取血包，回復 {healAmount} 點血量！");
-
-                // 銷毀血包
-                Destroy(gameObject, 0.1f); // 稍微延遲銷毀，讓音效有時間播放
             }
+        }
+    }
+
+    void Collect(PlayerController2D player)
+    {
+        if (collected) return;
+        collected = true;
+
+        player.Heal(healAmount);
+        PlayPickupSound();
+        PlayPickupEffect();
+        Debug.Log($"[HealthPickup] 玩家拾取血包，回復 {healAmount} 點血量！");
+
+        if (spriteRenderer != null)
+        {
+            StartCoroutine(FadeOut());
+        }
+        else
+        {
+            Destroy(gameObject);
         }
     }
 
@@ -94,12 +164,36 @@ public class HealthPickup : MonoBehaviour
     {
         if (pickupEffect != null)
         {
-            // 在血包位置生成特效
             Instantiate(pickupEffect, transform.position, transform.rotation);
         }
     }
 
-    // 可選：在Scene視窗中顯示偵測範圍
+    private SpriteRenderer spriteRenderer;
+    private Color originalColor;
+
+    void OnEnable()
+    {
+        spriteRenderer = GetComponent<SpriteRenderer>();
+        if (spriteRenderer != null)
+            originalColor = spriteRenderer.color;
+    }
+
+    IEnumerator FadeOut()
+    {
+        float elapsed = 0f;
+        float duration = 0.3f;
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            float alpha = Mathf.Lerp(1f, 0f, elapsed / duration);
+            spriteRenderer.color = new Color(originalColor.r, originalColor.g, originalColor.b, alpha);
+            yield return null;
+        }
+
+        Destroy(gameObject);
+    }
+
     void OnDrawGizmosSelected()
     {
         Collider2D col = GetComponent<Collider2D>();

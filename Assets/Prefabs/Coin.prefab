@@ -11,8 +11,8 @@ GameObject:
   - component: {fileID: 4003330360852413859}
   - component: {fileID: 4003330360852413858}
   - component: {fileID: 4003330360852413857}
-  - component: {fileID: 4003330360852413856}
   - component: {fileID: 4003330360852413870}
+  - component: {fileID: 4003330360852413856}
   m_Layer: 0
   m_Name: Coin
   m_TagString: Untagged
@@ -48,9 +48,9 @@ CircleCollider2D:
   m_IsTrigger: 1
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: 0.047389664, y: 0.059235293}
+  m_Offset: {x: 0.004901886, y: 0.059235096}
   serializedVersion: 2
-  m_Radius: 1.2700567
+  m_Radius: 1.2639868
 --- !u!114 &4003330360852413857
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -63,11 +63,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 865de764f4cc41e48ba49afcc263dcdf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  value: 1
-  lifetime: 0
-  flyToPlayer: 0
-  flySpeed: 5
-  flyDelay: 0.5
+  coinValue: 1
+  pickupSound: {fileID: 0}
+  autoAbsorb: 1
+  absorbSpeed: 10
+--- !u!114 &4003330360852413870
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4003330360852413863}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9f5b89044cf82c0449312ddaa7d136c9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  flipSpeed: 5
 --- !u!212 &4003330360852413856
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -120,16 +132,3 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!114 &4003330360852413870
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4003330360852413863}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9f5b89044cf82c0449312ddaa7d136c9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  flipSpeed: 5

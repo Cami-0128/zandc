@@ -10,9 +10,9 @@ GameObject:
   m_Component:
   - component: {fileID: 8724526200966308666}
   - component: {fileID: 4046465653989977891}
+  - component: {fileID: 2274046957195904398}
   - component: {fileID: 6476659687698610462}
   - component: {fileID: 6306732145524581276}
-  - component: {fileID: 2274046957195904398}
   m_Layer: 10
   m_Name: HealthPickup
   m_TagString: Untagged
@@ -87,6 +87,27 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &2274046957195904398
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8324684822703190308}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 56e4083a368780e42a0b43813ab3ccbf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  healAmount: 25
+  pickupSound: {fileID: 0}
+  pickupEffect: {fileID: 0}
+  enableFloating: 1
+  floatSpeed: 2
+  floatHeight: 0.5
+  useCheckHealthFull: 1
+  autoAbsorb: 0
+  absorbSpeed: 10
 --- !u!58 &6476659687698610462
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -124,22 +145,3 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 4
---- !u!114 &2274046957195904398
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8324684822703190308}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 56e4083a368780e42a0b43813ab3ccbf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  healAmount: 25
-  pickupSound: {fileID: 0}
-  pickupEffect: {fileID: 0}
-  enableFloating: 1
-  floatSpeed: 2
-  floatHeight: 0.5
-  useCheckHealthFull: 1
