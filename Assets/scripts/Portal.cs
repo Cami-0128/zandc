@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
+using UnityEngine.UI;
 
 public class Portal : MonoBehaviour
 {
@@ -61,7 +62,7 @@ public class Portal : MonoBehaviour
     public string requiredKeyID = "Key_1";
 
     [Tooltip("鑰匙顯示名稱")]
-    public string keyDisplayName = "金鑰匙";
+    public string keyDisplayName = "KEY";   //"金鑰匙"
 
     [Tooltip("是否消耗鑰匙（false = 可重複使用）")]
     public bool consumeKey = true;
@@ -69,11 +70,28 @@ public class Portal : MonoBehaviour
     [Tooltip("鎖定狀態顏色")]
     public Color lockedColor = new Color(0.5f, 0.5f, 0.5f, 0.5f);
 
-    [Tooltip("提示UI預製體")]
+    [Tooltip("解鎖狀態顏色")]
+    public Color unlockedColor = new Color(0.3f, 0.6f, 1f, 0.8f);
+
+    [Tooltip("提示 UI Prefab (World Space Canvas)")]
     public GameObject keyHintUIPrefab;
 
+    [Tooltip("提示 UI 在傳送門上方的高度")]
+    public float hintUIHeight = 2f;
+
+    [Tooltip("提示 UI 顯示時間（秒）")]
+    public float hintDisplayDuration = 5f;
+
+    [Tooltip("鎖定狀態的粒子效果減弱倍率")]
+    [Range(0.1f, 1f)]
+    public float lockedParticleMultiplier = 0.3f;
+
     private GameObject keyHintUI;
+    private Canvas keyHintCanvas;
+    private TextMeshProUGUI hintText;
+    private Coroutine hideHintCoroutine;
     private bool isUnlocked = false;
+    private bool playerInRange = false;
 
     [Header("=== 傳送設定 ===")]
     [Tooltip("傳送冷卻時間")]
@@ -121,6 +139,10 @@ public class Portal : MonoBehaviour
     [Range(5, 50)]
     public int particleEmissionRate = 20;
 
+    [Tooltip("粒子生命週期（秒）")]
+    [Range(0.3f, 2f)]
+    public float particleLifetime = 1f;
+
     [Header("=== 音效 ===")]
     [Tooltip("傳送音效")]
     public AudioClip teleportSound;
@@ -135,8 +157,11 @@ public class Portal : MonoBehaviour
     private SpriteRenderer spriteRenderer;
     private Vector3 originalScale;
     private ParticleSystem portalParticles;
+    private float originalParticleSize;
+    private float originalParticleRadius;
+    private int originalParticleMaxCount;
+    private int originalParticleEmissionRate;
 
-    // 列舉類型
     public enum MultiPointMode { Cyclic, Random }
     public enum MovementMode { Horizontal, Vertical, Jump }
 
@@ -150,6 +175,12 @@ public class Portal : MonoBehaviour
             isUnlocked = true;
         }
 
+        // 保存原始粒子參數
+        originalParticleSize = particleSize;
+        originalParticleRadius = particleRadius;
+        originalParticleMaxCount = particleMaxCount;
+        originalParticleEmissionRate = particleEmissionRate;
+
         UpdateVisualState();
     }
 
@@ -158,7 +189,8 @@ public class Portal : MonoBehaviour
         spriteRenderer = GetComponent<SpriteRenderer>();
         if (spriteRenderer != null)
         {
-            originalScale = transform.localScale;
+            originalScale = transform.localScale * portalSizeMultiplier;
+            transform.localScale = originalScale;
         }
 
         audioSource = GetComponent<AudioSource>();
@@ -184,25 +216,20 @@ public class Portal : MonoBehaviour
 
     void Update()
     {
-        // 視覺效果
         AnimatePortal();
 
-        // 移動邏輯
         if (isMoving)
         {
             HandleMovement();
         }
 
-        // 更新提示UI位置
         UpdateKeyHintPosition();
     }
 
     void AnimatePortal()
     {
-        // 旋轉效果
         transform.Rotate(0, 0, rotationSpeed * Time.deltaTime);
 
-        // 脈衝效果
         if (spriteRenderer != null)
         {
             float pulse = 1f + Mathf.Sin(Time.time * pulseSpeed) * pulseAmount;
@@ -252,14 +279,16 @@ public class Portal : MonoBehaviour
     {
         if (collision.CompareTag("Player"))
         {
+            playerInRange = true;
             PlayerController2D player = collision.GetComponent<PlayerController2D>();
+
             if (player != null)
             {
                 if (requiresKey && !isUnlocked)
                 {
-                    TryUnlock(player);
+                    TryUnlock();
                 }
-                else if (canTeleport)
+                else if (canTeleport && isUnlocked)
                 {
                     Transform destination = GetDestination();
                     if (destination != null)
@@ -271,32 +300,40 @@ public class Portal : MonoBehaviour
         }
     }
 
-    void OnTriggerStay2D(Collider2D collision)
-    {
-        if (collision.CompareTag("Player") && requiresKey && !isUnlocked)
-        {
-            ShowKeyHintUI(true);
-        }
-    }
-
     void OnTriggerExit2D(Collider2D collision)
     {
         if (collision.CompareTag("Player"))
         {
-            ShowKeyHintUI(false);
+            playerInRange = false;
         }
     }
 
-    void TryUnlock(PlayerController2D player)
+    void TryUnlock()
     {
-        PlayerInventory inventory = player.GetComponent<PlayerInventory>();
+        bool hasKey = KeyItem.PlayerHasKey(requiredKeyID);
 
-        if (inventory != null && inventory.HasKey(requiredKeyID))
+        if (!hasKey)
+        {
+            PlayerInventory inventory = FindObjectOfType<PlayerInventory>();
+            if (inventory != null)
+            {
+                hasKey = inventory.HasKey(requiredKeyID);
+            }
+        }
+
+        if (hasKey)
         {
             if (consumeKey)
             {
-                inventory.UseKey(requiredKeyID);
+                KeyItem.UseKey(requiredKeyID);
+
+                PlayerInventory inventory = FindObjectOfType<PlayerInventory>();
+                if (inventory != null)
+                {
+                    inventory.UseKey(requiredKeyID);
+                }
             }
+
             Unlock();
         }
         else
@@ -305,7 +342,7 @@ public class Portal : MonoBehaviour
             {
                 audioSource.PlayOneShot(lockedSound);
             }
-            ShowKeyHintUI(true);
+            ShowKeyHintUI();
             Debug.Log($"[Portal] 需要 {keyDisplayName} 才能使用傳送門！");
         }
     }
@@ -321,7 +358,7 @@ public class Portal : MonoBehaviour
         }
 
         UpdateVisualState();
-        ShowKeyHintUI(false);
+        HideKeyHintUI();
         StartCoroutine(UnlockEffect());
     }
 
@@ -395,15 +432,25 @@ public class Portal : MonoBehaviour
             {
                 spriteRenderer.color = Color.white;
                 yield return new WaitForSeconds(0.1f);
-                spriteRenderer.color = portalColor;
+                spriteRenderer.color = isUnlocked ? (portalColor != Color.clear ? portalColor : unlockedColor) : lockedColor;
                 yield return new WaitForSeconds(0.1f);
             }
+        }
+
+        if (portalParticles != null)
+        {
+            var emission = portalParticles.emission;
+            emission.rateOverTime = particleEmissionRate * 5;
+            yield return new WaitForSeconds(0.5f);
+            emission.rateOverTime = particleEmissionRate;
         }
     }
 
     void UpdateVisualState()
     {
-        Color targetColor = isUnlocked ? portalColor : lockedColor;
+        Color targetColor = isUnlocked ?
+            (portalColor != Color.clear ? portalColor : unlockedColor) :
+            lockedColor;
 
         if (spriteRenderer != null)
         {
@@ -414,6 +461,36 @@ public class Portal : MonoBehaviour
         {
             var main = portalParticles.main;
             main.startColor = targetColor;
+
+            // 根據鎖定狀態調整粒子效果
+            if (requiresKey && !isUnlocked)
+            {
+                // 鎖定狀態：減弱粒子效果
+                main.startSize = originalParticleSize * portalSizeMultiplier * lockedParticleMultiplier;
+                main.startLifetime = particleLifetime * 0.5f; // 生命週期減半
+
+                var shape = portalParticles.shape;
+                shape.radius = originalParticleRadius * portalSizeMultiplier * lockedParticleMultiplier;
+
+                var emission = portalParticles.emission;
+                emission.rateOverTime = (int)(originalParticleEmissionRate * lockedParticleMultiplier);
+
+                main.maxParticles = (int)(originalParticleMaxCount * lockedParticleMultiplier);
+            }
+            else
+            {
+                // 解鎖狀態：正常粒子效果
+                main.startSize = originalParticleSize * portalSizeMultiplier;
+                main.startLifetime = particleLifetime;
+
+                var shape = portalParticles.shape;
+                shape.radius = originalParticleRadius * portalSizeMultiplier;
+
+                var emission = portalParticles.emission;
+                emission.rateOverTime = originalParticleEmissionRate;
+
+                main.maxParticles = originalParticleMaxCount;
+            }
         }
     }
 
@@ -423,6 +500,16 @@ public class Portal : MonoBehaviour
         {
             GameObject particles = Instantiate(particleEffectPrefab, transform.position, Quaternion.identity, transform);
             portalParticles = particles.GetComponent<ParticleSystem>();
+
+            if (portalParticles != null)
+            {
+                var main = portalParticles.main;
+                main.startSize = particleSize * portalSizeMultiplier;
+                main.startLifetime = particleLifetime;
+
+                var shape = portalParticles.shape;
+                shape.radius = particleRadius * portalSizeMultiplier;
+            }
         }
         else
         {
@@ -433,17 +520,17 @@ public class Portal : MonoBehaviour
             portalParticles = particleObj.AddComponent<ParticleSystem>();
             var main = portalParticles.main;
             main.startColor = portalColor;
-            main.startSize = 0.3f;
+            main.startSize = particleSize * portalSizeMultiplier;
             main.startSpeed = 2f;
-            main.startLifetime = 1f;
-            main.maxParticles = 50;
+            main.startLifetime = particleLifetime;
+            main.maxParticles = particleMaxCount;
 
             var emission = portalParticles.emission;
-            emission.rateOverTime = 20;
+            emission.rateOverTime = particleEmissionRate;
 
             var shape = portalParticles.shape;
             shape.shapeType = ParticleSystemShapeType.Circle;
-            shape.radius = 1f;
+            shape.radius = particleRadius * portalSizeMultiplier;
         }
     }
 
@@ -451,49 +538,67 @@ public class Portal : MonoBehaviour
     {
         if (requiresKey && keyHintUIPrefab != null)
         {
-            keyHintUI = Instantiate(keyHintUIPrefab, transform);
-            keyHintUI.transform.localPosition = new Vector3(0, 1.5f, 0);
-            keyHintUI.SetActive(false);
+            keyHintUI = Instantiate(keyHintUIPrefab, transform.position + Vector3.up * hintUIHeight, Quaternion.identity);
+            keyHintCanvas = keyHintUI.GetComponent<Canvas>();
 
-            TextMeshProUGUI text = keyHintUI.GetComponentInChildren<TextMeshProUGUI>();
-            if (text != null)
+            if (keyHintCanvas != null)
             {
-                text.text = $"需要 {keyDisplayName}";
+                keyHintCanvas.worldCamera = Camera.main;
             }
-        }
-        else if (requiresKey && keyHintUIPrefab == null)
-        {
-            // 創建簡單的文字提示
-            GameObject hintObj = new GameObject("KeyHint");
-            hintObj.transform.SetParent(transform);
-            hintObj.transform.localPosition = new Vector3(0, 1.5f, 0);
 
-            TextMesh textMesh = hintObj.AddComponent<TextMesh>();
-            textMesh.text = $"🔒 需要 {keyDisplayName}";
-            textMesh.fontSize = 30;
-            textMesh.color = Color.yellow;
-            textMesh.anchor = TextAnchor.MiddleCenter;
-            textMesh.alignment = TextAlignment.Center;
+            // 尋找 HintText
+            hintText = keyHintUI.GetComponentInChildren<TextMeshProUGUI>();
+            if (hintText != null)
+            {
+                hintText.text = $"need {keyDisplayName}";   //$"需要 {keyDisplayName}"
+            }
 
-            keyHintUI = hintObj;
             keyHintUI.SetActive(false);
         }
     }
 
-    void ShowKeyHintUI(bool show)
+    void ShowKeyHintUI()
     {
         if (keyHintUI != null)
         {
-            keyHintUI.SetActive(show);
+            keyHintUI.SetActive(true);
+
+            // 取消之前的隱藏協程
+            if (hideHintCoroutine != null)
+            {
+                StopCoroutine(hideHintCoroutine);
+            }
+
+            // 啟動新的隱藏協程
+            hideHintCoroutine = StartCoroutine(HideHintAfterDelay());
         }
+    }
+
+    void HideKeyHintUI()
+    {
+        if (keyHintUI != null)
+        {
+            keyHintUI.SetActive(false);
+        }
+
+        if (hideHintCoroutine != null)
+        {
+            StopCoroutine(hideHintCoroutine);
+            hideHintCoroutine = null;
+        }
+    }
+
+    IEnumerator HideHintAfterDelay()
+    {
+        yield return new WaitForSeconds(hintDisplayDuration);
+        HideKeyHintUI();
     }
 
     void UpdateKeyHintPosition()
     {
         if (keyHintUI != null && keyHintUI.activeSelf)
         {
-            // 讓提示始終保持在傳送門上方
-            keyHintUI.transform.position = transform.position + Vector3.up * 1.5f;
+            keyHintUI.transform.position = transform.position + Vector3.up * hintUIHeight;
         }
     }
 
@@ -533,6 +638,25 @@ public class Portal : MonoBehaviour
                     break;
             }
         }
+
+        if (requiresKey)
+        {
+            Gizmos.color = isUnlocked ? Color.green : Color.red;
+            Gizmos.DrawWireSphere(transform.position, 0.3f);
+
+            // 顯示提示UI位置
+            Gizmos.color = Color.yellow;
+            Vector3 hintPos = transform.position + Vector3.up * hintUIHeight;
+            Gizmos.DrawWireCube(hintPos, new Vector3(3, 1, 0));
+        }
+    }
+
+    void OnDestroy()
+    {
+        if (keyHintUI != null)
+        {
+            Destroy(keyHintUI);
+        }
     }
 
     public void ForceUnlock()
@@ -547,6 +671,17 @@ public class Portal : MonoBehaviour
         if (spriteRenderer != null)
         {
             spriteRenderer.enabled = active;
+        }
+    }
+}
+
+public class Billboard : MonoBehaviour
+{
+    void LateUpdate()
+    {
+        if (Camera.main != null)
+        {
+            transform.rotation = Camera.main.transform.rotation;
         }
     }
 }
