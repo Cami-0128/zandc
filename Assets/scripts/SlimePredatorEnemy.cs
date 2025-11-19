@@ -1,69 +1,95 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 using System.Collections;
 
 /// <summary>
-/// ¥vµÜ©i®·­¹ªÌ¼Ä¤H - ·|°lÂÜª±®a¨Ã¥]»q§]¾½
+/// å²èŠå§†æ•é£Ÿè€…æ•µäºº - æœƒè¿½è¹¤ç©å®¶ä¸¦åŒ…è£¹åå™¬
+/// ã€ä¿®æ”¹ã€‘æ”¹å–„å…¨æ–¹ä½è¦–è§’æª¢æ¸¬ + ä¿®å¾©å³å´æª¢æ¸¬å•é¡Œ
 /// </summary>
 public class SlimePredatorEnemy : MonoBehaviour
 {
-    [Header("¨µÅŞ³]©w")]
-    [Tooltip("¨µÅŞ²¾°Ê³t«×")]
-    public float patrolSpeed = 2f;
-    [Tooltip("¨µÅŞ½d³ò¡]¥ª¥k¦U¦h¤Ö³æ¦ì¡^")]
-    public float patrolRange = 5f;
-    [Tooltip("¬O§_±Ò¥Î¨µÅŞ")]
-    public bool enablePatrol = true;
+    [Header("è¡€é‡ç³»çµ±")]
+    [Tooltip("æ˜¯å¦æœ‰è¡€é‡ç³»çµ±")]
+    public bool hasHealthSystem = false;
+    [Tooltip("æœ€å¤§è¡€é‡")]
+    public float maxHealth = 100f;
+    [SerializeField] private float currentHealth;
+    [Tooltip("è¡€æ¢UI")]
+    public EnemyHealthBar healthBar;
+    [Tooltip("æ˜¯å¦å—åˆ°ç©å®¶æ”»æ“Šå½±éŸ¿")]
+    public bool canTakeDamage = true;
+    [Tooltip("æ˜¯å¦æœƒè¢«ç„¡æ•µæ˜Ÿæ˜Ÿæ®ºæ­»")]
+    public bool vulnerableToInvincibility = true;
 
-    [Header("°lÂÜ³]©w")]
-    [Tooltip("µø½u½d³ò")]
+    [Header("å·¡é‚è¨­å®š")]
+    [Tooltip("å·¡é‚ç§»å‹•é€Ÿåº¦")]
+    public float patrolSpeed = 2f;
+    [Tooltip("å·¡é‚ç¯„åœï¼ˆå·¦å³å„å¤šå°‘å–®ä½ï¼‰")]
+    public float patrolRange = 5f;
+    [Tooltip("æ˜¯å¦å•Ÿç”¨å·¡é‚")]
+    public bool enablePatrol = true;
+    [Tooltip("ç¢°åˆ°éšœç¤™ç‰©æ™‚è‡ªå‹•æŠ˜è¿”")]
+    public bool autoTurnOnCollision = true;
+
+    [Header("è¿½è¹¤è¨­å®š")]
+    [Tooltip("è¦–ç·šç¯„åœ")]
     public float visionRange = 10f;
-    [Tooltip("µø½u¨¤«×¡]«e¤è¦h¤Ö«×¤º¥i¥H¬İ¨ì¡^")]
+    [Tooltip("è¦–ç·šæ¨¡å¼")]
+    public VisionMode visionMode = VisionMode.Omnidirectional;
+    [Tooltip("è¦–ç·šè§’åº¦ï¼ˆåƒ…åœ¨æ–¹å‘æ€§æ¨¡å¼ä¸‹ä½¿ç”¨ï¼‰")]
     public float visionAngle = 60f;
-    [Tooltip("°lÂÜ²¾°Ê³t«×")]
+    [Tooltip("è¿½è¹¤ç§»å‹•é€Ÿåº¦")]
     public float chaseSpeed = 3f;
-    [Tooltip("¶i¤J°lÂÜª¬ºA©Ò»İ°±¯d®É¶¡")]
+    [Tooltip("é€²å…¥è¿½è¹¤ç‹€æ…‹æ‰€éœ€åœç•™æ™‚é–“")]
     public float detectionTime = 3f;
-    [Tooltip("µø½uÀË´ú¼h¯Å")]
+    [Tooltip("è¦–ç·šæª¢æ¸¬å±¤ç´š")]
     public LayerMask obstacleLayer;
 
-    [Header("¥]»q§]¾½³]©w")]
-    [Tooltip("Ä²µo¥]»qªº¶ZÂ÷")]
+    public enum VisionMode
+    {
+        Omnidirectional,  // å…¨æ–¹ä½ï¼ˆ360åº¦ï¼Œå·¦å³éƒ½èƒ½çœ‹åˆ°ï¼‰
+        Directional       // æ–¹å‘æ€§ï¼ˆåªèƒ½çœ‹å‰æ–¹ï¼Œéœ€è¦è½‰èº«ï¼‰
+    }
+
+    [Header("åŒ…è£¹åå™¬è¨­å®š")]
+    [Tooltip("è§¸ç™¼åŒ…è£¹çš„è·é›¢")]
     public float captureDistance = 1.5f;
-    [Tooltip("¥]»q§¹¦¨®É¶¡")]
+    [Tooltip("åŒ…è£¹å®Œæˆæ™‚é–“")]
     public float captureTime = 2f;
-    [Tooltip("¥]»q¯S®Ä¹w»sª«")]
+    [Tooltip("åŒ…è£¹ç‰¹æ•ˆé è£½ç‰©")]
     public GameObject captureEffectPrefab;
-    [Tooltip("¥]»q²É¤l¯S®ÄÃC¦â")]
+    [Tooltip("åŒ…è£¹ç²’å­ç‰¹æ•ˆé¡è‰²")]
     public Color captureColor = new Color(0.2f, 0.8f, 0.3f, 0.7f);
-    [Tooltip("°k²æ¾÷²v¡]0-1¡A¶V¤p¶VÃø°k¡^")]
+    [Tooltip("é€ƒè„«æ©Ÿç‡ï¼ˆ0-1ï¼Œè¶Šå°è¶Šé›£é€ƒï¼‰")]
     [Range(0f, 1f)]
     public float escapeChance = 0.1f;
-    [Tooltip("ª±®a·»¸Ñ®É¶¡")]
+    [Tooltip("ç©å®¶æº¶è§£æ™‚é–“")]
     public float dissolveTime = 1.5f;
 
-    [Header("¥~Æ[³]©w")]
-    [Tooltip("¥vµÜ©iÃC¦â")]
+    [Header("å¤–è§€è¨­å®š")]
+    [Tooltip("å²èŠå§†é¡è‰²")]
     public Color slimeColor = new Color(0.2f, 0.8f, 0.3f);
-    [Tooltip("°»´ú¨ìª±®a®ÉªºÃC¦â")]
+    [Tooltip("åµæ¸¬åˆ°ç©å®¶æ™‚çš„é¡è‰²")]
     public Color alertColor = new Color(1f, 0.3f, 0.2f);
-    [Tooltip("Äµ§Ù´£¥Ü²Å¸¹¹w»sª«¡]Åå¹Ä¸¹¡^")]
+    [Tooltip("è­¦æˆ’æç¤ºç¬¦è™Ÿé è£½ç‰©ï¼ˆé©šå˜†è™Ÿï¼‰")]
     public GameObject alertIconPrefab;
 
-    [Header("­µ®Ä")]
-    [Tooltip("°»´ú¨ìª±®a­µ®Ä")]
+    [Header("éŸ³æ•ˆ")]
+    [Tooltip("åµæ¸¬åˆ°ç©å®¶éŸ³æ•ˆ")]
     public AudioClip detectSound;
-    [Tooltip("¥]»q­µ®Ä")]
+    [Tooltip("åŒ…è£¹éŸ³æ•ˆ")]
     public AudioClip captureSound;
-    [Tooltip("§]¾½­µ®Ä")]
+    [Tooltip("åå™¬éŸ³æ•ˆ")]
     public AudioClip devourSound;
 
-    [Header("Debug³]©w")]
-    [Tooltip("Åã¥Üµø½u½d³ò")]
+    [Header("Debugè¨­å®š")]
+    [Tooltip("é¡¯ç¤ºè¦–ç·šç¯„åœ")]
     public bool showVisionRange = true;
-    [Tooltip("Åã¥Ü°»´ú­p®É")]
+    [Tooltip("é¡¯ç¤ºåµæ¸¬è¨ˆæ™‚")]
     public bool showDetectionTimer = true;
+    [Tooltip("é¡¯ç¤ºè©³ç´°èª¿è©¦ä¿¡æ¯")]
+    public bool showDetailedDebug = true;
 
-    // ¨p¦³ÅÜ¼Æ
+    // ç§æœ‰è®Šæ•¸
     private Transform playerTransform;
     private Rigidbody2D rb;
     private SpriteRenderer spriteRenderer;
@@ -74,15 +100,16 @@ public class SlimePredatorEnemy : MonoBehaviour
     private float detectionTimer = 0f;
     private bool isChasing = false;
     private bool isCapturing = false;
+    private bool isDying = false;
     private GameObject alertIcon;
     private GameObject captureEffect;
 
     private enum State
     {
-        Patrol,      // ¨µÅŞª¬ºA
-        Detecting,   // °»´úª±®a¤¤
-        Chasing,     // °lÂÜª±®a
-        Capturing    // ¥]»qª±®a
+        Patrol,      // å·¡é‚ç‹€æ…‹
+        Detecting,   // åµæ¸¬ç©å®¶ä¸­
+        Chasing,     // è¿½è¹¤ç©å®¶
+        Capturing    // åŒ…è£¹ç©å®¶
     }
 
     private State currentState = State.Patrol;
@@ -103,6 +130,12 @@ public class SlimePredatorEnemy : MonoBehaviour
         if (playerObj != null)
         {
             playerTransform = playerObj.transform;
+            if (showDetailedDebug)
+                Debug.Log($"[SlimePredator] æ‰¾åˆ°ç©å®¶: {playerTransform.name}");
+        }
+        else
+        {
+            Debug.LogError("[SlimePredator] æ‰¾ä¸åˆ°æ¨™ç±¤ç‚º 'Player' çš„ç‰©ä»¶ï¼");
         }
 
         patrolStartPosition = transform.position;
@@ -112,12 +145,29 @@ public class SlimePredatorEnemy : MonoBehaviour
             spriteRenderer.color = slimeColor;
         }
 
-        Debug.Log("[SlimePredator] ¥vµÜ©i®·­¹ªÌ¤w¥Í¦¨");
+        // åˆå§‹åŒ–è¡€é‡ç³»çµ±
+        if (hasHealthSystem)
+        {
+            currentHealth = maxHealth;
+
+            if (healthBar == null)
+            {
+                healthBar = GetComponentInChildren<EnemyHealthBar>();
+            }
+
+            if (healthBar != null)
+            {
+                healthBar.Initialize(this.transform);
+                healthBar.UpdateHealthBar(currentHealth, maxHealth);
+            }
+        }
+
+        Debug.Log("[SlimePredator] å²èŠå§†æ•é£Ÿè€…å·²ç”Ÿæˆ");
     }
 
     void Update()
     {
-        if (playerTransform == null || isCapturing) return;
+        if (playerTransform == null || isCapturing || isDying) return;
 
         switch (currentState)
         {
@@ -164,6 +214,7 @@ public class SlimePredatorEnemy : MonoBehaviour
         }
     }
 
+    // ã€ä¿®æ”¹ã€‘æ”¹å–„ CheckForPlayer æ–¹æ³• - ä¿®å¾©å…¨æ–¹ä½è¦–è§’æª¢æ¸¬
     void CheckForPlayer()
     {
         if (playerTransform == null) return;
@@ -171,25 +222,52 @@ public class SlimePredatorEnemy : MonoBehaviour
         Vector3 directionToPlayer = playerTransform.position - transform.position;
         float distanceToPlayer = directionToPlayer.magnitude;
 
-        // ÀË¬d¬O§_¦bµø½u½d³ò¤º
+        if (showDetailedDebug)
+            Debug.Log($"[SlimePredator] ç•¶å‰ç‹€æ…‹: {currentState}, ç©å®¶è·é›¢: {distanceToPlayer:F2}, è¦–ç·šç¯„åœ: {visionRange}");
+
+        // æª¢æŸ¥æ˜¯å¦åœ¨è¦–ç·šç¯„åœå…§
         if (distanceToPlayer <= visionRange)
         {
-            // ÀË¬d¨¤«×
-            Vector3 forward = transform.right * (spriteRenderer.flipX ? -1 : 1);
-            float angle = Vector3.Angle(forward, directionToPlayer);
+            bool inAngle = true;
 
-            if (angle <= visionAngle / 2f)
+            // ã€é‡é»ã€‘å…¨æ–¹ä½æ¨¡å¼ä¸‹ï¼Œä¸æª¢æŸ¥è§’åº¦ï¼Œç›´æ¥é€šé
+            if (visionMode == VisionMode.Directional)
             {
-                // ÀË¬d¬O§_¦³»ÙÃªª«¾B¾×
+                // æ–¹å‘æ€§æ¨¡å¼ï¼šåªèƒ½çœ‹å‰æ–¹
+                Vector3 forward = spriteRenderer.flipX ? Vector3.left : Vector3.right;
+                float angle = Vector3.Angle(forward, directionToPlayer.normalized);
+                inAngle = (angle <= visionAngle / 2f);
+                if (showDetailedDebug)
+                    Debug.Log($"[SlimePredator] æ–¹å‘æ¨¡å¼ - è§’åº¦: {angle:F1}Â°, å…è¨±: {visionAngle / 2f}Â°");
+            }
+            else
+            {
+                // ã€ä¿®æ”¹ã€‘Omnidirectional æ¨¡å¼ï¼šå…¨æ–¹ä½æª¢æ¸¬ï¼ˆ360åº¦ï¼‰
+                inAngle = true;
+                if (showDetailedDebug)
+                    Debug.Log("[SlimePredator] å…¨æ–¹ä½æ¨¡å¼ - ç¯„åœå…§è‡ªå‹•é€šé");
+            }
+
+            if (inAngle)
+            {
+                // æª¢æŸ¥æ˜¯å¦æœ‰éšœç¤™ç‰©é®æ“‹
                 RaycastHit2D hit = Physics2D.Raycast(transform.position, directionToPlayer.normalized, distanceToPlayer, obstacleLayer);
 
                 if (hit.collider == null || hit.collider.CompareTag("Player"))
                 {
-                    // ¬İ¨ìª±®a¤F¡I
-                    currentState = State.Detecting;
-                    detectionTimer = 0f;
-                    ShowAlertIcon();
-                    Debug.Log("[SlimePredator] °»´ú¨ìª±®a¡I");
+                    // çœ‹åˆ°ç©å®¶äº†ï¼
+                    if (currentState == State.Patrol)
+                    {
+                        currentState = State.Detecting;
+                        detectionTimer = 0f;
+                        ShowAlertIcon();
+                        Debug.Log("[SlimePredator] âœ… åµæ¸¬åˆ°ç©å®¶ï¼");
+                    }
+                }
+                else
+                {
+                    if (showDetailedDebug)
+                        Debug.Log($"[SlimePredator] ç©å®¶è¢«é®æ“‹ï¼Œé®æ“‹ç‰©: {hit.collider.name}");
                 }
             }
         }
@@ -203,10 +281,10 @@ public class SlimePredatorEnemy : MonoBehaviour
             return;
         }
 
-        // °±¤î²¾°Ê¡A¨nµÛª±®a
+        // åœæ­¢ç§»å‹•ï¼Œç›¯è‘—ç©å®¶
         rb.velocity = new Vector2(0, rb.velocity.y);
 
-        // ­±¦Vª±®a
+        // é¢å‘ç©å®¶
         if (playerTransform.position.x > transform.position.x)
         {
             spriteRenderer.flipX = false;
@@ -216,24 +294,24 @@ public class SlimePredatorEnemy : MonoBehaviour
             spriteRenderer.flipX = true;
         }
 
-        // ÀË¬dª±®a¬O§_ÁÙ¦bµø½u¤º
+        // æª¢æŸ¥ç©å®¶æ˜¯å¦é‚„åœ¨è¦–ç·šå…§
         if (!IsPlayerInVision())
         {
             ResetToPatrol();
             return;
         }
 
-        // ­p®É
+        // è¨ˆæ™‚
         detectionTimer += Time.deltaTime;
 
-        // §ïÅÜÃC¦â´£¥Ü
+        // æ”¹è®Šé¡è‰²æç¤º
         if (spriteRenderer != null)
         {
             float t = detectionTimer / detectionTime;
             spriteRenderer.color = Color.Lerp(slimeColor, alertColor, t);
         }
 
-        // ¹F¨ì°»´ú®É¶¡¡A¶}©l°lÂÜ
+        // é”åˆ°åµæ¸¬æ™‚é–“ï¼Œé–‹å§‹è¿½è¹¤
         if (detectionTimer >= detectionTime)
         {
             currentState = State.Chasing;
@@ -245,7 +323,7 @@ public class SlimePredatorEnemy : MonoBehaviour
                 audioSource.PlayOneShot(detectSound);
             }
 
-            Debug.Log("[SlimePredator] ¶}©l°lÂÜª±®a¡I");
+            Debug.Log("[SlimePredator] é–‹å§‹è¿½è¹¤ç©å®¶ï¼");
         }
     }
 
@@ -257,11 +335,11 @@ public class SlimePredatorEnemy : MonoBehaviour
             return;
         }
 
-        // °lÂÜª±®a
+        // è¿½è¹¤ç©å®¶
         Vector3 direction = (playerTransform.position - transform.position).normalized;
         rb.velocity = new Vector2(direction.x * chaseSpeed, rb.velocity.y);
 
-        // ­±¦Vª±®a
+        // é¢å‘ç©å®¶
         if (direction.x > 0)
         {
             spriteRenderer.flipX = false;
@@ -271,7 +349,7 @@ public class SlimePredatorEnemy : MonoBehaviour
             spriteRenderer.flipX = true;
         }
 
-        // ÀË¬d¬O§_±µªñª±®a
+        // æª¢æŸ¥æ˜¯å¦æ¥è¿‘ç©å®¶
         float distance = Vector3.Distance(transform.position, playerTransform.position);
 
         if (distance <= captureDistance)
@@ -288,9 +366,9 @@ public class SlimePredatorEnemy : MonoBehaviour
         isCapturing = true;
         rb.velocity = Vector2.zero;
 
-        Debug.Log("[SlimePredator] ¶}©l¥]»qª±®a¡I");
+        Debug.Log("[SlimePredator] é–‹å§‹åŒ…è£¹ç©å®¶ï¼");
 
-        // ¼½©ñ­µ®Ä
+        // æ’­æ”¾éŸ³æ•ˆ
         if (captureSound != null && audioSource != null)
         {
             audioSource.PlayOneShot(captureSound);
@@ -301,23 +379,23 @@ public class SlimePredatorEnemy : MonoBehaviour
 
     IEnumerator CaptureSequence()
     {
-        // ÀË¬dª±®a¬O§_µL¼Ä
+        // æª¢æŸ¥ç©å®¶æ˜¯å¦ç„¡æ•µ
         InvincibilityController invincibility = playerTransform.GetComponent<InvincibilityController>();
         if (invincibility != null && invincibility.IsInvincible())
         {
-            Debug.Log("[SlimePredator] ª±®a³B©óµL¼Äª¬ºA¡AµLªk®·Àò¡I");
+            Debug.Log("[SlimePredator] ç©å®¶è™•æ–¼ç„¡æ•µç‹€æ…‹ï¼Œç„¡æ³•æ•ç²ï¼");
             ResetToPatrol();
             yield break;
         }
 
-        // ¸T¥Îª±®a±±¨î
+        // ç¦ç”¨ç©å®¶æ§åˆ¶
         PlayerController2D playerController = playerTransform.GetComponent<PlayerController2D>();
         if (playerController != null)
         {
             playerController.canControl = false;
         }
 
-        // ³Ğ«Ø¥]»q¯S®Ä
+        // å‰µå»ºåŒ…è£¹ç‰¹æ•ˆ
         if (captureEffectPrefab != null)
         {
             captureEffect = Instantiate(captureEffectPrefab, playerTransform.position, Quaternion.identity);
@@ -326,17 +404,17 @@ public class SlimePredatorEnemy : MonoBehaviour
         }
         else
         {
-            // ¨Ï¥ÎÂ²³æªº²É¤l®ÄªG
+            // ä½¿ç”¨ç°¡å–®çš„ç²’å­æ•ˆæœ
             CreateDefaultCaptureEffect();
         }
 
-        // ÀË¬d°k²æ¾÷²v
+        // æª¢æŸ¥é€ƒè„«æ©Ÿç‡
         float escapeRoll = Random.Range(0f, 1f);
 
         if (escapeRoll < escapeChance)
         {
-            // ª±®a°k²æ¤F¡I
-            Debug.Log("[SlimePredator] ª±®a°k²æ¤F¡I");
+            // ç©å®¶é€ƒè„«äº†ï¼
+            Debug.Log("[SlimePredator] ç©å®¶é€ƒè„«äº†ï¼");
             yield return new WaitForSeconds(captureTime * 0.5f);
 
             if (captureEffect != null)
@@ -353,7 +431,7 @@ public class SlimePredatorEnemy : MonoBehaviour
             yield break;
         }
 
-        // ¥]»q¹Lµ{
+        // åŒ…è£¹éç¨‹
         float elapsed = 0f;
         Vector3 startScale = playerTransform.localScale;
 
@@ -362,7 +440,7 @@ public class SlimePredatorEnemy : MonoBehaviour
             elapsed += Time.deltaTime;
             float t = elapsed / captureTime;
 
-            // ª±®a³vº¥ÁY¤p
+            // ç©å®¶é€æ¼¸ç¸®å°
             if (playerTransform != null)
             {
                 playerTransform.localScale = Vector3.Lerp(startScale, startScale * 0.3f, t);
@@ -371,22 +449,22 @@ public class SlimePredatorEnemy : MonoBehaviour
             yield return null;
         }
 
-        // ¼½©ñ§]¾½­µ®Ä
+        // æ’­æ”¾åå™¬éŸ³æ•ˆ
         if (devourSound != null && audioSource != null)
         {
             audioSource.PlayOneShot(devourSound);
         }
 
-        // ª±®a·»¸Ñ°Êµe
+        // ç©å®¶æº¶è§£å‹•ç•«
         yield return StartCoroutine(DissolvePlayer());
 
-        // ª±®a¦º¤`
+        // ç©å®¶æ­»äº¡
         if (playerController != null)
         {
             playerController.Die();
         }
 
-        // ²M²z
+        // æ¸…ç†
         if (captureEffect != null)
         {
             Destroy(captureEffect);
@@ -409,12 +487,12 @@ public class SlimePredatorEnemy : MonoBehaviour
                 elapsed += Time.deltaTime;
                 float t = elapsed / dissolveTime;
 
-                // ²H¥X¨Ã§ïÅÜÃC¦â
+                // æ·¡å‡ºä¸¦æ”¹è®Šé¡è‰²
                 Color dissolveColor = Color.Lerp(originalColor, captureColor, t);
                 dissolveColor.a = Mathf.Lerp(1f, 0f, t);
                 playerRenderer.color = dissolveColor;
 
-                // ÁY¤p
+                // ç¸®å°
                 if (playerTransform != null)
                 {
                     float scale = Mathf.Lerp(0.3f, 0f, t);
@@ -449,6 +527,7 @@ public class SlimePredatorEnemy : MonoBehaviour
         captureEffect = effectObj;
     }
 
+    // ã€ä¿®æ”¹ã€‘æ”¹å–„ IsPlayerInVision - ä¿®å¾©å…¨æ–¹ä½è¦–è§’æª¢æ¸¬
     bool IsPlayerInVision()
     {
         if (playerTransform == null) return false;
@@ -458,10 +537,15 @@ public class SlimePredatorEnemy : MonoBehaviour
 
         if (distanceToPlayer > visionRange) return false;
 
-        Vector3 forward = transform.right * (spriteRenderer.flipX ? -1 : 1);
-        float angle = Vector3.Angle(forward, directionToPlayer);
+        // æ ¹æ“šè¦–ç·šæ¨¡å¼æª¢æŸ¥è§’åº¦
+        if (visionMode == VisionMode.Directional)
+        {
+            Vector3 forward = spriteRenderer.flipX ? Vector3.left : Vector3.right;
+            float angle = Vector3.Angle(forward, directionToPlayer.normalized);
 
-        if (angle > visionAngle / 2f) return false;
+            if (angle > visionAngle / 2f) return false;
+        }
+        // ã€ä¿®æ”¹ã€‘Omnidirectional æ¨¡å¼ï¼šè·³éè§’åº¦æª¢æŸ¥ï¼Œå…¨æ–¹ä½æœ‰æ•ˆ
 
         RaycastHit2D hit = Physics2D.Raycast(transform.position, directionToPlayer.normalized, distanceToPlayer, obstacleLayer);
 
@@ -482,7 +566,7 @@ public class SlimePredatorEnemy : MonoBehaviour
 
         HideAlertIcon();
 
-        Debug.Log("[SlimePredator] ªğ¦^¨µÅŞª¬ºA");
+        Debug.Log("[SlimePredator] è¿”å›å·¡é‚ç‹€æ…‹");
     }
 
     void ShowAlertIcon()
@@ -513,27 +597,232 @@ public class SlimePredatorEnemy : MonoBehaviour
         }
     }
 
+    // ===== è¡€é‡ç³»çµ±ç›¸é—œæ–¹æ³• =====
+
+    public void TakeDamage(float damage, string damageSource = "Unknown")
+    {
+        if (!hasHealthSystem || !canTakeDamage || isDying) return;
+
+        currentHealth -= damage;
+        currentHealth = Mathf.Max(0, currentHealth);
+
+        if (healthBar != null)
+        {
+            healthBar.UpdateHealthBar(currentHealth, maxHealth);
+        }
+
+        Debug.Log($"[SlimePredator] å—åˆ° {damage} é»å‚·å®³ (ä¾†æº: {damageSource})ï¼Œå‰©é¤˜è¡€é‡: {currentHealth}/{maxHealth}");
+
+        if (currentHealth <= 0)
+        {
+            Die();
+        }
+        else
+        {
+            StartCoroutine(FlashEffect());
+        }
+    }
+
+    IEnumerator FlashEffect()
+    {
+        if (spriteRenderer == null) yield break;
+
+        Color originalColor = currentState == State.Detecting
+            ? Color.Lerp(slimeColor, alertColor, detectionTimer / detectionTime)
+            : (currentState == State.Chasing ? alertColor : slimeColor);
+
+        for (int i = 0; i < 3; i++)
+        {
+            if (isDying) yield break;
+
+            spriteRenderer.color = Color.white;
+            yield return new WaitForSeconds(0.1f);
+
+            if (isDying) yield break;
+
+            spriteRenderer.color = originalColor;
+            yield return new WaitForSeconds(0.1f);
+        }
+    }
+
+    void Die()
+    {
+        if (isDying) return;
+
+        isDying = true;
+
+        Debug.Log("[SlimePredator] å²èŠå§†æ­»äº¡ï¼");
+
+        StopAllCoroutines();
+
+        if (healthBar != null && healthBar.gameObject != null)
+        {
+            Destroy(healthBar.gameObject);
+            healthBar = null;
+        }
+
+        HideAlertIcon();
+
+        if (captureEffect != null)
+        {
+            Destroy(captureEffect);
+        }
+
+        if (rb != null)
+        {
+            rb.velocity = Vector2.zero;
+            rb.isKinematic = true;
+        }
+
+        Collider2D[] colliders = GetComponents<Collider2D>();
+        foreach (Collider2D col in colliders)
+        {
+            col.enabled = false;
+        }
+
+        StartCoroutine(DeathEffect());
+    }
+
+    IEnumerator DeathEffect()
+    {
+        if (spriteRenderer != null)
+        {
+            float elapsed = 0f;
+            float fadeTime = 1f;
+            Color originalColor = spriteRenderer.color;
+
+            while (elapsed < fadeTime)
+            {
+                elapsed += Time.deltaTime;
+                float alpha = Mathf.Lerp(1f, 0f, elapsed / fadeTime);
+                spriteRenderer.color = new Color(originalColor.r, originalColor.g, originalColor.b, alpha);
+
+                float scale = Mathf.Lerp(1f, 0f, elapsed / fadeTime);
+                transform.localScale = Vector3.one * scale;
+
+                yield return null;
+            }
+        }
+
+        Destroy(gameObject);
+    }
+
+    void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (isDying || isCapturing) return;
+
+        // ç©å®¶ç¢°æ’ - ä¸æŠ˜è¿”
+        if (collision.gameObject.CompareTag("Player"))
+        {
+            return;
+        }
+
+        // ç¢°åˆ°å…¶ä»–ç‰©ä»¶å°±æŠ˜è¿”ï¼ˆç‰†å£ã€åœ°é¢ã€å¹³å°ç­‰ï¼‰
+        Debug.Log($"[SlimePredator] ç¢°åˆ°éšœç¤™ç‰©: {collision.gameObject.name}ï¼ŒæŠ˜è¿”");
+
+        if (currentState == State.Patrol && enablePatrol)
+        {
+            movingRight = !movingRight;
+            FlipSprite();
+        }
+        else if (currentState == State.Chasing)
+        {
+            // è¿½è¹¤ä¸­ç¢°åˆ°ç‰†å£æ™‚ï¼Œä¹Ÿè½‰èº«å»è¿½ç©å®¶
+            if (playerTransform != null)
+            {
+                if (playerTransform.position.x > transform.position.x)
+                {
+                    spriteRenderer.flipX = false;
+                    movingRight = true;
+                }
+                else
+                {
+                    spriteRenderer.flipX = true;
+                    movingRight = false;
+                }
+            }
+        }
+    }
+
+    void OnTriggerEnter2D(Collider2D other)
+    {
+        if (isDying) return;
+
+        // è™•ç†ç©å®¶å­å½ˆå‚·å®³
+        if (hasHealthSystem && canTakeDamage)
+        {
+            MagicBullet magicBullet = other.GetComponent<MagicBullet>();
+            if (magicBullet != null)
+            {
+                TakeDamage(magicBullet.damage, "MagicBullet");
+                Destroy(other.gameObject);
+                return;
+            }
+
+            HeavyBullet heavyBullet = other.GetComponent<HeavyBullet>();
+            if (heavyBullet != null)
+            {
+                TakeDamage(heavyBullet.damage, "HeavyBullet");
+                Destroy(other.gameObject);
+                return;
+            }
+        }
+
+        // è™•ç†ç„¡æ•µæ˜Ÿæ˜Ÿ
+        if (vulnerableToInvincibility && other.CompareTag("Player"))
+        {
+            InvincibilityController invincibility = other.GetComponent<InvincibilityController>();
+            if (invincibility != null && invincibility.IsInvincible())
+            {
+                Debug.Log("[SlimePredator] è¢«ç„¡æ•µç©å®¶æ¶ˆæ»…ï¼");
+                Die();
+            }
+        }
+    }
+
+    public float GetHealthPercentage()
+    {
+        if (!hasHealthSystem) return 1f;
+        return currentHealth / maxHealth;
+    }
+
+    public float GetCurrentHealth()
+    {
+        return currentHealth;
+    }
+
+    // ===== Gizmos ç¹ªè£½ =====
+
     void OnDrawGizmos()
     {
         if (!showVisionRange) return;
 
-        // Ã¸»sµø½u½d³ò
+        // ç¹ªè£½è¦–ç·šç¯„åœ
         Gizmos.color = Color.yellow;
-        Vector3 forward = transform.right * (spriteRenderer != null && spriteRenderer.flipX ? -1 : 1);
 
-        // Ã¸»sµø½u®°§Î
-        Vector3 leftBoundary = Quaternion.Euler(0, 0, visionAngle / 2f) * forward * visionRange;
-        Vector3 rightBoundary = Quaternion.Euler(0, 0, -visionAngle / 2f) * forward * visionRange;
+        if (visionMode == VisionMode.Omnidirectional)
+        {
+            // å…¨æ–¹ä½è¦–è§’ï¼Œç¹ªè£½åœ“å½¢
+            Gizmos.DrawWireSphere(transform.position, visionRange);
+        }
+        else
+        {
+            // æ–¹å‘æ€§è¦–è§’ï¼Œç¹ªè£½æ‰‡å½¢
+            Vector3 forward = spriteRenderer != null && spriteRenderer.flipX ? Vector3.left : Vector3.right;
 
-        Gizmos.DrawLine(transform.position, transform.position + leftBoundary);
-        Gizmos.DrawLine(transform.position, transform.position + rightBoundary);
-        Gizmos.DrawLine(transform.position, transform.position + forward * visionRange);
+            Vector3 leftBoundary = Quaternion.Euler(0, 0, visionAngle / 2f) * forward * visionRange;
+            Vector3 rightBoundary = Quaternion.Euler(0, 0, -visionAngle / 2f) * forward * visionRange;
 
-        // Ã¸»s®·Àò½d³ò
+            Gizmos.DrawLine(transform.position, transform.position + leftBoundary);
+            Gizmos.DrawLine(transform.position, transform.position + rightBoundary);
+            Gizmos.DrawLine(transform.position, transform.position + forward * visionRange);
+        }
+
+        // ç¹ªè£½æ•ç²ç¯„åœ
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, captureDistance);
 
-        // Ã¸»s¨µÅŞ½d³ò
+        // ç¹ªè£½å·¡é‚ç¯„åœ
         if (enablePatrol && Application.isPlaying)
         {
             Gizmos.color = Color.cyan;
@@ -549,7 +838,7 @@ public class SlimePredatorEnemy : MonoBehaviour
         screenPos.y = Screen.height - screenPos.y;
 
         float progress = detectionTimer / detectionTime;
-        string timerText = $"°»´ú¤¤: {progress * 100:F0}%";
+        string timerText = $"åµæ¸¬ä¸­: {progress * 100:F0}%";
 
         GUI.Label(new Rect(screenPos.x - 50, screenPos.y, 100, 20), timerText);
     }

@@ -45,6 +45,12 @@ public class SwordSlashSkill : MonoBehaviour
     [Range(0f, 1f)]
     public float pivotOffsetRatio = 0.95f;
 
+    [Header("Debug設定")]
+    [Tooltip("顯示攻擊範圍")]
+    public bool showAttackRadius = true;
+    [Tooltip("顯示詳細調試信息")]
+    public bool showDetailedDebug = true;
+
     private bool isSlashing = false;
     private float slashTimer = 0f;
     private float lastSlashTime = -999f;
@@ -273,6 +279,9 @@ public class SwordSlashSkill : MonoBehaviour
         // 使用OverlapCircle檢測範圍內的所有碰撞體
         Collider2D[] hitColliders = Physics2D.OverlapCircleAll(swordPos, slashDetectionRadius, detectionLayerMask);
 
+        if (showDetailedDebug && hitColliders.Length > 0)
+            Debug.Log($"[SwordSlashSkill] 檢測到 {hitColliders.Length} 個碰撞體");
+
         foreach (Collider2D col in hitColliders)
         {
             // 跳過已經擊中過的敵人
@@ -282,6 +291,21 @@ public class SwordSlashSkill : MonoBehaviour
             // 跳過玩家自己
             if (col.CompareTag("Player"))
                 continue;
+
+            // 【修改】先檢測 SlimePredatorEnemy
+            SlimePredatorEnemy slime = col.GetComponent<SlimePredatorEnemy>();
+            if (slime != null)
+            {
+                hitThisSlash.Add(col.gameObject);
+                slime.TakeDamage(normalEnemyDamage, "PlayerSword");
+                Debug.Log($"[SwordSlashSkill] ✅ 劍擊中史萊姆！造成 {normalEnemyDamage} 點傷害");
+
+                if (audioSource != null && hitSound != null)
+                {
+                    audioSource.PlayOneShot(hitSound);
+                }
+                continue;
+            }
 
             // 檢測Boss
             BossController2D boss = col.GetComponent<BossController2D>();
@@ -310,7 +334,11 @@ public class SwordSlashSkill : MonoBehaviour
                 {
                     audioSource.PlayOneShot(hitSound);
                 }
+                continue;
             }
+
+            if (showDetailedDebug)
+                Debug.Log($"[SwordSlashSkill] ⚠️ {col.gameObject.name} 沒有找到可識別的敵人組件 (圖層: {LayerMask.LayerToName(col.gameObject.layer)})");
         }
     }
 
@@ -377,6 +405,15 @@ public class SwordSlashSkill : MonoBehaviour
 
         SwordTrailFade fade = trail.AddComponent<SwordTrailFade>();
         fade.fadeDuration = trailFadeDuration;
+    }
+
+    // 【新增】Gizmos 繪製攻擊範圍
+    void OnDrawGizmosSelected()
+    {
+        if (!showAttackRadius || swordObject == null) return;
+
+        Gizmos.color = new Color(1f, 0f, 0f, 0.3f);
+        Gizmos.DrawWireSphere(swordObject.transform.position, slashDetectionRadius);
     }
 }
 
