@@ -53,7 +53,7 @@ public class PlayerController2D : MonoBehaviour
     public int LastHorizontalDirection { get; private set; } = 1;
 
     // ========== 按鍵綁定管理器 ==========
-    private KeyBindingManager keyManager;
+    private KeyBindingManager keyManager;  //自訂義按鍵功能未完成
 
     void Start()
     {

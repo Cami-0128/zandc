@@ -195,14 +195,14 @@ public class BossController2D : MonoBehaviour
             spriteRenderer.flipX = dirX < 0;
     }
 
-    // 【新增】外部接口 - 用於捕捉技能
+    // 外部接口 - 用於捕捉技能
     public void OnCaptured()
     {
         Debug.Log("[Boss] Boss 被捕捉了！");
         Die();
     }
 
-    // 【新增】獲取當前血量百分比
+    // 獲取當前血量百分比
     public float GetHealthPercentage()
     {
         return currentHealth / maxHealth;

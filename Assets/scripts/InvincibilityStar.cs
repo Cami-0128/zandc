@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class InvincibilityStar : MonoBehaviour
+public class InvincibilityStar : MonoBehaviour   //無敵星星
 {
     [Header("星星旋轉效果")]
     [Tooltip("星星每秒旋轉的角度")]

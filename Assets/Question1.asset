@@ -17,10 +17,10 @@ MonoBehaviour:
   - (A) Emmm...
   - (B) SURE.
   - (C) IDK.
-  - (D) .
+  - (D) . (ans)
   correctAnswerIndex: 3
-  rewardType: 1
-  rewardAmount: 10
+  rewardType: 2
+  rewardAmount: 30
   barrierTag: Barrier
   hasPenalty: 1
   penaltyType: 1

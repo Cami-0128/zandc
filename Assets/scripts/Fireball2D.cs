@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class Fireball2D : MonoBehaviour
+public class Fireball2D : MonoBehaviour   //Boss(關卡Boss) && InteractiveBlock(觸碰則掉落物品的方塊)
 {
     public int damage = 20;
     public float speed = 15f;
