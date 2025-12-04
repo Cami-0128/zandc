@@ -23,6 +23,15 @@ public class ButtonTrigger : MonoBehaviour
     [Tooltip("按鈕按下的位置偏移")]
     public Vector3 pressedOffset = new Vector3(0, -0.1f, 0);
 
+    [Tooltip("按下動畫時間(秒)")]
+    public float pressAnimationTime = 0.15f;
+
+    [Tooltip("彈起動畫時間(秒)")]
+    public float releaseAnimationTime = 0.2f;
+
+    [Tooltip("使用平滑動畫")]
+    public bool useSmoothAnimation = true;
+
     [Tooltip("按鈕顏色變化")]
     public Color pressedColor = Color.green;
 
@@ -51,6 +60,8 @@ public class ButtonTrigger : MonoBehaviour
     private int objectsOnButton = 0;
     private GameObject glowEffect;
     private GameObject currentParticles;
+    private Coroutine pressCoroutine;
+    private Coroutine releaseCoroutine;
 
     public enum ButtonType
     {
@@ -121,12 +132,26 @@ public class ButtonTrigger : MonoBehaviour
         isPressed = true;
         hasTriggered = true;
 
-        // 視覺反饋
-        transform.position = originalPosition + pressedOffset;
-
-        if (spriteRenderer != null)
+        // 停止正在進行的釋放動畫
+        if (releaseCoroutine != null)
         {
-            spriteRenderer.color = pressedColor;
+            StopCoroutine(releaseCoroutine);
+            releaseCoroutine = null;
+        }
+
+        // 開始按下動畫
+        if (useSmoothAnimation)
+        {
+            pressCoroutine = StartCoroutine(PressAnimationCoroutine());
+        }
+        else
+        {
+            // 立即按下
+            transform.position = originalPosition + pressedOffset;
+            if (spriteRenderer != null)
+            {
+                spriteRenderer.color = pressedColor;
+            }
         }
 
         // 發光效果
@@ -156,12 +181,26 @@ public class ButtonTrigger : MonoBehaviour
     {
         isPressed = false;
 
-        // 恢復視覺
-        transform.position = originalPosition;
-
-        if (spriteRenderer != null)
+        // 停止正在進行的按下動畫
+        if (pressCoroutine != null)
         {
-            spriteRenderer.color = originalColor;
+            StopCoroutine(pressCoroutine);
+            pressCoroutine = null;
+        }
+
+        // 開始彈起動畫
+        if (useSmoothAnimation)
+        {
+            releaseCoroutine = StartCoroutine(ReleaseAnimationCoroutine());
+        }
+        else
+        {
+            // 立即彈起
+            transform.position = originalPosition;
+            if (spriteRenderer != null)
+            {
+                spriteRenderer.color = originalColor;
+            }
         }
 
         // 關閉發光
@@ -174,6 +213,69 @@ public class ButtonTrigger : MonoBehaviour
         if (releaseSound != null && audioSource != null)
         {
             audioSource.PlayOneShot(releaseSound);
+        }
+    }
+
+    private System.Collections.IEnumerator PressAnimationCoroutine()
+    {
+        float elapsed = 0f;
+        Vector3 startPos = transform.position;
+        Vector3 targetPos = originalPosition + pressedOffset;
+        Color startColor = spriteRenderer != null ? spriteRenderer.color : Color.white;
+
+        while (elapsed < pressAnimationTime)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / pressAnimationTime;
+
+            // 使用 EaseOut 曲線讓按下更有彈性
+            float smoothT = 1f - Mathf.Pow(1f - t, 3f);
+
+            transform.position = Vector3.Lerp(startPos, targetPos, smoothT);
+
+            if (spriteRenderer != null)
+            {
+                spriteRenderer.color = Color.Lerp(startColor, pressedColor, smoothT);
+            }
+
+            yield return null;
+        }
+
+        transform.position = targetPos;
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.color = pressedColor;
+        }
+    }
+
+    private System.Collections.IEnumerator ReleaseAnimationCoroutine()
+    {
+        float elapsed = 0f;
+        Vector3 startPos = transform.position;
+        Color startColor = spriteRenderer != null ? spriteRenderer.color : Color.white;
+
+        while (elapsed < releaseAnimationTime)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / releaseAnimationTime;
+
+            // 使用 EaseOutBack 曲線製造彈跳效果
+            float smoothT = 1f + (--t) * t * ((1.70158f + 1f) * t + 1.70158f);
+
+            transform.position = Vector3.Lerp(startPos, originalPosition, smoothT);
+
+            if (spriteRenderer != null)
+            {
+                spriteRenderer.color = Color.Lerp(startColor, originalColor, t);
+            }
+
+            yield return null;
+        }
+
+        transform.position = originalPosition;
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.color = originalColor;
         }
     }
 

@@ -2,12 +2,12 @@
 using System.Collections;
 
 /// <summary>
-/// 下雨伤害系统 - 管理整体下雨效果和伤害逻辑
+/// 下雨傷害系統 - 管理整体下雨效果和伤害逻辑
 /// 雨丝会斜斜地下落，颜色可在Inspector中调整
 /// </summary>
 public class RainSystem : MonoBehaviour
 {
-    [Header("下雨范围设置")]
+    [Header("下雨範圍設置")]
     [Tooltip("下雨范围的左边界")]
     public float rainAreaLeft = -10f;
     [Tooltip("下雨范围的右边界")]
@@ -17,7 +17,7 @@ public class RainSystem : MonoBehaviour
     [Tooltip("雨停止的高度")]
     public float rainEndHeight = -5f;
 
-    [Header("雨滴设置")]
+    [Header("雨滴設置")]
     [Tooltip("雨滴预制物")]
     public GameObject raindropPrefab;
     [Tooltip("每秒生成的雨滴数量")]
@@ -29,19 +29,19 @@ public class RainSystem : MonoBehaviour
     [Tooltip("雨丝长度")]
     public float raindropLength = 0.5f;
 
-    [Header("雨的倾斜设置")]
+    [Header("雨的傾斜設置")]
     [Tooltip("雨的倾斜角度（度数，0=垂直下落，负数=左倾，正数=右倾）")]
     public float rainTiltAngle = -15f;
     [Tooltip("水平移动速度（控制斜向下落的强度）")]
     public float horizontalSpeed = 2f;
 
-    [Header("视觉效果")]
+    [Header("視覺效果")]
     [Tooltip("雨丝颜色")]
     public Color raindropColor = new Color(0.3f, 0.7f, 1f, 0.8f);
     [Tooltip("启用下雨范围可视化（调试用）")]
     public bool showDebugArea = true;
 
-    [Header("伤害设置")]
+    [Header("傷害設置")]
     [Tooltip("碰到雨滴造成的血量伤害")]
     public int healthDamage = 5;
     [Tooltip("碰到雨滴造成的魔力伤害")]
