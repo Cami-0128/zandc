@@ -178,7 +178,7 @@ public class PlayerController2D : MonoBehaviour
         }
     }
 
-    // ========== 修改：整合自定義按鍵移動 + 完整回退 ==========
+    // ========== 整合自定義按鍵移動 + 完整回退 ==========
     void Move()
     {
         float moveX = 0f;
@@ -215,7 +215,7 @@ public class PlayerController2D : MonoBehaviour
         rb.velocity = new Vector2(moveX * moveSpeed, rb.velocity.y);
     }
 
-    // ========== 修改：整合自定義按鍵跳躍 + 完整回退 ==========
+    // ========== 整合自定義按鍵跳躍 + 完整回退 ==========
     void HandleJumpInput()
     {
         Time.timeScale = 1f;
