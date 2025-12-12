@@ -9,6 +9,7 @@ public class FrostTrapZone : MonoBehaviour
 
     private Rigidbody2D playerRb;
     private PlayerController2D playerController;
+    private InvincibilityController invincibilityController;
     private float slowdownEndTime = -999f;
     private bool isPlayerInZone = false;
     private Vector2 lastAppliedVelocity = Vector2.zero;
@@ -19,6 +20,7 @@ public class FrostTrapZone : MonoBehaviour
         {
             playerRb = collision.GetComponent<Rigidbody2D>();
             playerController = collision.GetComponent<PlayerController2D>();
+            invincibilityController = collision.GetComponent<InvincibilityController>();
             slowdownEndTime = Time.time + slowdownDuration;
             isPlayerInZone = true;
             Debug.Log("[FrostTrapZone] 玩家進入冰凍區域，移動嚴重減速！");
@@ -32,6 +34,13 @@ public class FrostTrapZone : MonoBehaviour
         // 檢查是否還在減速時間內
         if (Time.time < slowdownEndTime)
         {
+            // ========== 檢查玩家是否處於無敵狀態 ==========
+            if (invincibilityController != null && invincibilityController.IsInvincible())
+            {
+                Debug.Log("[FrostTrapZone] 玩家無敵中，免除冰凍減速效果！");
+                return;  // 無敵狀態下不應用冰凍減速
+            }
+
             // 在 FixedUpdate 中應用減速，確保與物理引擎同步
             Vector2 currentVelocity = playerRb.velocity;
 
@@ -60,6 +69,7 @@ public class FrostTrapZone : MonoBehaviour
             isPlayerInZone = false;
             playerRb = null;
             playerController = null;
+            invincibilityController = null;
         }
     }
 

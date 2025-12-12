@@ -49,6 +49,10 @@ public class RainSystem : MonoBehaviour
     [Tooltip("伤害冷却时间（秒）")]
     public float damageCooldown = 0.5f;
 
+    [Header("物理設置")]
+    [Tooltip("地板的Tag名稱")]
+    public string groundTag = "Ground";
+
     private Transform spawnParent;
     private float nextSpawnTime = 0f;
     private float tiltRadian; // 预计算的角度（弧度）
@@ -187,6 +191,7 @@ public class RainSystem : MonoBehaviour
     public int GetHealthDamage() => healthDamage;
     public int GetManaDamage() => manaDamage;
     public float GetDamageCooldown() => damageCooldown;
+    public string GetGroundTag() => groundTag;
 }
 
 /// <summary>
@@ -242,6 +247,15 @@ public class Raindrop : MonoBehaviour
 
     void OnTriggerEnter2D(Collider2D collision)
     {
+        // 檢查是否碰到地板
+        if (rainSystem != null && collision.CompareTag(rainSystem.GetGroundTag()))
+        {
+            Debug.Log("[Raindrop] 雨滴碰到地板，消失");
+            Destroy(gameObject);
+            return;
+        }
+
+        // 檢查是否碰到玩家
         if (collision.CompareTag("Player"))
         {
             // 检查玩家是否处于无敌状态
@@ -289,9 +303,9 @@ public class Raindrop : MonoBehaviour
     {
         if (target.TryGetComponent<PlayerController2D>(out var pc))
         {
-            if (!target.TryGetComponent<DamageTracker>(out var tracker))
+            if (!target.TryGetComponent<RainDamageTracker>(out var tracker))
             {
-                tracker = target.AddComponent<DamageTracker>();
+                tracker = target.AddComponent<RainDamageTracker>();
             }
             return tracker.IsOnCooldown();
         }
@@ -300,9 +314,9 @@ public class Raindrop : MonoBehaviour
 
     private void SetDamageOnCooldown(GameObject target)
     {
-        if (!target.TryGetComponent<DamageTracker>(out var tracker))
+        if (!target.TryGetComponent<RainDamageTracker>(out var tracker))
         {
-            tracker = target.AddComponent<DamageTracker>();
+            tracker = target.AddComponent<RainDamageTracker>();
         }
         tracker.SetCooldown(FindObjectOfType<RainSystem>().GetDamageCooldown());
     }
@@ -311,7 +325,7 @@ public class Raindrop : MonoBehaviour
 /// <summary>
 /// 伤害冷却追踪器 - 防止在冷却期间重复伤害
 /// </summary>
-public class DamageTracker : MonoBehaviour
+public class RainDamageTracker : MonoBehaviour
 {
     private float lastDamageTime = -999f;
     private float cooldownDuration = 0.5f;
