@@ -44,5 +44,11 @@ public class TypewriterEffect : MonoBehaviour
         isTyping = false;
     }
 
+    public void Stop()
+    {
+        StopAllCoroutines();
+        isTyping = false;
+    }
+
     public bool IsTyping() => isTyping;
 }

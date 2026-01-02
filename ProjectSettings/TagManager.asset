@@ -13,6 +13,8 @@ TagManager:
   - MagicBullet
   - HeavyBullet
   - Barrier
+  - Fish
+  - Boat
   layers:
   - Default
   - TransparentFX

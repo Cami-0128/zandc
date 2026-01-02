@@ -52,8 +52,19 @@ public class PlayerController2D : MonoBehaviour
 
     public int LastHorizontalDirection { get; private set; } = 1;
 
+    // ========== 水域系統相關 ==========
+    [Header("水域系統")]
+    public bool isInWater = false;
+    public float waterSwimForce = 5f;
+    public float waterDragMultiplier = 0.6f;
+
+    [Header("水域下沉系統")]
+    public KeyCode sinkKey1 = KeyCode.DownArrow;  // 下沉按鍵 1
+    public KeyCode sinkKey2 = KeyCode.C;           // 下沉按鍵 2
+    public float sinkForce = 3f;                   // 下沉力度
+
     // ========== 按鍵綁定管理器 ==========
-    private KeyBindingManager keyManager;  //自訂義按鍵功能未完成
+    private KeyBindingManager keyManager;
 
     void Start()
     {
@@ -70,6 +81,10 @@ public class PlayerController2D : MonoBehaviour
         if (keyManager == null)
         {
             Debug.LogWarning("[PlayerController2D] KeyBindingManager 未找到，使用傳統按鍵");
+        }
+        else
+        {
+            Debug.Log("[PlayerController2D] KeyBindingManager 已初始化");
         }
 
         ManaBarUI manaBar = FindObjectOfType<ManaBarUI>();
@@ -159,6 +174,15 @@ public class PlayerController2D : MonoBehaviour
         }
     }
 
+    void FixedUpdate()
+    {
+        // 在水中時處理下沉
+        if (isInWater)
+        {
+            HandleWaterSinking();
+        }
+    }
+
     void OnTriggerEnter2D(Collider2D collision)
     {
         if (collision.CompareTag("EndPoint"))
@@ -212,10 +236,13 @@ public class PlayerController2D : MonoBehaviour
         {
             LastHorizontalDirection = (int)Mathf.Sign(moveX);
         }
-        rb.velocity = new Vector2(moveX * moveSpeed, rb.velocity.y);
+
+        // ========== 水中移動減速 ==========
+        float effectiveMoveSpeed = isInWater ? moveSpeed * waterDragMultiplier : moveSpeed;
+        rb.velocity = new Vector2(moveX * effectiveMoveSpeed, rb.velocity.y);
     }
 
-    // ========== 整合自定義按鍵跳躍 + 完整回退 ==========
+    // ========== 整合自定義按鍵跳躍 + 水中游動 + 完整回退 ==========
     void HandleJumpInput()
     {
         Time.timeScale = 1f;
@@ -237,6 +264,15 @@ public class PlayerController2D : MonoBehaviour
 
         if (jumpPressed)
         {
+            // ========== 在水中時的特殊處理 ==========
+            if (isInWater)
+            {
+                // 在水中允許無限次向上游動
+                SwimUpward();
+                return;
+            }
+
+            // ========== 陸地上的跳躍 ==========
             if (isTouchingWall && !isGrounded && Time.time - lastWallJumpTime >= wallJumpCooldown)
             {
                 WallJump();
@@ -252,6 +288,33 @@ public class PlayerController2D : MonoBehaviour
     {
         rb.velocity = new Vector2(rb.velocity.x, jumpForce);
         jumpCount++;
+    }
+
+    // ========== 水中向上游動 ==========
+    void SwimUpward()
+    {
+        // 在水中無限次向上游動，應用向上的力
+        rb.velocity = new Vector2(rb.velocity.x, waterSwimForce);
+        Debug.Log("[水域] 玩家向上游動");
+    }
+
+    // ========== 水中下沉系統 ==========
+    void HandleWaterSinking()
+    {
+        // 檢查下沉按鍵
+        bool sinkPressed = Input.GetKey(sinkKey1) || Input.GetKey(sinkKey2);
+
+        if (sinkPressed)
+        {
+            // 按下下沉鍵時加速下沉
+            rb.velocity = new Vector2(rb.velocity.x, rb.velocity.y - sinkForce * Time.fixedDeltaTime);
+            Debug.Log("[水域] 玩家加速下沉");
+        }
+        else
+        {
+            // 不按下沉鍵時，保持或自動下沉
+            // WaterZone 會自動處理被動下沉
+        }
     }
 
     void WallJump()
@@ -302,7 +365,6 @@ public class PlayerController2D : MonoBehaviour
         Debug.DrawRay(wallCheck.position, checkRight * wallCheckDistance, Color.red);
     }
 
-    // ========== 修改：添加彈簧邏輯 ==========
     void OnCollisionEnter2D(Collision2D collision)
     {
         // 檢查是否踩到彈簧
@@ -310,7 +372,6 @@ public class PlayerController2D : MonoBehaviour
         if (bouncer != null)
         {
             Debug.Log("[PlayerController2D] 踩到彈簧！");
-            // 彈簧會自己處理彈跳邏輯，玩家這邊只需要記錄
             return;
         }
 

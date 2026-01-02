@@ -16,6 +16,7 @@ public class KeyBindingManager : MonoBehaviour
     {
         MoveLeft,      // 向左移動
         MoveRight,     // 向右移動
+        MoveDown,      // 向下移動 (新增 - 用於水中下沉)
         Jump,          // 跳躍
         OpenShop,      // 開關商店
         OpenInfo,      // 開關資訊
@@ -32,8 +33,9 @@ public class KeyBindingManager : MonoBehaviour
     {
         { ActionType.MoveLeft, KeyCode.A },
         { ActionType.MoveRight, KeyCode.D },
+        { ActionType.MoveDown, KeyCode.S },        // 新增：向下移動預設為 S
         { ActionType.Jump, KeyCode.W },
-        { ActionType.OpenShop, KeyCode.S },
+        { ActionType.OpenShop, KeyCode.E },        // 修改：原本 S 被 MoveDown 取代，改用 E
         { ActionType.OpenInfo, KeyCode.I },
         { ActionType.Attack1, KeyCode.N },
         { ActionType.Attack2, KeyCode.M },
@@ -45,6 +47,7 @@ public class KeyBindingManager : MonoBehaviour
     {
         { ActionType.MoveLeft, "向左移動" },
         { ActionType.MoveRight, "向右移動" },
+        { ActionType.MoveDown, "向下移動" },      // 新增
         { ActionType.Jump, "跳躍" },
         { ActionType.OpenShop, "開關商店" },
         { ActionType.OpenInfo, "開關資訊" },

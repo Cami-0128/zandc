@@ -1,31 +1,31 @@
-using System.Collections;
+ï»¿using System.Collections;
 using UnityEngine;
 
 public class PlayerAttack : MonoBehaviour
 {
-    [Header("§ğÀ»³]©w")]
+    [Header("æ”»æ“Šè¨­å®š")]
     public GameObject magicBulletPrefab;
     public GameObject heavyBulletPrefab;
     public Transform firePoint;
 
-    [Header("­µ®Ä")]
+    [Header("éŸ³æ•ˆ")]
     public AudioClip magicCastSound;
     private AudioSource attackAudioSource;
 
-    [Header("¥D¨¤¦å¶q")]
+    [Header("ä¸»è§’è¡€é‡")]
     public float playerCurrentHealth = 100f;
     public float playerMaxHealth = 100f;
 
-    [Header("Å]¤O¨t²Î")]
+    [Header("é­”åŠ›ç³»çµ±")]
     public int maxMana = 100;
     [SerializeField] private int currentMana;
 
-    [Header("Å]¤O¦^´_³]©w")]
+    [Header("é­”åŠ›å›å¾©è¨­å®š")]
     public bool enableManaRegen = false;
     public float manaRegenRate = 5f;
     public float manaRegenDelay = 2f;
 
-    [Header("¤â°Ê¦^Å]³]©w")]
+    [Header("æ‰‹å‹•å›é­”è¨­å®š")]
     public bool enableManualRestore = true;
     public KeyCode manualRestoreKey = KeyCode.R;
     public int manualRestoreAmount = 30;
@@ -37,7 +37,7 @@ public class PlayerAttack : MonoBehaviour
     private PlayerController2D playerController;
     private Coroutine manaRegenCoroutine;
 
-    // ========== ·s¼W¡G«öÁä¸j©wºŞ²z¾¹ ==========
+    // ========== æŒ‰éµç¶å®šç®¡ç†å™¨ ==========
     private KeyBindingManager keyManager;
 
     void Start()
@@ -59,11 +59,10 @@ public class PlayerAttack : MonoBehaviour
 
         playerController = GetComponent<PlayerController2D>();
 
-        // ========== ªì©l¤Æ«öÁäºŞ²z¾¹ ==========
         keyManager = KeyBindingManager.Instance;
         if (keyManager == null)
         {
-            Debug.LogWarning("[PlayerAttack] KeyBindingManager ¥¼§ä¨ì¡A¨Ï¥Î¶Ç²Î«öÁä");
+            Debug.LogWarning("[PlayerAttack] KeyBindingManager æœªæ‰¾åˆ°ï¼Œä½¿ç”¨å‚³çµ±æŒ‰éµ");
         }
 
         if (enableManaRegen)
@@ -75,7 +74,6 @@ public class PlayerAttack : MonoBehaviour
         if (playerController != null && playerController.isDead)
             return;
 
-        // ========== ­×§ï¡G¾ã¦X¦Û©w¸q«öÁä§ğÀ» ==========
         bool attack1Pressed = false;
         bool attack2Pressed = false;
 
@@ -86,7 +84,6 @@ public class PlayerAttack : MonoBehaviour
         }
         else
         {
-            // ¦^°h¨ì¶Ç²Î«öÁä
             attack1Pressed = Input.GetKeyDown(KeyCode.N);
             attack2Pressed = Input.GetKeyDown(KeyCode.M);
         }
@@ -108,10 +105,14 @@ public class PlayerAttack : MonoBehaviour
         if (magicBulletPrefab == null)
             return;
 
+        // âœ… ä¿®å¾©ï¼šä½¿ç”¨ MagicBullet.manaCostï¼ˆè€Œä¸æ˜¯ damageï¼‰
         MagicBullet bulletData = magicBulletPrefab.GetComponent<MagicBullet>();
         int manaCost = bulletData ? bulletData.manaCost : 5;
         if (currentMana < manaCost)
+        {
+            Debug.Log("[PlayerAttack] é­”åŠ›ä¸è¶³ï¼Œç„¡æ³•ç™¼å°„é­”æ³•å­å½ˆ");
             return;
+        }
 
         ConsumeMana(manaCost);
 
@@ -127,6 +128,8 @@ public class PlayerAttack : MonoBehaviour
         MagicBullet bulletScript = bullet.GetComponent<MagicBullet>();
         if (bulletScript != null)
             bulletScript.speed = Mathf.Abs(bulletScript.speed) * direction;
+
+        Debug.Log($"[PlayerAttack] ç™¼å°„é­”æ³•å­å½ˆï¼Œæ¶ˆè€— {manaCost} é­”åŠ›");
     }
 
     void CastHeavyAttack()
@@ -136,10 +139,14 @@ public class PlayerAttack : MonoBehaviour
         if (heavyBulletPrefab == null)
             return;
 
+        // âœ… ä¿®å¾©ï¼šä½¿ç”¨ HeavyBullet.manaCost
         HeavyBullet prefabData = heavyBulletPrefab.GetComponent<HeavyBullet>();
         int manaCost = prefabData ? prefabData.manaCost : 20;
         if (currentMana < manaCost)
+        {
+            Debug.Log("[PlayerAttack] é­”åŠ›ä¸è¶³ï¼Œç„¡æ³•ç™¼å°„é‡å‹å­å½ˆ");
             return;
+        }
 
         ConsumeMana(manaCost);
 
@@ -160,9 +167,12 @@ public class PlayerAttack : MonoBehaviour
             bulletScript.SetSpeed(Mathf.Abs(bulletScript.speed) * direction);
             bulletScript.SetColor(Color.black);
         }
+
+        Debug.Log($"[PlayerAttack] ç™¼å°„é‡å‹å­å½ˆï¼Œæ¶ˆè€— {manaCost} é­”åŠ›");
     }
 
-    private void ConsumeMana(int amount)
+    // ========== å…¬é–‹æ–¹æ³• ==========
+    public void ConsumeMana(int amount)
     {
         currentMana -= amount;
         currentMana = Mathf.Max(0, currentMana);
@@ -173,6 +183,8 @@ public class PlayerAttack : MonoBehaviour
         {
             manaBar.UpdateManaBar(currentMana, maxMana);
         }
+
+        Debug.Log($"[PlayerAttack] æ¶ˆè€— {amount} é­”åŠ›ï¼Œå‰©é¤˜: {currentMana}/{maxMana}");
     }
 
     private IEnumerator ManaRegenerationCoroutine()
@@ -210,10 +222,20 @@ public class PlayerAttack : MonoBehaviour
     {
         currentMana += amount;
         currentMana = Mathf.Min(currentMana, maxMana);
+
+        ManaBarUI manaBar = FindObjectOfType<ManaBarUI>();
+        if (manaBar != null)
+        {
+            manaBar.UpdateManaBar(currentMana, maxMana);
+        }
+
+        Debug.Log($"[PlayerAttack] æ¢å¾© {amount} é­”åŠ›ï¼Œç•¶å‰: {currentMana}/{maxMana}");
     }
 
     public int GetCurrentMana() => currentMana;
+    public int GetMaxMana() => maxMana;
     public float GetManaPercentage() => (float)currentMana / maxMana;
+    public bool HasEnoughMana(int amount) => currentMana >= amount;
 
     public void SetManaRegen(bool enabled)
     {
