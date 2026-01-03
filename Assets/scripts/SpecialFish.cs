@@ -1,41 +1,42 @@
-using System.Collections;
+ï»¿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// ¯S®í³½ V3 - ¨Ï¥Î FishBullet ´À¥N HeavyBullet
+/// ç‰¹æ®Šé­š V4 - ä½¿ç”¨ FishBullet æ›¿ä»£ HeavyBullet
+/// æ•´åˆæ•æ‰æŠ€èƒ½æ”¯æŒ
 /// </summary>
 public class SpecialFish : MonoBehaviour
 {
-    [Header("ùùùùùù °òÂ¦³]©w ùùùùùù")]
+    [Header("â•â•â• åŸºç¤è¨­å®š â•â•â•")]
     public float swimSpeed = 2f;
     public float swimRadius = 10f;
 
-    [Header("ùùùùùù AI ¦æ¬° ùùùùùù")]
+    [Header("â•â•â• AI è¡Œç‚º â•â•â•")]
     public bool enableAI = true;
     public float directionChangeInterval = 2f;
     public float evadeDistance = 4f;
     public float evadeSpeed = 3.5f;
 
-    [Header("ùùùùùù ¼Ä¤H¸úÁ× ùùùùùù")]
+    [Header("â•â•â• æ•µäººèº²é¿ â•â•â•")]
     public float enemyDetectDistance = 6f;
     public float enemyAvoidanceForce = 5f;
 
-    [Header("ùùùùùù ¦å¶q ùùùùùù")]
+    [Header("â•â•â• è¡€é‡ â•â•â•")]
     public int maxFishHealth = 60;
     public int currentFishHealth;
     public EnemyHealthBar healthBar;
 
-    [Header("ùùùùùù §ğÀ» ùùùùùù")]
+    [Header("â•â•â• æ”»æ“Š â•â•â•")]
     public bool canAttack = true;
     public float attackDistance = 1.5f;
     public int attackDamage = 15;
-    public GameObject fishBulletPrefab;  // §ï¬° FishBullet
+    public GameObject fishBulletPrefab;  // âœ… ä½¿ç”¨ FishBullet
     public Transform firePoint;
     public float attackCooldown = 3f;
     private float lastAttackTime = -999f;
 
-    [Header("ùùùùùù ±¼¸¨ª««~¡]¼úÀy¸û°ª¡^ùùùùùù")]
+    [Header("â•â•â• æ‰è½ç‰©å“ï¼ˆçå‹µè¼ƒé«˜ï¼‰â•â•â•")]
     public GameObject coinPickupPrefab;
     public GameObject manaPickupPrefab;
     public GameObject healthPickupPrefab;
@@ -54,7 +55,7 @@ public class SpecialFish : MonoBehaviour
     public int manaRestoreAmount = 40;
     public int healthRestoreAmount = 30;
 
-    [Header("ùùùùùù µøÄ±®ÄªG ùùùùùù")]
+    [Header("â•â•â• è¦–è¦ºæ•ˆæœ â•â•â•")]
     public bool flipBasedOnDirection = true;
     public Color damagedColor = new Color(1f, 0.5f, 0.5f, 1f);
     public Color specialColor = new Color(0.7f, 0.3f, 1f, 1f);
@@ -83,7 +84,7 @@ public class SpecialFish : MonoBehaviour
 
         if (rb == null)
         {
-            Debug.LogError("[SpecialFish] »İ­n Rigidbody2D ²Õ¥ó");
+            Debug.LogError("[SpecialFish] éœ€è¦ Rigidbody2D çµ„ä»¶");
             return;
         }
 
@@ -101,7 +102,7 @@ public class SpecialFish : MonoBehaviour
             swimDirection = Random.insideUnitCircle.normalized;
         }
 
-        // ªì©l¤Æ¦å±ø
+        // åˆå§‹åŒ–è¡€æ¢
         if (healthBar == null)
         {
             healthBar = GetComponentInChildren<EnemyHealthBar>();
@@ -112,7 +113,7 @@ public class SpecialFish : MonoBehaviour
             healthBar.UpdateHealthBar(currentFishHealth, maxFishHealth);
         }
 
-        // ³Ğ«Ø®gÀ»ÂI¡]¦ì©ó³½ªº¤¤¤ß¡^
+        // å‰µå»ºå°„æ“Šé»ï¼ˆä½æ–¼é­šçš„ä¸­å¿ƒï¼‰
         if (firePoint == null)
         {
             GameObject firePointObj = new GameObject("FirePoint");
@@ -123,13 +124,13 @@ public class SpecialFish : MonoBehaviour
 
         waterZone = FindObjectOfType<WaterZone>();
 
-        // ÀË¬d FishBullet ¹w»sª«
+        // æª¢æŸ¥ FishBullet é è£½ç‰©
         if (fishBulletPrefab == null)
         {
-            Debug.LogWarning("[SpecialFish] fishBulletPrefab ¥¼³]©w¡I½Ğ¦b Inspector ¤¤«ü©w FishBullet ¹w»sª«");
+            Debug.LogWarning("[SpecialFish] fishBulletPrefab æœªè¨­å®šï¼è«‹åœ¨ Inspector ä¸­æŒ‡å®š FishBullet é è£½ç‰©");
         }
 
-        Debug.Log($"[SpecialFish] ªì©l¤Æ§¹¦¨ - ¦å¶q: {currentFishHealth}¡A§ğÀ»¶Ë®`: {attackDamage}");
+        Debug.Log($"[SpecialFish] åˆå§‹åŒ–å®Œæˆ - è¡€é‡: {currentFishHealth}ï¼Œæ”»æ“Šå‚·å®³: {attackDamage}");
     }
 
     void FixedUpdate()
@@ -172,14 +173,14 @@ public class SpecialFish : MonoBehaviour
         swimDirection = Random.insideUnitCircle.normalized;
     }
 
-    // ========== ª±®a©M¼Ä¤HÀË´ú ==========
+    // ========== ç©å®¶å’Œæ•µäººæª¢æ¸¬ ==========
     void CheckPlayerAndEnemies()
     {
         nearestPlayer = FindObjectOfType<PlayerController2D>();
         nearestBoat = FindObjectOfType<Boat>();
 
-        // ª±®a±µªñ®É¸úÁ×
-        if (nearestPlayer != null)
+        // ç©å®¶æ¥è¿‘æ™‚èº²é¿
+        if (nearestPlayer != null && !nearestPlayer.isDead)
         {
             float distanceToPlayer = Vector2.Distance(transform.position, nearestPlayer.transform.position);
             if (distanceToPlayer < evadeDistance)
@@ -188,13 +189,13 @@ public class SpecialFish : MonoBehaviour
                 {
                     isEvading = true;
                     evadeTimer = 2f;
-                    // ­pºâ¸úÁ×¤è¦V¡]»·Â÷ª±®a¡^
+                    // è¨ˆç®—èº²é¿æ–¹å‘ï¼ˆé é›¢ç©å®¶ï¼‰
                     swimDirection = (transform.position - nearestPlayer.transform.position).normalized;
                 }
             }
         }
 
-        // ¼Ä¤H¸úÁ×
+        // æ•µäººèº²é¿
         CheckEnemiesAndAvoid();
     }
 
@@ -215,25 +216,25 @@ public class SpecialFish : MonoBehaviour
             {
                 nearbyEnemies.Add(enemy);
 
-                // ­pºâ¸úÁ×¤è¦V
+                // è¨ˆç®—èº²é¿æ–¹å‘
                 Vector2 awayFromEnemy = (transform.position - enemy.transform.position).normalized;
                 avoidanceForce += awayFromEnemy * enemyAvoidanceForce;
             }
         }
 
-        // ¦pªG¦³¼Ä¤Hªşªñ¡AÀu¥ı¸úÁ×¼Ä¤H
+        // å¦‚æœæœ‰æ•µäººé™„è¿‘ï¼Œå„ªå…ˆèº²é¿æ•µäºº
         if (nearbyEnemies.Count > 0)
         {
             swimDirection = avoidanceForce.normalized;
         }
     }
 
-    // ========== §ğÀ»¨t²Î ==========
+    // ========== æ”»æ“Šç³»çµ± ==========
     void CheckAttackTarget()
     {
         if (!canAttack || Time.time - lastAttackTime < attackCooldown) return;
 
-        // ¥u¦³·¥¾aªñ®É¤~§ğÀ»
+        // åªæœ‰æ¥µé è¿‘æ™‚æ‰æ”»æ“Š
         if (nearestPlayer != null && !nearestPlayer.isDead)
         {
             float distanceToPlayer = Vector2.Distance(transform.position, nearestPlayer.transform.position);
@@ -244,7 +245,7 @@ public class SpecialFish : MonoBehaviour
             }
         }
 
-        // ²î¤W¦³ª±®a®É¤]§ğÀ»
+        // èˆ¹ä¸Šæœ‰ç©å®¶æ™‚ä¹Ÿæ”»æ“Š
         if (nearestBoat != null && nearestBoat.HasPlayerOnBoard())
         {
             float distanceToBoat = Vector2.Distance(transform.position, nearestBoat.transform.position);
@@ -259,29 +260,33 @@ public class SpecialFish : MonoBehaviour
     {
         if (fishBulletPrefab == null)
         {
-            Debug.LogError("[SpecialFish] fishBulletPrefab ¥¼³]©w");
+            Debug.LogError("[SpecialFish] fishBulletPrefab æœªè¨­å®š");
             return;
         }
 
-        // ­pºâ´Â¦V¥Ø¼Ğªº¤è¦V
+        // è¨ˆç®—æœå‘ç›®æ¨™çš„æ–¹å‘
         Vector3 directionToTarget = (targetPos - firePoint.position).normalized;
 
-        // ±q®gÀ»ÂIµo®g FishBullet
+        // å¾å°„æ“Šé»ç™¼å°„ FishBullet
         GameObject bullet = Instantiate(fishBulletPrefab, firePoint.position, Quaternion.identity);
 
-        // ³]©w¤l¼uªº¤è¦V©M³t«×
+        // è¨­å®šå­å½ˆçš„æ–¹å‘å’Œé€Ÿåº¦
         FishBullet bulletScript = bullet.GetComponent<FishBullet>();
         if (bulletScript != null)
         {
             bulletScript.SetDirection(directionToTarget, 11f);
-            bulletScript.SetDamage(attackDamage);  // ³]©w¶Ë®`­È
+            bulletScript.SetDamage(attackDamage);  // è¨­å®šå‚·å®³å€¼
+            Debug.Log($"[SpecialFish] æœå‘ {targetPos} ç™¼å°„é­šå­å½ˆï¼Œæ–¹å‘: {directionToTarget}ï¼Œå‚·å®³: {attackDamage}");
+        }
+        else
+        {
+            Debug.LogError("[SpecialFish] FishBullet é è£½ç‰©ç¼ºå°‘ FishBullet è…³æœ¬");
         }
 
         lastAttackTime = Time.time;
-        Debug.Log($"[SpecialFish] ´Â¦V {targetPos} µo®g³½¤l¼u¡A¤è¦V: {directionToTarget}¡A¶Ë®`: {attackDamage}");
     }
 
-    // ========== ¨ü¶Ë¨t²Î ==========
+    // ========== å—å‚·ç³»çµ± ==========
     public void TakeDamage(int damage)
     {
         if (isDead) return;
@@ -289,7 +294,7 @@ public class SpecialFish : MonoBehaviour
         currentFishHealth -= damage;
         currentFishHealth = Mathf.Max(currentFishHealth, 0);
 
-        Debug.Log($"[SpecialFish] ¨ü¨ì {damage} ÂI¶Ë®`¡C·í«e¦å¶q: {currentFishHealth}/{maxFishHealth}");
+        Debug.Log($"[SpecialFish] å—åˆ° {damage} é»å‚·å®³ã€‚ç•¶å‰è¡€é‡: {currentFishHealth}/{maxFishHealth}");
 
         StartCoroutine(DamagedEffect());
 
@@ -314,11 +319,11 @@ public class SpecialFish : MonoBehaviour
         }
     }
 
-    // ========== ¦º¤`¨t²Î ==========
+    // ========== æ­»äº¡ç³»çµ± ==========
     void Die()
     {
         isDead = true;
-        Debug.Log($"[SpecialFish] ¯S®í³½¤w¦º¤`");
+        Debug.Log($"[SpecialFish] ç‰¹æ®Šé­šå·²æ­»äº¡");
 
         WaterSplashEffect splashEffect = FindObjectOfType<WaterSplashEffect>();
         if (splashEffect != null)
@@ -328,6 +333,24 @@ public class SpecialFish : MonoBehaviour
 
         DropLoot();
         Destroy(gameObject);
+    }
+
+    // âœ… æ–°å¢ï¼šæ•æ‰æŠ€èƒ½æ•´åˆ
+    public void OnCaptured()
+    {
+        if (isDead) return;
+
+        isDead = true;
+        Debug.Log($"[SpecialFish] ç‰¹æ®Šé­šè¢«æ•æ‰");
+
+        WaterSplashEffect splashEffect = FindObjectOfType<WaterSplashEffect>();
+        if (splashEffect != null)
+        {
+            splashEffect.CreateBloodSplash(transform.position);
+        }
+
+        DropLoot();
+        // gameObject ç”± CaptureBubble éŠ·æ¯€
     }
 
     void DropLoot()
@@ -384,7 +407,7 @@ public class SpecialFish : MonoBehaviour
         }
     }
 
-    // ========== ´åªa²¾°Ê ==========
+    // ========== æ¸¸æ³³ç§»å‹• ==========
     void ApplySwimming()
     {
         float currentSpeed = isEvading ? evadeSpeed : swimSpeed;
@@ -400,7 +423,7 @@ public class SpecialFish : MonoBehaviour
         rb.velocity = currentVelocity;
     }
 
-    // ========== µøÄ±§ó·s ==========
+    // ========== è¦–è¦ºæ›´æ–° ==========
     void UpdateVisuals()
     {
         if (flipBasedOnDirection && spriteRenderer != null)
@@ -418,11 +441,12 @@ public class SpecialFish : MonoBehaviour
         }
     }
 
-    // ========== ¸I¼²ÀË´ú ==========
+    // ========== ç¢°æ’æª¢æ¸¬ ==========
     void OnTriggerEnter2D(Collider2D other)
     {
         if (isDead) return;
 
+        // âœ… æª¢æ¸¬ MagicBullet
         MagicBullet magicBullet = other.GetComponent<MagicBullet>();
         if (magicBullet != null)
         {
@@ -430,6 +454,7 @@ public class SpecialFish : MonoBehaviour
             return;
         }
 
+        // âœ… æª¢æ¸¬ HeavyBullet
         HeavyBullet heavyBullet = other.GetComponent<HeavyBullet>();
         if (heavyBullet != null)
         {

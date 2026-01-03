@@ -3,7 +3,13 @@ guid: 5f03be0b56102e846975ba52da87645b
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
-  defaultReferences: []
+  defaultReferences:
+  - healthBar: {instanceID: 0}
+  - fishBulletPrefab: {fileID: 8770902122390544480, guid: 185aed48913c00c40abfe789b0847f1b, type: 3}
+  - firePoint: {instanceID: 0}
+  - coinPickupPrefab: {fileID: 4003330360852413863, guid: 9b1541601c792244391766eed91ccb35, type: 3}
+  - manaPickupPrefab: {fileID: 7719398469118768508, guid: f4d48d69c1c124841b15fadcc7691c6a, type: 3}
+  - healthPickupPrefab: {fileID: 8324684822703190308, guid: 904543624316126458ef674a3ef484a1, type: 3}
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 

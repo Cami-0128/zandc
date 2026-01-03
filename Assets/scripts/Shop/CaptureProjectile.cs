@@ -93,7 +93,32 @@ public class CaptureProjectile : MonoBehaviour
 
         if (hasHit) return;
 
-        // 【新增】Boss 捕捉判斷
+        // ✅ 捕捉普通魚
+        if (other.CompareTag("Fish"))
+        {
+            NormalFish normalFish = other.GetComponent<NormalFish>();
+            if (normalFish != null)
+            {
+                Debug.Log($"[射線] ✅ 普通魚 Tag 匹配成功！開始捕捉：{other.gameObject.name}");
+                hasHit = true;
+                CaptureFish(other.gameObject, "Normal");
+                Destroy(gameObject, 0.1f);
+                return;
+            }
+
+            // ✅ 捕捉特殊魚
+            SpecialFish specialFish = other.GetComponent<SpecialFish>();
+            if (specialFish != null)
+            {
+                Debug.Log($"[射線] ✅ 特殊魚 Tag 匹配成功！開始捕捉：{other.gameObject.name}");
+                hasHit = true;
+                CaptureFish(other.gameObject, "Special");
+                Destroy(gameObject, 0.1f);
+                return;
+            }
+        }
+
+        // 【原有】Boss 捕捉判斷
         if (other.gameObject.CompareTag("Boss"))
         {
             Debug.Log($"[射線] ✅ Boss Tag 匹配成功！開始捕捉：{other.gameObject.name}");
@@ -103,10 +128,10 @@ public class CaptureProjectile : MonoBehaviour
             return;
         }
 
-        // 普通敵人捕捉
+        // 【原有】普通敵人捕捉
         if (other.gameObject.CompareTag("Enemy") || other.gameObject.CompareTag("Enemy1"))
         {
-            Debug.Log($"[射線] ✅ Tag 匹配成功！開始捕捉：{other.gameObject.name}");
+            Debug.Log($"[射線] ✅ 敵人 Tag 匹配成功！開始捕捉：{other.gameObject.name}");
             hasHit = true;
             CaptureEnemy(other.gameObject);
             Destroy(gameObject, 0.1f);
@@ -124,26 +149,85 @@ public class CaptureProjectile : MonoBehaviour
 
         if (hasHit) return;
 
-        // 【新增】Boss 捕捉判斷
-        if (collision.gameObject.CompareTag("Boss"))
+        GameObject collidedObj = collision.gameObject; // ✅ 修正：使用 gameObject 而不是直接調用 GetComponent
+
+        // ✅ 捕捉魚
+        if (collidedObj.CompareTag("Fish"))
+        {
+            NormalFish normalFish = collidedObj.GetComponent<NormalFish>();
+            if (normalFish != null)
+            {
+                Debug.Log($"[射線 Collision] ✅ 普通魚匹配成功！");
+                hasHit = true;
+                CaptureFish(collidedObj, "Normal");
+                Destroy(gameObject, 0.1f);
+                return;
+            }
+
+            SpecialFish specialFish = collidedObj.GetComponent<SpecialFish>();
+            if (specialFish != null)
+            {
+                Debug.Log($"[射線 Collision] ✅ 特殊魚匹配成功！");
+                hasHit = true;
+                CaptureFish(collidedObj, "Special");
+                Destroy(gameObject, 0.1f);
+                return;
+            }
+        }
+
+        // 【原有】Boss 捕捉判斷
+        if (collidedObj.CompareTag("Boss"))
         {
             Debug.Log($"[射線 Collision] ✅ Boss 匹配成功！");
             hasHit = true;
-            CaptureBoss(collision.gameObject);
+            CaptureBoss(collidedObj);
             Destroy(gameObject, 0.1f);
             return;
         }
 
-        if (collision.gameObject.CompareTag("Enemy") || collision.gameObject.CompareTag("Enemy1"))
+        if (collidedObj.CompareTag("Enemy") || collidedObj.CompareTag("Enemy1"))
         {
-            Debug.Log($"[射線 Collision] ✅ 匹配成功！");
+            Debug.Log($"[射線 Collision] ✅ 敵人匹配成功！");
             hasHit = true;
-            CaptureEnemy(collision.gameObject);
+            CaptureEnemy(collidedObj);
             Destroy(gameObject, 0.1f);
         }
     }
 
-    // 【新增】捕捉Boss的方法
+    // ✅ 新增：捕捉魚的方法
+    void CaptureFish(GameObject fish, string fishType)
+    {
+        Debug.Log($"[捕捉技能] 🎣 成功捕捉{fishType}魚：{fish.name}");
+
+        GameObject bubble;
+
+        if (bubblePrefab != null)
+        {
+            bubble = Instantiate(bubblePrefab, fish.transform.position, Quaternion.identity);
+        }
+        else
+        {
+            bubble = CreateDefaultBubble(fish.transform.position);
+        }
+
+        CaptureBubble bubbleScript = bubble.GetComponent<CaptureBubble>();
+        if (bubbleScript == null)
+        {
+            bubbleScript = bubble.AddComponent<CaptureBubble>();
+        }
+
+        // ✅ 根據魚的類型調用相應的初始化方法
+        if (fishType == "Normal")
+        {
+            bubbleScript.InitializeNormalFish(fish, bubbleRiseSpeed, bubbleRiseHeight, captureDelay);
+        }
+        else if (fishType == "Special")
+        {
+            bubbleScript.InitializeSpecialFish(fish, bubbleRiseSpeed, bubbleRiseHeight, captureDelay);
+        }
+    }
+
+    // 【原有】捕捉Boss的方法
     void CaptureBoss(GameObject boss)
     {
         Debug.Log($"[捕捉技能] 🎯 成功捕捉Boss：{boss.name}");

@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// 普通魚 - 會主動靠近玩家並攻擊
-/// 修復版：確保正確靠近和發射子彈
+/// 普通魚 - 使用 FishBullet 替代 MagicBullet
+/// 修復版：支持捕捉技能整合
 /// </summary>
 public class NormalFish : MonoBehaviour
 {
@@ -28,7 +28,7 @@ public class NormalFish : MonoBehaviour
     [Header("═══ 攻擊設定 ═══")]
     public bool canAttack = true;
     public float attackDistance = 5f;
-    public float approachDistance = 6f;  // 靠近玩家的距離
+    public float approachDistance = 6f;
     public int attackDamage = 10;
     public GameObject fishBulletPrefab;
     public Transform firePoint;
@@ -140,29 +140,23 @@ public class NormalFish : MonoBehaviour
     {
         if (isDead) return;
 
-        // 尋找最近的玩家
         UpdateTargetTracking();
 
-        // 如果偵測到玩家，主動靠近
         if (nearestPlayer != null && !nearestPlayer.isDead)
         {
             float distanceToPlayer = Vector2.Distance(transform.position, nearestPlayer.transform.position);
 
             if (distanceToPlayer > approachDistance)
             {
-                // 主動靠近玩家
                 Vector2 directionToPlayer = (nearestPlayer.transform.position - transform.position).normalized;
                 swimDirection = directionToPlayer;
-                Debug.Log($"[NormalFish] 靠近玩家，距離: {distanceToPlayer:F1}");
             }
             else if (distanceToPlayer <= attackDistance)
             {
-                // 靠近到攻擊距離，停止移動並攻擊
                 swimDirection = Vector2.zero;
                 CheckAttackTarget();
             }
         }
-        // 船上有玩家時，也靠近並攻擊
         else if (nearestBoat != null && nearestBoat.HasPlayerOnBoard())
         {
             float distanceToBoat = Vector2.Distance(transform.position, nearestBoat.transform.position);
@@ -171,7 +165,6 @@ public class NormalFish : MonoBehaviour
             {
                 Vector2 directionToBoat = (nearestBoat.transform.position - transform.position).normalized;
                 swimDirection = directionToBoat;
-                Debug.Log($"[NormalFish] 靠近有玩家的船，距離: {distanceToBoat:F1}");
             }
             else if (distanceToBoat <= attackDistance)
             {
@@ -181,7 +174,6 @@ public class NormalFish : MonoBehaviour
         }
         else
         {
-            // 沒有玩家時，正常游動
             directionChangeTimer -= Time.deltaTime;
             if (directionChangeTimer <= 0f)
             {
@@ -205,7 +197,6 @@ public class NormalFish : MonoBehaviour
         swimDirection = Random.insideUnitCircle.normalized;
     }
 
-    // ========== 敵人偵測和躲避 ==========
     void CheckEnemiesAndAvoid()
     {
         nearbyEnemies.Clear();
@@ -223,30 +214,24 @@ public class NormalFish : MonoBehaviour
             {
                 nearbyEnemies.Add(enemy);
 
-                // 計算躲避方向
                 Vector2 awayFromEnemy = (transform.position - enemy.transform.position).normalized;
                 avoidanceForce += awayFromEnemy * enemyAvoidanceForce;
             }
         }
 
-        // 如果有敵人且沒有在攻擊，改變方向躲避
         if (nearbyEnemies.Count > 0)
         {
-            // 只有沒有在追擊玩家時才躲避敵人
             if (!(nearestPlayer != null || nearestBoat != null))
             {
                 swimDirection = avoidanceForce.normalized;
-                Debug.Log($"[NormalFish] 偵測到 {nearbyEnemies.Count} 個敵人，躲避");
             }
         }
     }
 
-    // ========== 攻擊系統 ==========
     void CheckAttackTarget()
     {
         if (!canAttack || Time.time - lastAttackTime < attackCooldown) return;
 
-        // 優先攻擊船上的玩家
         if (nearestBoat != null && nearestBoat.HasPlayerOnBoard())
         {
             float distanceToBoat = Vector2.Distance(transform.position, nearestBoat.transform.position);
@@ -257,7 +242,6 @@ public class NormalFish : MonoBehaviour
             }
         }
 
-        // 其次攻擊玩家
         if (nearestPlayer != null && !nearestPlayer.isDead)
         {
             float distanceToPlayer = Vector2.Distance(transform.position, nearestPlayer.transform.position);
@@ -276,29 +260,21 @@ public class NormalFish : MonoBehaviour
             return;
         }
 
-        // 計算朝向目標的方向
         Vector3 directionToTarget = (targetPos - firePoint.position).normalized;
 
-        // 從射擊點發射 FishBullet
         GameObject bullet = Instantiate(fishBulletPrefab, firePoint.position, Quaternion.identity);
 
-        // 立即設定方向（在第一幀執行）
         FishBullet bulletScript = bullet.GetComponent<FishBullet>();
         if (bulletScript != null)
         {
             bulletScript.SetDirection(directionToTarget, 10f);
             bulletScript.SetDamage(attackDamage);
-            Debug.Log($"[NormalFish] ✅ 朝向 {targetPos} 發射魚子彈，方向: {directionToTarget}, 傷害: {attackDamage}");
-        }
-        else
-        {
-            Debug.LogError("[NormalFish] 子彈沒有 FishBullet 腳本");
+            Debug.Log($"[NormalFish] ✅ 朝向 {targetPos} 發射魚子彈，傷害: {attackDamage}");
         }
 
         lastAttackTime = Time.time;
     }
 
-    // ========== 受傷系統 ==========
     public void TakeDamage(int damage)
     {
         if (isDead) return;
@@ -331,7 +307,6 @@ public class NormalFish : MonoBehaviour
         }
     }
 
-    // ========== 死亡系統 ==========
     void Die()
     {
         isDead = true;
@@ -345,6 +320,24 @@ public class NormalFish : MonoBehaviour
 
         DropLoot();
         Destroy(gameObject);
+    }
+
+    // ✅ 新增：捕捉技能整合
+    public void OnCaptured()
+    {
+        if (isDead) return;
+
+        isDead = true;
+        Debug.Log($"[NormalFish] 普通魚被捕捉");
+
+        WaterSplashEffect splashEffect = FindObjectOfType<WaterSplashEffect>();
+        if (splashEffect != null)
+        {
+            splashEffect.CreateBloodSplash(transform.position);
+        }
+
+        DropLoot();
+        // gameObject 由 CaptureBubble 銷毀
     }
 
     void DropLoot()
@@ -401,7 +394,6 @@ public class NormalFish : MonoBehaviour
         }
     }
 
-    // ========== 游泳移動 ==========
     void ApplySwimming()
     {
         if (swimDirection.magnitude > 0.1f)
@@ -418,12 +410,10 @@ public class NormalFish : MonoBehaviour
         }
         else
         {
-            // 停止移動
             rb.velocity = Vector2.Lerp(rb.velocity, Vector2.zero, 0.1f);
         }
     }
 
-    // ========== 視覺更新 ==========
     void UpdateVisuals()
     {
         if (flipBasedOnDirection && spriteRenderer != null && swimDirection.magnitude > 0.1f)
@@ -440,7 +430,6 @@ public class NormalFish : MonoBehaviour
         }
     }
 
-    // ========== 碰撞檢測 ==========
     void OnTriggerEnter2D(Collider2D other)
     {
         if (isDead) return;
@@ -462,19 +451,15 @@ public class NormalFish : MonoBehaviour
 
     void OnDrawGizmosSelected()
     {
-        // 活動範圍
         Gizmos.color = Color.cyan;
         Gizmos.DrawWireSphere(spawnPosition, swimRadius);
 
-        // 靠近距離
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, approachDistance);
 
-        // 攻擊距離
         Gizmos.color = new Color(1f, 0.5f, 0f);
         Gizmos.DrawWireSphere(transform.position, attackDistance);
 
-        // 敵人偵測距離
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, enemyDetectDistance);
     }

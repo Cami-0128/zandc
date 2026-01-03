@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class InvincibilityStar : MonoBehaviour   //無敵星星  可免除 雨 冰凍區域 的負面影響
+public class InvincibilityStar : MonoBehaviour   //無敵星星  可免除 雨 冰凍區域 等的負面影響
 {
     [Header("星星旋轉效果")]
     [Tooltip("星星每秒旋轉的角度")]

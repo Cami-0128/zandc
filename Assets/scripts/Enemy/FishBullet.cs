@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 
 /// <summary>
-/// 魚的專用子彈 - 修復版：不與 WaterZone 碰撞
+/// 魚的專用子彈 - 支援無敵星星檢測
 /// </summary>
 public class FishBullet : MonoBehaviour
 {
@@ -44,7 +44,7 @@ public class FishBullet : MonoBehaviour
         }
         spriteRenderer.color = bulletColor;
 
-        // 設定碰撞體（重要：只檢測 Player 和 Boat）
+        // 設定碰撞體
         circleCollider = GetComponent<CircleCollider2D>();
         if (circleCollider == null)
         {
@@ -53,12 +53,11 @@ public class FishBullet : MonoBehaviour
         circleCollider.radius = 0.25f;
         circleCollider.isTrigger = true;
 
-        Debug.Log($"[FishBullet] Awake 完成 - 位置: {transform.position}");
+        Debug.Log($"[FishBullet] Awake 完成");
     }
 
     void Start()
     {
-        // 設定初始速度
         if (rb != null)
         {
             rb.velocity = direction * speed;
@@ -68,17 +67,13 @@ public class FishBullet : MonoBehaviour
 
     void Update()
     {
-        // 檢查是否超過生命週期
         if (Time.time - spawnTime > lifetime)
         {
-            Debug.Log($"[FishBullet] ⏰ 子彈因過期而銷毀 (生存時間: {(Time.time - spawnTime):F2}秒)");
+            Debug.Log($"[FishBullet] ⏰ 子彈因過期而銷毀");
             Destroy(gameObject);
         }
     }
 
-    /// <summary>
-    /// 設定子彈的方向和速度
-    /// </summary>
     public void SetDirection(Vector2 newDirection, float newSpeed = -1f)
     {
         direction = newDirection.normalized;
@@ -88,23 +83,18 @@ public class FishBullet : MonoBehaviour
             speed = newSpeed;
         }
 
-        // 立即設定速度
         if (rb != null)
         {
             rb.velocity = direction * speed;
-            Debug.Log($"[FishBullet] SetDirection: 方向={direction}, 速度={speed}, Velocity={rb.velocity}");
+            Debug.Log($"[FishBullet] SetDirection: {direction}, 速度={speed}");
         }
 
-        // 根據方向翻轉精靈
         if (spriteRenderer != null)
         {
             spriteRenderer.flipX = direction.x < 0;
         }
     }
 
-    /// <summary>
-    /// 設定傷害值
-    /// </summary>
     public void SetDamage(float newDamage)
     {
         damage = newDamage;
@@ -114,12 +104,12 @@ public class FishBullet : MonoBehaviour
     {
         if (hasHit) return;
 
-        Debug.Log($"[FishBullet] 碰撞檢測: {collision.gameObject.name} (Tag: {collision.tag})");
+        Debug.Log($"[FishBullet] 碰撞: {collision.gameObject.name} (Tag: {collision.tag})");
 
-        // ✅ 修復：忽略 WaterZone（Tag 為空或 "Untagged"）
+        // ✅ 忽略 WaterZone
         if (collision.gameObject.name == "WaterZone" || collision.CompareTag("Water"))
         {
-            Debug.Log("[FishBullet] ✓ 忽略水域，子彈繼續飛行");
+            Debug.Log("[FishBullet] ✓ 忽略水域");
             return;
         }
 
@@ -130,12 +120,24 @@ public class FishBullet : MonoBehaviour
             return;
         }
 
-        // 傷害玩家
+        // ✅ 傷害玩家（檢測無敵）
         if (collision.CompareTag("Player"))
         {
             PlayerController2D player = collision.GetComponent<PlayerController2D>();
             if (player != null && !player.isDead)
             {
+                // ✅ 檢測無敵星星
+                InvincibilityController invincibility = player.GetComponent<InvincibilityController>();
+                bool isInvincible = invincibility != null && invincibility.IsInvincible();
+
+                if (isInvincible)
+                {
+                    Debug.Log($"[FishBullet] ⭐ 玩家無敵，子彈被擋住");
+                    hasHit = true;
+                    Destroy(gameObject);
+                    return;
+                }
+
                 player.TakeDamage((int)damage);
                 Debug.Log($"[FishBullet] ✅ 擊中玩家，造成 {damage} 點傷害");
                 hasHit = true;
@@ -144,12 +146,31 @@ public class FishBullet : MonoBehaviour
             return;
         }
 
-        // 傷害船隻
+        // ✅ 傷害船隻（檢測船上玩家無敵）
         if (collision.CompareTag("Boat"))
         {
             Boat boat = collision.GetComponent<Boat>();
             if (boat != null && !boat.IsSinking())
             {
+                // ✅ 如果船上有無敵玩家，保護整個船
+                if (boat.HasPlayerOnBoard())
+                {
+                    PlayerController2D playerOnBoat = boat.GetPlayerOnBoard();
+                    if (playerOnBoat != null)
+                    {
+                        InvincibilityController invincibility = playerOnBoat.GetComponent<InvincibilityController>();
+                        bool isInvincible = invincibility != null && invincibility.IsInvincible();
+
+                        if (isInvincible)
+                        {
+                            Debug.Log($"[FishBullet] ⭐ 船上玩家無敵，保護船隻");
+                            hasHit = true;
+                            Destroy(gameObject);
+                            return;
+                        }
+                    }
+                }
+
                 boat.TakeDamage((int)damage);
                 Debug.Log($"[FishBullet] ✅ 擊中船隻，造成 {damage} 點傷害");
                 hasHit = true;
@@ -161,7 +182,7 @@ public class FishBullet : MonoBehaviour
         // 撞到其他物體銷毀
         if (!collision.CompareTag("Player") && !collision.CompareTag("Fish") && !collision.CompareTag("Boat"))
         {
-            Debug.Log($"[FishBullet] 撞到 {collision.gameObject.name} ({collision.tag})，銷毀子彈");
+            Debug.Log($"[FishBullet] 撞到 {collision.gameObject.name}，銷毀");
             hasHit = true;
             Destroy(gameObject);
         }
@@ -172,7 +193,7 @@ public class FishBullet : MonoBehaviour
         float aliveTime = Time.time - spawnTime;
         if (!hasHit && aliveTime < lifetime * 0.2f)
         {
-            Debug.LogWarning($"[FishBullet] ⚠️ 子彈異常銷毀 (生存時間: {aliveTime:F3}秒，預期: {lifetime}秒)");
+            Debug.LogWarning($"[FishBullet] ⚠️ 異常銷毀 ({aliveTime:F3}秒)");
         }
     }
 }

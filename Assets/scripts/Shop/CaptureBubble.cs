@@ -1,10 +1,13 @@
-using System.Collections;
+ï»¿using System.Collections;
 using UnityEngine;
 
 public class CaptureBubble : MonoBehaviour
 {
     private GameObject capturedEnemy;
     private BossController2D capturedBoss;
+    private NormalFish capturedNormalFish;      // âœ… æ–°å¢
+    private SpecialFish capturedSpecialFish;    // âœ… æ–°å¢
+
     private float riseSpeed;
     private float riseHeight;
     private float captureDelay;
@@ -12,18 +15,22 @@ public class CaptureBubble : MonoBehaviour
     private bool isRising = false;
     private float captureTime;
     private bool isBoss = false;
+    private bool isFish = false;              // âœ… æ–°å¢
 
     public void Initialize(GameObject enemy, float speed, float height, float delay)
     {
         capturedEnemy = enemy;
         capturedBoss = null;
+        capturedNormalFish = null;
+        capturedSpecialFish = null;
         isBoss = false;
+        isFish = false;
         riseSpeed = speed;
         riseHeight = height;
         captureDelay = delay;
         startPosition = transform.position;
         captureTime = Time.time;
-        Debug.Log($"[¶ê²y] ªì©l¤Æ¡A®·®»¼Ä¤H¡G{enemy.name}");
+        Debug.Log($"[åœ“çƒ] åˆå§‹åŒ–ï¼Œæ•æ‰æ•µäººï¼š{enemy.name}");
         if (capturedEnemy != null)
         {
             DisableEnemy();
@@ -33,18 +40,21 @@ public class CaptureBubble : MonoBehaviour
         StartCoroutine(AppearAnimation());
     }
 
-    // ¡i·s¼W¡jBoss ªì©l¤Æ¤èªk
+    // ã€æ–°å¢ã€‘Boss åˆå§‹åŒ–æ–¹æ³•
     public void InitializeBoss(GameObject boss, float speed, float height, float delay)
     {
         capturedEnemy = null;
         capturedBoss = boss.GetComponent<BossController2D>();
+        capturedNormalFish = null;
+        capturedSpecialFish = null;
         isBoss = true;
+        isFish = false;
         riseSpeed = speed;
         riseHeight = height;
         captureDelay = delay;
         startPosition = transform.position;
         captureTime = Time.time;
-        Debug.Log($"[¶ê²y] ªì©l¤Æ¡A®·®»Boss¡G{boss.name}");
+        Debug.Log($"[åœ“çƒ] åˆå§‹åŒ–ï¼Œæ•æ‰Bossï¼š{boss.name}");
         if (capturedBoss != null)
         {
             DisableBoss(boss);
@@ -54,19 +64,67 @@ public class CaptureBubble : MonoBehaviour
         StartCoroutine(AppearAnimation());
     }
 
+    // âœ… æ–°å¢ï¼šæ™®é€šé­šåˆå§‹åŒ–æ–¹æ³•
+    public void InitializeNormalFish(GameObject fish, float speed, float height, float delay)
+    {
+        capturedEnemy = null;
+        capturedBoss = null;
+        capturedNormalFish = fish.GetComponent<NormalFish>();
+        capturedSpecialFish = null;
+        isBoss = false;
+        isFish = true;
+        riseSpeed = speed;
+        riseHeight = height;
+        captureDelay = delay;
+        startPosition = transform.position;
+        captureTime = Time.time;
+        Debug.Log($"[åœ“çƒ] åˆå§‹åŒ–ï¼Œæ•æ‰æ™®é€šé­šï¼š{fish.name}");
+        if (capturedNormalFish != null)
+        {
+            DisableFish(fish);
+            fish.transform.SetParent(transform);
+            fish.transform.localPosition = Vector3.zero;
+        }
+        StartCoroutine(AppearAnimation());
+    }
+
+    // âœ… æ–°å¢ï¼šç‰¹æ®Šé­šåˆå§‹åŒ–æ–¹æ³•
+    public void InitializeSpecialFish(GameObject fish, float speed, float height, float delay)
+    {
+        capturedEnemy = null;
+        capturedBoss = null;
+        capturedNormalFish = null;
+        capturedSpecialFish = fish.GetComponent<SpecialFish>();
+        isBoss = false;
+        isFish = true;
+        riseSpeed = speed;
+        riseHeight = height;
+        captureDelay = delay;
+        startPosition = transform.position;
+        captureTime = Time.time;
+        Debug.Log($"[åœ“çƒ] åˆå§‹åŒ–ï¼Œæ•æ‰ç‰¹æ®Šé­šï¼š{fish.name}");
+        if (capturedSpecialFish != null)
+        {
+            DisableFish(fish);
+            fish.transform.SetParent(transform);
+            fish.transform.localPosition = Vector3.zero;
+        }
+        StartCoroutine(AppearAnimation());
+    }
+
     void Update()
     {
         if (!isRising && Time.time - captureTime >= captureDelay)
         {
             isRising = true;
-            Debug.Log("[¶ê²y] ¶}©l¤W¤É");
+            Debug.Log("[åœ“çƒ] é–‹å§‹ä¸Šå‡");
         }
         if (isRising)
         {
             transform.position += Vector3.up * riseSpeed * Time.deltaTime;
             if (transform.position.y >= startPosition.y + riseHeight)
             {
-                Debug.Log("[¶ê²y] ¹F¨ì¥Ø¼Ğ°ª«×¡A·Ç³Æ¾P·´");
+                Debug.Log("[åœ“çƒ] é”åˆ°ç›®æ¨™é«˜åº¦ï¼Œæº–å‚™éŠ·æ¯€");
                 DestroyBubbleAndTarget();
             }
         }
@@ -96,10 +154,10 @@ public class CaptureBubble : MonoBehaviour
                 script.enabled = false;
             }
         }
-        Debug.Log($"[®·®»¨t²Î] ¤w¸T¥Î¼Ä¤H²Õ¥ó¡G{capturedEnemy.name}");
+        Debug.Log($"[æ•æ‰ç³»çµ±] å·²ç¦ç”¨æ•µäººçµ„ä»¶ï¼š{capturedEnemy.name}");
     }
 
-    // ¡i·s¼W¡j¸T¥ÎBossªº¤èªk
+    // ã€æ–°å¢ã€‘ç¦ç”¨Bossçš„æ–¹æ³•
     void DisableBoss(GameObject boss)
     {
         if (boss == null) return;
@@ -122,7 +180,33 @@ public class CaptureBubble : MonoBehaviour
                 script.enabled = false;
             }
         }
-        Debug.Log($"[®·®»¨t²Î] ¤w¸T¥ÎBoss²Õ¥ó¡G{boss.name}");
+        Debug.Log($"[æ•æ‰ç³»çµ±] å·²ç¦ç”¨Bossçµ„ä»¶ï¼š{boss.name}");
+    }
+
+    // âœ… æ–°å¢ï¼šç¦ç”¨é­šçš„æ–¹æ³•
+    void DisableFish(GameObject fish)
+    {
+        if (fish == null) return;
+        Rigidbody2D rb = fish.GetComponent<Rigidbody2D>();
+        if (rb != null)
+        {
+            rb.velocity = Vector2.zero;
+            rb.bodyType = RigidbodyType2D.Kinematic;
+        }
+        Collider2D[] colliders = fish.GetComponents<Collider2D>();
+        foreach (var col in colliders)
+        {
+            col.enabled = false;
+        }
+        MonoBehaviour[] scripts = fish.GetComponents<MonoBehaviour>();
+        foreach (var script in scripts)
+        {
+            if (script != null && !script.GetType().Name.Equals("CaptureBubble"))
+            {
+                script.enabled = false;
+            }
+        }
+        Debug.Log($"[æ•æ‰ç³»çµ±] å·²ç¦ç”¨é­šçš„çµ„ä»¶ï¼š{fish.name}");
     }
 
     IEnumerator AppearAnimation()
@@ -165,17 +249,29 @@ public class CaptureBubble : MonoBehaviour
             }
             yield return null;
         }
-        // ¡i­×§ï¡j®Ú¾Ú®·®»ªº¬O¼Ä¤HÁÙ¬OBoss¤À§O³B²z
+
+        // âœ… æ ¹æ“šæ•æ‰çš„ç›®æ¨™é¡å‹åˆ†åˆ¥è™•ç†
         if (capturedEnemy != null)
         {
-            Debug.Log($"[®·®»¨t²Î] ¼Ä¤H¤w³Q®ø°£¡G{capturedEnemy.name}");
+            Debug.Log($"[æ•æ‰ç³»çµ±] æ•µäººå·²è¢«æ¶ˆé™¤ï¼š{capturedEnemy.name}");
             Destroy(capturedEnemy);
         }
         else if (capturedBoss != null)
         {
-            Debug.Log($"[®·®»¨t²Î] Boss¤w³Q®ø°£");
-            capturedBoss.OnCaptured(); // ½Õ¥ÎBossªº®·®»¨Æ¥ó
+            Debug.Log($"[æ•æ‰ç³»çµ±] Bosså·²è¢«æ¶ˆé™¤");
+            capturedBoss.OnCaptured();
         }
+        else if (capturedNormalFish != null)
+        {
+            Debug.Log($"[æ•æ‰ç³»çµ±] æ™®é€šé­šå·²è¢«æ•æ‰");
+            capturedNormalFish.OnCaptured();
+        }
+        else if (capturedSpecialFish != null)
+        {
+            Debug.Log($"[æ•æ‰ç³»çµ±] ç‰¹æ®Šé­šå·²è¢«æ•æ‰");
+            capturedSpecialFish.OnCaptured();
+        }
+
         Destroy(gameObject);
     }
 
@@ -191,6 +287,22 @@ public class CaptureBubble : MonoBehaviour
             if (bossGO != null)
             {
                 Destroy(bossGO);
+            }
+        }
+        else if (capturedNormalFish != null)
+        {
+            GameObject fishGO = capturedNormalFish.gameObject;
+            if (fishGO != null)
+            {
+                Destroy(fishGO);
+            }
+        }
+        else if (capturedSpecialFish != null)
+        {
+            GameObject fishGO = capturedSpecialFish.gameObject;
+            if (fishGO != null)
+            {
+                Destroy(fishGO);
             }
         }
     }

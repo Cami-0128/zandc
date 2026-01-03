@@ -3,7 +3,16 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// 水域系統 - 添加詳細 Debug 日誌版本
+/// 水域系統 - 修復版：正確的深度判定
+/// 
+/// 三個層級說明：
+/// 红線(水面線) ─────────────────
+/// 黄線(半浸沒底) ─────────────────
+/// 蓝線(全水下線) ─────────────────
+/// 
+/// Surface: 紅線上方 (浮在水面)
+/// Partial: 紅線和黃線之間 (半浸沒)
+/// Submerged: 黃線和藍線之間 (完全浸沒，會扣血)
 /// </summary>
 public class WaterZone : MonoBehaviour
 {
@@ -54,7 +63,7 @@ public class WaterZone : MonoBehaviour
     public string fishTag = "Fish";
 
     [Header("═══ Debug 設定 ═══")]
-    public bool enableDetailedDebug = true;  // 開啟詳細 Debug
+    public bool enableDetailedDebug = true;
 
     private List<Rigidbody2D> objectsInWater = new List<Rigidbody2D>();
     private Dictionary<Rigidbody2D, string> objectTypes = new Dictionary<Rigidbody2D, string>();
@@ -102,10 +111,8 @@ public class WaterZone : MonoBehaviour
 
             string objType = objectTypes[rb];
 
-            // 邊界檢測
             EnforceWaterBoundary(rb);
 
-            // 根據物件類型應用物理
             switch (objType)
             {
                 case "Player":
@@ -119,7 +126,7 @@ public class WaterZone : MonoBehaviour
                     break;
             }
 
-            // 溺水傷害（只有玩家）
+            // 溺水傷害
             if (objType == "Player")
             {
                 UpdateDrownDamage(rb);
@@ -139,11 +146,12 @@ public class WaterZone : MonoBehaviour
         partialBottomY = boundsMin.y;
 
         Debug.Log($"[WaterZone] 邊界 Y: {boundsMin.y:F2} ~ {boundsMax.y:F2}");
-        Debug.Log($"[WaterZone] 水面線: {waterSurfaceY:F2}");
-        Debug.Log($"[WaterZone] 半浸沒底: {surfaceBottomY:F2}");
+        Debug.Log($"[WaterZone] 水面線（紅線）: {waterSurfaceY:F2}");
+        Debug.Log($"[WaterZone] 半浸沒底（黃線）: {surfaceBottomY:F2}");
+        Debug.Log($"[WaterZone] 全水下線（藍線）: {partialBottomY:F2}");
     }
 
-    // ========== 邊界強制推回（只適用於魚類） ==========
+    // ========== 邊界強制推回 ==========
     void EnforceWaterBoundary(Rigidbody2D rb)
     {
         if (!rb.CompareTag(fishTag))
@@ -185,17 +193,37 @@ public class WaterZone : MonoBehaviour
         }
     }
 
-    // ========== 深度檢測 ==========
+    // ========== 深度檢測 ✅ 修復版 ==========
     public enum DepthState { Surface, Partial, Submerged }
 
+    /// <summary>
+    /// 深度判定：
+    /// Surface: Y > 紅線（水面線）
+    /// Partial: 黃線 ≤ Y ≤ 紅線（半浸沒）
+    /// Submerged: 藍線 ≤ Y < 黃線（完全浸沒，會扣血）
+    /// </summary>
     public DepthState GetDepthState(Vector2 position)
     {
-        if (position.y > surfaceBottomY)
+        if (position.y > waterSurfaceY)
+        {
+            // 在紅線上方 = Surface（浮在水面）
             return DepthState.Surface;
-        else if (position.y > partialBottomY)
+        }
+        else if (position.y > surfaceBottomY)
+        {
+            // 在紅線和黃線之間 = Partial（半浸沒）
             return DepthState.Partial;
-        else
+        }
+        else if (position.y > partialBottomY)
+        {
+            // 在黃線和藍線之間 = Submerged（完全浸沒，會扣血）
             return DepthState.Submerged;
+        }
+        else
+        {
+            // 在藍線下方 = Submerged（完全浸沒）
+            return DepthState.Submerged;
+        }
     }
 
     public float GetSubmergedRatio(Collider2D collider)
@@ -225,13 +253,21 @@ public class WaterZone : MonoBehaviour
                 break;
 
             case DepthState.Partial:
-                ApplyPlayerMovementDrag(rb, playerWaterDrag);
-                ApplyPlayerSwimPhysics(rb, 0.5f, isInvincible);
+                // ✅ 在無敵時不應用減速
+                if (!isInvincible)
+                {
+                    ApplyPlayerMovementDrag(rb, playerWaterDrag);
+                    ApplyPlayerSwimPhysics(rb, 0.5f);
+                }
                 break;
 
             case DepthState.Submerged:
-                ApplyPlayerMovementDrag(rb, playerWaterDrag);
-                ApplyPlayerSwimPhysics(rb, 1f, isInvincible);
+                // ✅ 在無敵時不應用減速
+                if (!isInvincible)
+                {
+                    ApplyPlayerMovementDrag(rb, playerWaterDrag);
+                    ApplyPlayerSwimPhysics(rb, 1f);
+                }
                 break;
         }
     }
@@ -241,14 +277,14 @@ public class WaterZone : MonoBehaviour
         rb.velocity *= (1f - dragAmount * Time.fixedDeltaTime);
     }
 
-    void ApplyPlayerSwimPhysics(Rigidbody2D rb, float submergedRatio, bool isInvincible)
+    void ApplyPlayerSwimPhysics(Rigidbody2D rb, float submergedRatio)
     {
         PlayerController2D player = rb.GetComponent<PlayerController2D>();
         if (player == null) return;
 
         bool isSwimmingUp = player.isInWater && rb.velocity.y > 0.1f;
 
-        if (!isSwimmingUp && !isInvincible)
+        if (!isSwimmingUp)
         {
             rb.velocity -= Vector2.up * playerSinkAcceleration * submergedRatio * Time.fixedDeltaTime;
         }
@@ -266,7 +302,7 @@ public class WaterZone : MonoBehaviour
         float targetY = waterSurfaceY;
 
         float buoyancy = (targetY - boatCenterY) * 10f;
-        rb.velocity = new Vector2(rb.velocity.x * boatSurfaceDamping, buoyancy);
+        rb.velocity = new Vector2(rb.velocity.x, buoyancy);
 
         float submergedRatio = GetSubmergedRatio(rb.GetComponent<Collider2D>());
         if (submergedRatio > 0.1f)
@@ -327,7 +363,8 @@ public class WaterZone : MonoBehaviour
         InvincibilityController invincibility = player.GetComponent<InvincibilityController>();
         bool isInvincible = invincibility != null && invincibility.IsInvincible();
 
-        if (isInvincible)
+        // ✅ 只有 Submerged 狀態才扣血
+        if (depth != DepthState.Submerged)
         {
             if (timeFullySubmerged.ContainsKey(rb))
             {
@@ -337,14 +374,7 @@ public class WaterZone : MonoBehaviour
             return;
         }
 
-        // ✅ 修復：詳細 Debug 日誌
-        if (enableDetailedDebug)
-        {
-            Debug.Log($"[WaterZone] 玩家位置: Y={rb.position.y:F2}, 水面: {waterSurfaceY:F2}, 深度: {depth}");
-        }
-
-        // 只有在全水下時才計算溺水
-        if (depth != DepthState.Submerged)
+        if (isInvincible)
         {
             if (timeFullySubmerged.ContainsKey(rb))
             {
@@ -359,19 +389,20 @@ public class WaterZone : MonoBehaviour
         {
             timeFullySubmerged[rb] = 0f;
             lastDamageIndex[rb] = 0;
-            Debug.Log($"[WaterZone] 🌊 玩家開始完全浸沒");
+            Debug.Log($"[WaterZone] 🌊 玩家開始完全浸沒（Y={rb.position.y:F2}）");
         }
 
         // 累積浸沒時間
         timeFullySubmerged[rb] += Time.fixedDeltaTime;
         float timeInSeconds = timeFullySubmerged[rb];
 
-        if (enableDetailedDebug && Mathf.FloorToInt(timeInSeconds) % 5 == 0)
+        // 每 5 秒打印一次
+        if (Mathf.FloorToInt(timeInSeconds) % 5 == 0 && Mathf.FloorToInt(timeInSeconds) != Mathf.FloorToInt(timeInSeconds - Time.fixedDeltaTime))
         {
-            Debug.Log($"[WaterZone] 浸沒時間: {timeInSeconds:F1}秒");
+            Debug.Log($"[WaterZone] ⏱️ 浸沒時間: {timeInSeconds:F1}秒");
         }
 
-        // 檢查是否到達傷害時間點
+        // 檢查傷害時間點
         for (int i = lastDamageIndex[rb]; i < drownDamageThresholds.Length; i++)
         {
             if (timeInSeconds >= drownDamageThresholds[i])
@@ -380,7 +411,7 @@ public class WaterZone : MonoBehaviour
                 {
                     int damage = drownDamageAmounts[i];
                     player.TakeDamage(damage);
-                    Debug.Log($"[WaterZone] 💀 溺水傷害 -{damage} (浸沒 {timeInSeconds:F1}秒，閾值: {drownDamageThresholds[i]}秒，血量: {player.GetCurrentHealth()}/{player.GetMaxHealth()})");
+                    Debug.Log($"[WaterZone] 💀 溺水傷害 -{damage} (浸沒 {timeInSeconds:F1}秒，血量: {player.GetCurrentHealth()}/{player.GetMaxHealth()})");
                 }
 
                 lastDamageIndex[rb] = i + 1;
@@ -407,7 +438,7 @@ public class WaterZone : MonoBehaviour
             if (player != null)
             {
                 player.isInWater = true;
-                Debug.Log($"[WaterZone] 💧 玩家進入水域 (位置: {rb.position.y:F2})");
+                Debug.Log($"[WaterZone] 💧 玩家進入水域");
             }
 
             Debug.Log($"[WaterZone] {collision.gameObject.name} 進入水域");
@@ -428,7 +459,7 @@ public class WaterZone : MonoBehaviour
             if (player != null)
             {
                 player.isInWater = false;
-                Debug.Log($"[WaterZone] 🏖️ 玩家離開水域，溺水計時重置");
+                Debug.Log($"[WaterZone] 🏖️ 玩家離開水域");
             }
 
             Debug.Log($"[WaterZone] {collision.gameObject.name} 離開水域");
@@ -460,7 +491,7 @@ public class WaterZone : MonoBehaviour
         Gizmos.color = new Color(0.3f, 0.7f, 1f, 0.2f);
         Gizmos.DrawCube(bounds.center, bounds.size);
 
-        // 水面線（紅色）
+        // 紅線：水面線（Surface/Partial 邊界）
         Gizmos.color = Color.red;
         float surfaceY = bounds.max.y - surfaceDepthOffset;
         Gizmos.DrawLine(
@@ -468,16 +499,22 @@ public class WaterZone : MonoBehaviour
             new Vector3(bounds.max.x, surfaceY, 0)
         );
 
-        // 半浸沒邊界（黃色）
+        // 黃線：半浸沒底（Partial/Submerged 邊界）
         Gizmos.color = Color.yellow;
         float partialBottomY = surfaceY - partialSubmergedThickness;
         Gizmos.DrawLine(
             new Vector3(bounds.min.x, partialBottomY, 0),
             new Vector3(bounds.max.x, partialBottomY, 0)
         );
+
+        // 藍線：全水下線（Submerged 下限）
+        Gizmos.color = Color.blue;
+        Gizmos.DrawLine(
+            new Vector3(bounds.min.x, bounds.min.y, 0),
+            new Vector3(bounds.max.x, bounds.min.y, 0)
+        );
     }
 
-    // ========== 公開方法 ==========
     public Vector2 GetWaterBoundsMin() => boundsMin;
     public Vector2 GetWaterBoundsMax() => boundsMax;
     public float GetWaterSurfaceY() => waterSurfaceY;
