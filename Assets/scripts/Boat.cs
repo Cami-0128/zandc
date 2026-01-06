@@ -21,7 +21,7 @@ public class Boat : MonoBehaviour
     public int maxBoatHealth = 100;
     public int currentBoatHealth;
     public float sinkStartHealth = 0.2f;
-    public float sinkSpeed = 3f; // ✅ 修正：從 0.5f 改為 3f（加快6倍）
+    public float sinkSpeed = 3f; // ✅ 修正：加快沉沒速度
 
     [Header("═══ 船隻修復系統 ═══")]
     public bool enableManaRepair = true;
@@ -58,7 +58,6 @@ public class Boat : MonoBehaviour
     private Color originalColor;
     private float sinkStartTime = -999f;
 
-    // ========== 船隻移動控制 ==========
     private float boatMoveX = 0f;
 
     void Start()
@@ -148,11 +147,11 @@ public class Boat : MonoBehaviour
 
     void FixedUpdate()
     {
-        // ✅ 沉沒時只處理沉沒邏輯，不執行其他物理計算
+        // ✅ 沉沒時完全禁用所有其他邏輯
         if (isSinking)
         {
             HandleSinking();
-            return;
+            return; // ⭐ 必須立即返回，不執行任何其他邏輯
         }
 
         if (!isFollowingWave || waveSystem == null)
@@ -170,14 +169,13 @@ public class Boat : MonoBehaviour
             UpdateAutoRepair();
         }
 
-        // ✅ 每幀鎖定玩家
         if (playerOnBoard != null && playerRbOnBoard != null)
         {
             LockPlayerOnBoat();
         }
     }
 
-    // ✅ 新增：沉沒處理（在 FixedUpdate 中執行）
+    // ✅ 沉沒處理（在 FixedUpdate 中執行）
     void HandleSinking()
     {
         // 第一次進入沉沒狀態時初始化
@@ -185,43 +183,39 @@ public class Boat : MonoBehaviour
         {
             sinkStartTime = Time.time;
             Debug.Log("[Boat] ⛵ 船隻開始沉沒！");
+
+            // ✅ 禁用波浪跟隨
             isFollowingWave = false;
 
-            // 禁用 Kinematic，讓船可以直接下沉
+            // ✅ 完全禁用 Rigidbody2D 的物理影響
             if (rb != null)
             {
-                rb.isKinematic = false;
+                rb.isKinematic = true; // ⭐ 改為 true，禁用所有物理影響
                 rb.velocity = Vector2.zero;
-                rb.gravityScale = 0f; // ✅ 不使用物理重力，改用手動下沉
+                rb.gravityScale = 0f;
+                Debug.Log("[Boat] ✓ Rigidbody 已配置為純運動學模式");
             }
 
-            // 強制下船
+            // 強制玩家下船
             if (playerOnBoard != null)
             {
+                Debug.Log("[Boat] ✓ 玩家強制下船");
                 PlayerGetOff();
             }
         }
 
-        // ✅ 逐幀下沉（直接修改位置，不受波浪影響）
+        // ✅ 每幀直接修改位置，不受任何外力影響
         Vector3 newPos = transform.position;
         newPos.y -= sinkSpeed * Time.fixedDeltaTime;
         transform.position = newPos;
 
-        // ✅ 簡化判定邏輯，不依賴 WaterZone
-        if (transform.position.y < -10f)
+        // 每30幀列印日誌，追蹤沉沒進度
+        if (Time.frameCount % 30 == 0)
         {
-            Debug.Log($"[Boat] ⛵ 船隻已沉出視野，銷毀（Y={transform.position.y:F2}）");
-
-            if (playerOnBoard != null)
-            {
-                PlayerGetOff();
-            }
-
-            Destroy(gameObject);
+            Debug.Log($"[Boat] ⬇️ 沉沒中... Y: {transform.position.y:F2}，時間: {Time.time - sinkStartTime:F2}秒");
         }
     }
 
-    // ========== 玩家上下船 ==========
     void CheckPlayerNearby()
     {
         PlayerController2D nearbyPlayer = FindObjectOfType<PlayerController2D>();
@@ -239,7 +233,6 @@ public class Boat : MonoBehaviour
         }
     }
 
-    // ========== 船隻移動輸入 ==========
     void CheckBoatMovementInput()
     {
         boatMoveX = 0f;
@@ -269,7 +262,6 @@ public class Boat : MonoBehaviour
         }
     }
 
-    // ========== 船隻浮動邏輯 ==========
     void UpdateBoatFloating()
     {
         if (waveSystem == null) return;
@@ -302,6 +294,9 @@ public class Boat : MonoBehaviour
 
     void LockPlayerOnBoat()
     {
+        // ✅ 沉沒時不鎖定玩家
+        if (isSinking) return;
+
         if (playerOnBoard == null || playerRbOnBoard == null) return;
 
         Vector3 targetPos = transform.position;
@@ -315,7 +310,11 @@ public class Boat : MonoBehaviour
 
     public void TakeDamage(int damage)
     {
-        if (isSinking) return;
+        if (isSinking)
+        {
+            Debug.Log("[Boat] 船隻已在沉沒中，忽略傷害");
+            return;
+        }
 
         currentBoatHealth -= damage;
         currentBoatHealth = Mathf.Max(currentBoatHealth, 0);
@@ -338,6 +337,7 @@ public class Boat : MonoBehaviour
         // ✅ 修復：血量≤0時立即開始沉沒
         if (currentBoatHealth <= 0)
         {
+            Debug.Log("[Boat] ⚠️ 血量歸零，調用 StartSinking()");
             StartSinking();
         }
     }
@@ -360,8 +360,6 @@ public class Boat : MonoBehaviour
 
         Debug.Log("[Boat] ⛵ 開始沉沒流程");
     }
-
-    // ✅ 已移除舊的 CheckSinking 方法，改用 HandleSinking
 
     void CheckRepairInput()
     {
@@ -433,7 +431,6 @@ public class Boat : MonoBehaviour
         spriteRenderer.color = originalSpriteColor;
     }
 
-    // ✅ 修復：自動修復系統
     void UpdateAutoRepair()
     {
         if (currentBoatHealth >= maxBoatHealth) return;
