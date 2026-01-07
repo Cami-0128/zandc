@@ -1783,7 +1783,7 @@ MonoBehaviour:
   maxTilt: 15
   playerGetOnDistance: 1
   getOnKey: 101
-  maxBoatHealth: 20
+  maxBoatHealth: 100
   currentBoatHealth: 0
   sinkStartHealth: 0.2
   sinkSpeed: 20

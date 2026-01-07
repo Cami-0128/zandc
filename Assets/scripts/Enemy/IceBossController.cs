@@ -7,6 +7,13 @@ using System.Collections;
 /// </summary>
 public class IceBossController : MonoBehaviour
 {
+    [Header("遊戲開始控制")]
+    [Tooltip("Boss是否能夠行動（由StartManager控制）")]
+    public bool canMove = false;
+
+    [Tooltip("是否忽略 Time.timeScale（通常不需要勾選）")]
+    public bool ignoreTimeScale = false;
+
     [Header("基本屬性")]
     [Tooltip("Boss最大血量")]
     public float maxHealth = 1000f;

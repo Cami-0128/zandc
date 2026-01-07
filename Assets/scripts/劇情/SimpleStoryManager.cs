@@ -1,6 +1,7 @@
 using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class SimpleStoryManager : MonoBehaviour
 {
@@ -152,8 +153,7 @@ public class SimpleStoryManager : MonoBehaviour
         button1.onClick.AddListener(() =>
         {
             Debug.Log("進入遊戲主線");
-            // 可以在這裡加載下一個場景
-            // SceneManager.LoadScene("GameScene");
+            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
         });
 
         // 選項 2：普通人生
@@ -175,7 +175,7 @@ public class SimpleStoryManager : MonoBehaviour
 
         storyLines = new StoryLine[]
         {
-            new StoryLine { speaker = "旁白", dialogue = "你選擇遠離那一夜，度過平凡的一生。", background = bgBlack, character = null },
+            new StoryLine { speaker = "旁白", dialogue = "你選擇遠離那一夜，度過平凡的一生。", background = bgVillage, character = charMain },
             new StoryLine { speaker = "旁白", dialogue = "遊戲結束。", background = bgBlack, character = null }
         };
 

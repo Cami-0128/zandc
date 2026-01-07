@@ -52,3 +52,4 @@ public class TypewriterEffect : MonoBehaviour
 
     public bool IsTyping() => isTyping;
 }
+
