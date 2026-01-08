@@ -3,6 +3,7 @@ using UnityEngine;
 
 /// <summary>
 /// 地面尖刺陷阱 - 平時隱藏，觸發時升起
+/// 正式版本 - 由Boss控制觸發
 /// </summary>
 public class GroundSpikeTrap : MonoBehaviour
 {
@@ -35,8 +36,11 @@ public class GroundSpikeTrap : MonoBehaviour
     public AudioClip riseSound;
     public AudioClip hitSound;
 
-    [Header("Debug")]
-    public bool debugMode = false;
+    [Header("傷害設定")]
+    [Tooltip("是否造成持續傷害")]
+    public bool enableContinuousDamage = false;
+    [Tooltip("持續傷害間隔")]
+    public float damageInterval = 0.5f;
 
     private Vector3 hiddenPosition;
     private Vector3 activePosition;
@@ -44,15 +48,23 @@ public class GroundSpikeTrap : MonoBehaviour
     private AudioSource audioSource;
     private bool isActive = false;
     private bool isTriggering = false;
+    private float lastDamageTime = -999f;
 
     void Awake()
     {
         // 獲取組件
         if (spikeRenderer == null)
-            spikeRenderer = GetComponent<SpriteRenderer>();
+            spikeRenderer = GetComponentInChildren<SpriteRenderer>();
 
         spikeCollider = GetComponent<Collider2D>();
         audioSource = GetComponent<AudioSource>();
+
+        // 如果沒有AudioSource，自動添加
+        if (audioSource == null && (riseSound != null || hitSound != null))
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
+            audioSource.playOnAwake = false;
+        }
 
         // 設定初始位置
         hiddenPosition = transform.localPosition;
@@ -79,20 +91,15 @@ public class GroundSpikeTrap : MonoBehaviour
 
         transform.localPosition = hiddenPosition;
         isActive = false;
-
-        if (debugMode)
-            Debug.Log("[GroundSpike] 尖刺已隱藏");
     }
 
     /// <summary>
-    /// 觸發尖刺升起
+    /// 觸發尖刺升起（由Boss調用）
     /// </summary>
     public void Trigger()
     {
         if (isTriggering)
         {
-            if (debugMode)
-                Debug.Log("[GroundSpike] 尖刺正在觸發中，忽略重複觸發");
             return;
         }
 
@@ -106,9 +113,6 @@ public class GroundSpikeTrap : MonoBehaviour
     {
         isTriggering = true;
 
-        if (debugMode)
-            Debug.Log("[GroundSpike] === 開始尖刺序列 ===");
-
         // 1. 警告階段（閃爍）
         yield return StartCoroutine(WarningPhase());
 
@@ -121,9 +125,6 @@ public class GroundSpikeTrap : MonoBehaviour
         // 4. 下降階段
         yield return StartCoroutine(FallPhase());
 
-        if (debugMode)
-            Debug.Log("[GroundSpike] === 尖刺序列結束 ===");
-
         isTriggering = false;
     }
 
@@ -132,9 +133,6 @@ public class GroundSpikeTrap : MonoBehaviour
     /// </summary>
     IEnumerator WarningPhase()
     {
-        if (debugMode)
-            Debug.Log("[GroundSpike] 警告階段");
-
         float elapsed = 0f;
 
         while (elapsed < warningTime)
@@ -159,9 +157,6 @@ public class GroundSpikeTrap : MonoBehaviour
     /// </summary>
     IEnumerator RisePhase()
     {
-        if (debugMode)
-            Debug.Log("[GroundSpike] 升起階段");
-
         // 播放音效
         if (riseSound != null && audioSource != null)
             audioSource.PlayOneShot(riseSound);
@@ -172,8 +167,9 @@ public class GroundSpikeTrap : MonoBehaviour
         {
             float t = elapsed / riseTime;
 
-            // 位置插值
-            transform.localPosition = Vector3.Lerp(hiddenPosition, activePosition, t);
+            // 位置插值（緩動效果）
+            float easedT = EaseOutBack(t);
+            transform.localPosition = Vector3.Lerp(hiddenPosition, activePosition, easedT);
 
             // 透明度插值
             if (spikeRenderer != null)
@@ -200,9 +196,6 @@ public class GroundSpikeTrap : MonoBehaviour
     /// </summary>
     IEnumerator ActivePhase()
     {
-        if (debugMode)
-            Debug.Log("[GroundSpike] 活動階段（造成傷害）");
-
         isActive = true;
 
         // 啟用碰撞體
@@ -219,9 +212,6 @@ public class GroundSpikeTrap : MonoBehaviour
     /// </summary>
     IEnumerator FallPhase()
     {
-        if (debugMode)
-            Debug.Log("[GroundSpike] 下降階段");
-
         // 禁用碰撞體
         if (spikeCollider != null)
             spikeCollider.enabled = false;
@@ -251,7 +241,17 @@ public class GroundSpikeTrap : MonoBehaviour
     }
 
     /// <summary>
-    /// 碰撞檢測
+    /// 緩動函數 - 回彈效果
+    /// </summary>
+    float EaseOutBack(float t)
+    {
+        float c1 = 1.70158f;
+        float c3 = c1 + 1f;
+        return 1f + c3 * Mathf.Pow(t - 1f, 3f) + c1 * Mathf.Pow(t - 1f, 2f);
+    }
+
+    /// <summary>
+    /// 碰撞檢測 - 進入時造成傷害
     /// </summary>
     void OnTriggerEnter2D(Collider2D other)
     {
@@ -259,14 +259,37 @@ public class GroundSpikeTrap : MonoBehaviour
 
         if (other.CompareTag("Player"))
         {
-            if (debugMode)
-                Debug.Log($"[GroundSpike] 擊中玩家，造成 {damage} 點傷害");
+            DealDamageToPlayer(other.gameObject);
+        }
+    }
 
-            PlayerController2D player = other.GetComponent<PlayerController2D>();
-            if (player != null)
+    /// <summary>
+    /// 持續碰撞 - 如果啟用持續傷害
+    /// </summary>
+    void OnTriggerStay2D(Collider2D other)
+    {
+        if (!isActive || !enableContinuousDamage) return;
+
+        if (other.CompareTag("Player"))
+        {
+            // 檢查傷害間隔
+            if (Time.time - lastDamageTime >= damageInterval)
             {
-                player.TakeDamage(damage);
+                DealDamageToPlayer(other.gameObject);
             }
+        }
+    }
+
+    /// <summary>
+    /// 對玩家造成傷害
+    /// </summary>
+    void DealDamageToPlayer(GameObject playerObject)
+    {
+        PlayerController2D player = playerObject.GetComponent<PlayerController2D>();
+        if (player != null)
+        {
+            player.TakeDamage(damage);
+            lastDamageTime = Time.time;
 
             // 播放擊中音效
             if (hitSound != null && audioSource != null)
@@ -274,12 +297,19 @@ public class GroundSpikeTrap : MonoBehaviour
         }
     }
 
-    void OnTriggerStay2D(Collider2D other)
+    /// <summary>
+    /// 檢查尖刺是否正在觸發中
+    /// </summary>
+    public bool IsTriggering()
     {
-        // 持續傷害（每0.5秒）
-        if (isActive && other.CompareTag("Player"))
-        {
-            // 這裡可以加入持續傷害邏輯
-        }
+        return isTriggering;
+    }
+
+    /// <summary>
+    /// 檢查尖刺是否處於活動狀態（可造成傷害）
+    /// </summary>
+    public bool IsActive()
+    {
+        return isActive;
     }
 }

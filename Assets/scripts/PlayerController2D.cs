@@ -1,4 +1,4 @@
-using System.Collections;
+ï»¿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -16,7 +16,7 @@ public class PlayerController2D : MonoBehaviour
     private bool isGrounded;
     public bool canControl = true;
 
-    [Header("Health System ¦å¶q¨t²Î")]
+    [Header("Health System è¡€é‡ç³»çµ±")]
     public int maxHealth = 100;
     private static int persistentHealth = -1;
     private static bool isFirstTimePlay = true;
@@ -25,11 +25,11 @@ public class PlayerController2D : MonoBehaviour
     private float damageInvulnerabilityTime = 1f;
     private float lastDamageTime = -999f;
 
-    [Header("Health Pickup System ¦å¥]¨t²Î")]
+    [Header("Health Pickup System è¡€åŒ…ç³»çµ±")]
     public AudioClip healSound;
     private AudioSource audioSource;
 
-    // === Å]¤O ===
+    // === é­”åŠ› ===
     public int maxMana = 100;
     public int currentMana = 100;
 
@@ -52,19 +52,22 @@ public class PlayerController2D : MonoBehaviour
 
     public int LastHorizontalDirection { get; private set; } = 1;
 
-    // ========== ¤ô°ì¨t²Î¬ÛÃö ==========
-    [Header("¤ô°ì¨t²Î")]
+    // ========== æ°´åŸŸç³»çµ±ç›¸é—œ ==========
+    [Header("æ°´åŸŸç³»çµ±")]
     public bool isInWater = false;
     public float waterSwimForce = 5f;
     public float waterDragMultiplier = 0.6f;
 
-    [Header("¤ô°ì¤U¨I¨t²Î")]
-    public KeyCode sinkKey1 = KeyCode.DownArrow;  // ¤U¨I«öÁä 1
-    public KeyCode sinkKey2 = KeyCode.C;           // ¤U¨I«öÁä 2
-    public float sinkForce = 3f;                   // ¤U¨I¤O«×
+    [Header("æ°´åŸŸä¸‹æ²‰ç³»çµ±")]
+    public KeyCode sinkKey1 = KeyCode.DownArrow;
+    public KeyCode sinkKey2 = KeyCode.C;
+    public float sinkForce = 3f;
 
-    // ========== «öÁä¸j©wºŞ²z¾¹ ==========
+    // ========== æŒ‰éµç¶å®šç®¡ç†å™¨ ==========
     private KeyBindingManager keyManager;
+
+    // âœ… æ–°å¢:åŠæŠ€èƒ½å¼•ç”¨(ç”¨æ–¼ç²å–é€Ÿåº¦åŠ æˆ)
+    private SwordSlashSkill swordSkill;
 
     void Start()
     {
@@ -76,15 +79,17 @@ public class PlayerController2D : MonoBehaviour
             audioSource.playOnAwake = false;
         }
 
-        // ========== ªì©l¤Æ«öÁäºŞ²z¾¹ ==========
+        // âœ… ç²å–åŠæŠ€èƒ½çµ„ä»¶
+        swordSkill = GetComponent<SwordSlashSkill>();
+
         keyManager = KeyBindingManager.Instance;
         if (keyManager == null)
         {
-            Debug.LogWarning("[PlayerController2D] KeyBindingManager ¥¼§ä¨ì¡A¨Ï¥Î¶Ç²Î«öÁä");
+            Debug.LogWarning("[PlayerController2D] KeyBindingManager æœªæ‰¾åˆ°ï¼Œä½¿ç”¨å‚³çµ±æŒ‰éµ");
         }
         else
         {
-            Debug.Log("[PlayerController2D] KeyBindingManager ¤wªì©l¤Æ");
+            Debug.Log("[PlayerController2D] KeyBindingManager å·²åˆå§‹åŒ–");
         }
 
         ManaBarUI manaBar = FindObjectOfType<ManaBarUI>();
@@ -93,7 +98,7 @@ public class PlayerController2D : MonoBehaviour
 
         InitializeHealth();
         Time.timeScale = 1f;
-        Debug.Log($"Game Start. ¹CÀ¸¶}©l - ¦å¶q: {currentHealth}/{maxHealth}");
+        Debug.Log($"Game Start. éŠæˆ²é–‹å§‹ - è¡€é‡: {currentHealth}/{maxHealth}");
         UpdateHealthUI();
 
         if (hourglassTimer == null)
@@ -101,7 +106,7 @@ public class PlayerController2D : MonoBehaviour
             hourglassTimer = GetComponentInChildren<HourglassTimer>();
             if (hourglassTimer == null)
             {
-                Debug.LogWarning("§ä¤£¨ì HourglassTimer ²Õ¥ó¡I");
+                Debug.LogWarning("æ‰¾ä¸åˆ° HourglassTimer çµ„ä»¶ï¼");
             }
         }
     }
@@ -114,26 +119,26 @@ public class PlayerController2D : MonoBehaviour
             persistentHealth = maxHealth;
             currentMana = maxMana;
             isFirstTimePlay = false;
-            Debug.Log("[¦å¶q¨t²Î] ²Ä¤@¦¸¹CÀ¸¡A¦å¶q³]¬°º¡¦å¡AÅ]¤O¤]³]º¡");
+            Debug.Log("[è¡€é‡ç³»çµ±] ç¬¬ä¸€æ¬¡éŠæˆ²ï¼Œè¡€é‡è¨­ç‚ºæ»¿è¡€ï¼Œé­”åŠ›ä¹Ÿè¨­æ»¿");
         }
         else
         {
             currentHealth = persistentHealth;
-            Debug.Log($"[¦å¶q¨t²Î] ¸ü¤J«O¦sªº¦å¶q: {currentHealth}/{maxHealth}");
+            Debug.Log($"[è¡€é‡ç³»çµ±] è¼‰å…¥ä¿å­˜çš„è¡€é‡: {currentHealth}/{maxHealth}");
         }
     }
 
     void SaveHealth()
     {
         persistentHealth = currentHealth;
-        Debug.Log($"[¦å¶q¨t²Î] ¦å¶q¤w«O¦s: {persistentHealth}");
+        Debug.Log($"[è¡€é‡ç³»çµ±] è¡€é‡å·²ä¿å­˜: {persistentHealth}");
     }
 
     public static void ResetHealthSystem()
     {
         persistentHealth = -1;
         isFirstTimePlay = true;
-        Debug.Log("[¦å¶q¨t²Î] ¦å¶q¨t²Î¤w­«¸m");
+        Debug.Log("[è¡€é‡ç³»çµ±] è¡€é‡ç³»çµ±å·²é‡ç½®");
     }
 
     public void ManaHeal(int manaAmount)
@@ -142,7 +147,7 @@ public class PlayerController2D : MonoBehaviour
         int oldMana = currentMana;
         currentMana += manaAmount;
         currentMana = Mathf.Min(currentMana, maxMana);
-        Debug.Log($"ManaHeal called: ¦^´_ {manaAmount} Å]¤O¡A±q {oldMana} ¨ì {currentMana}");
+        Debug.Log($"ManaHeal called: å›å¾© {manaAmount} é­”åŠ›ï¼Œå¾ {oldMana} åˆ° {currentMana}");
 
         PlayerAttack attack = GetComponent<PlayerAttack>();
         if (attack != null)
@@ -152,11 +157,11 @@ public class PlayerController2D : MonoBehaviour
             if (manaBar != null)
                 manaBar.UpdateManaBar(attack.GetCurrentMana(), attack.maxMana);
             else
-                Debug.LogWarning("§ä¤£¨ì ManaBarUI ²Õ¥ó");
+                Debug.LogWarning("æ‰¾ä¸åˆ° ManaBarUI çµ„ä»¶");
         }
         else
         {
-            Debug.LogWarning("§ä¤£¨ì PlayerAttack ²Õ¥ó");
+            Debug.LogWarning("æ‰¾ä¸åˆ° PlayerAttack çµ„ä»¶");
         }
     }
 
@@ -176,7 +181,6 @@ public class PlayerController2D : MonoBehaviour
 
     void FixedUpdate()
     {
-        // ¦b¤ô¤¤®É³B²z¤U¨I
         if (isInWater)
         {
             HandleWaterSinking();
@@ -190,7 +194,7 @@ public class PlayerController2D : MonoBehaviour
             hasReachedEnd = true;
             canControl = false;
             rb.velocity = Vector2.zero;
-            Debug.Log("ª±®a¤w©è¹F²×ÂI¡I");
+            Debug.Log("ç©å®¶å·²æŠµé”çµ‚é»ï¼");
         }
     }
 
@@ -202,12 +206,11 @@ public class PlayerController2D : MonoBehaviour
         }
     }
 
-    // ========== ¾ã¦X¦Û©w¸q«öÁä²¾°Ê + §¹¾ã¦^°h ==========
+    // âœ… ä¿®æ”¹:æ•´åˆæ”¶åŠé€Ÿåº¦åŠ æˆ
     void Move()
     {
         float moveX = 0f;
 
-        // Àu¥ı¨Ï¥Î¦Û©w¸q«öÁä
         if (keyManager != null)
         {
             if (keyManager.GetKeyPressed(KeyBindingManager.ActionType.MoveLeft))
@@ -221,7 +224,6 @@ public class PlayerController2D : MonoBehaviour
         }
         else
         {
-            // §¹¾ã¦^°h¨ì¶Ç²Î«öÁä (¤ä´© WASD + ¤è¦VÁä)
             if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow))
             {
                 moveX = -1f;
@@ -237,26 +239,30 @@ public class PlayerController2D : MonoBehaviour
             LastHorizontalDirection = (int)Mathf.Sign(moveX);
         }
 
-        // ========== ¤ô¤¤²¾°Ê´î³t ==========
+        // âœ… è¨ˆç®—æœ€çµ‚ç§»å‹•é€Ÿåº¦(æ°´ä¸­æ¸›é€Ÿ + æ”¶åŠåŠ é€Ÿ)
         float effectiveMoveSpeed = isInWater ? moveSpeed * waterDragMultiplier : moveSpeed;
+
+        // âœ… å¥—ç”¨æ”¶åŠé€Ÿåº¦åŠ æˆ
+        if (swordSkill != null)
+        {
+            effectiveMoveSpeed *= swordSkill.GetSpeedMultiplier();
+        }
+
         rb.velocity = new Vector2(moveX * effectiveMoveSpeed, rb.velocity.y);
     }
 
-    // ========== ¾ã¦X¦Û©w¸q«öÁä¸õÅD + ¤ô¤¤´å°Ê + §¹¾ã¦^°h ==========
     void HandleJumpInput()
     {
         Time.timeScale = 1f;
 
         bool jumpPressed = false;
 
-        // Àu¥ı¨Ï¥Î¦Û©w¸q«öÁä
         if (keyManager != null)
         {
             jumpPressed = keyManager.GetKeyDown(KeyBindingManager.ActionType.Jump);
         }
         else
         {
-            // §¹¾ã¦^°h¨ì¶Ç²Î«öÁä (¤ä´© W + Space + ¤W¤è¦VÁä)
             jumpPressed = Input.GetKeyDown(KeyCode.W) ||
                          Input.GetKeyDown(KeyCode.Space) ||
                          Input.GetKeyDown(KeyCode.UpArrow);
@@ -264,15 +270,12 @@ public class PlayerController2D : MonoBehaviour
 
         if (jumpPressed)
         {
-            // ========== ¦b¤ô¤¤®Éªº¯S®í³B²z ==========
             if (isInWater)
             {
-                // ¦b¤ô¤¤¤¹³\µL­­¦¸¦V¤W´å°Ê
                 SwimUpward();
                 return;
             }
 
-            // ========== ³°¦a¤Wªº¸õÅD ==========
             if (isTouchingWall && !isGrounded && Time.time - lastWallJumpTime >= wallJumpCooldown)
             {
                 WallJump();
@@ -290,30 +293,20 @@ public class PlayerController2D : MonoBehaviour
         jumpCount++;
     }
 
-    // ========== ¤ô¤¤¦V¤W´å°Ê ==========
     void SwimUpward()
     {
-        // ¦b¤ô¤¤µL­­¦¸¦V¤W´å°Ê¡AÀ³¥Î¦V¤Wªº¤O
         rb.velocity = new Vector2(rb.velocity.x, waterSwimForce);
-        Debug.Log("[¤ô°ì] ª±®a¦V¤W´å°Ê");
+        Debug.Log("[æ°´åŸŸ] ç©å®¶å‘ä¸Šæ¸¸å‹•");
     }
 
-    // ========== ¤ô¤¤¤U¨I¨t²Î ==========
     void HandleWaterSinking()
     {
-        // ÀË¬d¤U¨I«öÁä
         bool sinkPressed = Input.GetKey(sinkKey1) || Input.GetKey(sinkKey2);
 
         if (sinkPressed)
         {
-            // «ö¤U¤U¨IÁä®É¥[³t¤U¨I
             rb.velocity = new Vector2(rb.velocity.x, rb.velocity.y - sinkForce * Time.fixedDeltaTime);
-            Debug.Log("[¤ô°ì] ª±®a¥[³t¤U¨I");
-        }
-        else
-        {
-            // ¤£«ö¤U¨IÁä®É¡A«O«ù©Î¦Û°Ê¤U¨I
-            // WaterZone ·|¦Û°Ê³B²z³Q°Ê¤U¨I
+            Debug.Log("[æ°´åŸŸ] ç©å®¶åŠ é€Ÿä¸‹æ²‰");
         }
     }
 
@@ -367,30 +360,27 @@ public class PlayerController2D : MonoBehaviour
 
     void OnCollisionEnter2D(Collision2D collision)
     {
-        // ÀË¬d¬O§_½ò¨ì¼uÂ®
         Bouncer bouncer = collision.gameObject.GetComponent<Bouncer>();
         if (bouncer != null)
         {
-            Debug.Log("[PlayerController2D] ½ò¨ì¼uÂ®¡I");
+            Debug.Log("[PlayerController2D] è¸©åˆ°å½ˆç°§ï¼");
             return;
         }
 
-        // ­ì¦³ªº¼Ä¤H¸I¼²ÅŞ¿è
         if (collision.gameObject.CompareTag("Enemy1"))
         {
-            Debug.Log("¸I¨ìEnemy1¡Aª½±µ¦º¤`¡I");
+            Debug.Log("ç¢°åˆ°Enemy1ï¼Œç›´æ¥æ­»äº¡ï¼");
             TakeDamage(currentHealth);
         }
         else if (collision.gameObject.CompareTag("Enemy"))
         {
             if (Time.time - lastDamageTime >= damageInvulnerabilityTime)
             {
-                Debug.Log("¸I¨ìEnemy¡A¦©°£" + enemyDamage + "ÂI¦å¶q¡I");
+                Debug.Log("ç¢°åˆ°Enemyï¼Œæ‰£é™¤" + enemyDamage + "é»è¡€é‡ï¼");
                 TakeDamage(enemyDamage);
             }
         }
 
-        // ¦a­±¸I¼²ÅŞ¿è
         foreach (ContactPoint2D contact in collision.contacts)
         {
             if (contact.normal.y > 0.5f)
@@ -414,7 +404,7 @@ public class PlayerController2D : MonoBehaviour
         lastDamageTime = Time.time;
         SaveHealth();
         UpdateHealthUI();
-        Debug.Log($"ª±®a¨ü¨ì {damage} ÂI¶Ë®`¡C·í«e¦å¶q: {currentHealth}/{maxHealth}");
+        Debug.Log($"ç©å®¶å—åˆ° {damage} é»å‚·å®³ã€‚ç•¶å‰è¡€é‡: {currentHealth}/{maxHealth}");
         if (currentHealth <= 0)
         {
             Die();
@@ -423,7 +413,7 @@ public class PlayerController2D : MonoBehaviour
 
     public void Heal(int healAmount)
     {
-        Debug.Log($"Heal¨ç¼Æ³Q©I¥s¡AhealAmount = {healAmount}");
+        Debug.Log($"Healå‡½æ•¸è¢«å‘¼å«ï¼ŒhealAmount = {healAmount}");
         if (isDead) return;
         int oldHealth = currentHealth;
         currentHealth += healAmount;
@@ -432,7 +422,7 @@ public class PlayerController2D : MonoBehaviour
             audioSource.PlayOneShot(healSound);
         SaveHealth();
         UpdateHealthUI();
-        Debug.Log($"¦^¦å {currentHealth - oldHealth} ÂI¡A¥Ø«e¦å¶q: {currentHealth}/{maxHealth}");
+        Debug.Log($"å›è¡€ {currentHealth - oldHealth} é»ï¼Œç›®å‰è¡€é‡: {currentHealth}/{maxHealth}");
         StartCoroutine(HealFeedback());
     }
 
@@ -457,7 +447,7 @@ public class PlayerController2D : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("§ä¤£¨ìHealthBarUI²Õ¥ó¡I½Ğ½T«O³õ´º¤¤¦³¦å±øUI¡C");
+            Debug.LogWarning("æ‰¾ä¸åˆ°HealthBarUIçµ„ä»¶ï¼è«‹ç¢ºä¿å ´æ™¯ä¸­æœ‰è¡€æ¢UIã€‚");
         }
     }
 
@@ -469,7 +459,7 @@ public class PlayerController2D : MonoBehaviour
     void Fall()
     {
         if (isDead) return;
-        Debug.Log("ª±®a±¼¸¨¦º¤`¡I");
+        Debug.Log("ç©å®¶æ‰è½æ­»äº¡ï¼");
         currentHealth = 0;
         SaveHealth();
         UpdateHealthUI();
@@ -484,7 +474,7 @@ public class PlayerController2D : MonoBehaviour
         isDead = true;
         canControl = false;
         SaveHealth();
-        Debug.Log("ª±®a¦º¤`¡I");
+        Debug.Log("ç©å®¶æ­»äº¡ï¼");
         FindObjectOfType<GameManager>().PlayerDied();
     }
 
@@ -508,7 +498,7 @@ public class PlayerController2D : MonoBehaviour
         currentHealth = maxHealth;
         SaveHealth();
         UpdateHealthUI();
-        Debug.Log("[¦å¶q¨t²Î] ¦å¶q³]¬°º¡¦å");
+        Debug.Log("[è¡€é‡ç³»çµ±] è¡€é‡è¨­ç‚ºæ»¿è¡€");
     }
 
     public void SetHealth(int health)
@@ -516,6 +506,6 @@ public class PlayerController2D : MonoBehaviour
         currentHealth = Mathf.Clamp(health, 0, maxHealth);
         SaveHealth();
         UpdateHealthUI();
-        Debug.Log($"[¦å¶q¨t²Î] ¦å¶q³]¬°: {currentHealth}/{maxHealth}");
+        Debug.Log($"[è¡€é‡ç³»çµ±] è¡€é‡è¨­ç‚º: {currentHealth}/{maxHealth}");
     }
 }

@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 6686930478614601322}
   - component: {fileID: 4601863740718550414}
   m_Layer: 0
-  m_Name: Particle System
+  m_Name: "Particle System(\u5927Boss\u77AC\u9593\u79FB\u52D5\u7279\u6548\u9032\u968E)"
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

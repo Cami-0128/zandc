@@ -15,7 +15,7 @@ public class Boat : MonoBehaviour
 
     [Header("═══ 搭乘設定 ═══")]
     public float playerGetOnDistance = 1f;
-    public KeyCode getOnKey = KeyCode.E;
+    public KeyCode getOnKey = KeyCode.R;
 
     [Header("═══ 船隻受損系統 ═══")]
     public int maxBoatHealth = 100;

@@ -7,7 +7,7 @@ EditorBuildSettings:
   m_Scenes:
   - enabled: 1
     path: "Assets/Scenes/\u80CC\u666F\u6545\u4E8B.unity"
-    guid: 6e673a2efd840ef4399b51645992e747
+    guid: a00be3be17482bb4e80907ea8c0c0ae8
   - enabled: 1
     path: Assets/Scenes/Level1.unity
     guid: 8c9cfa26abfee488c85f1582747f6a02
@@ -28,7 +28,7 @@ EditorBuildSettings:
     guid: 8ef9b280ce0fbcb4a8d87d067b09d3fe
   - enabled: 1
     path: "Assets/Scenes/\u6230\u9B25\u524D\u5287\u60C5.unity"
-    guid: a00be3be17482bb4e80907ea8c0c0ae8
+    guid: 6e673a2efd840ef4399b51645992e747
   - enabled: 1
     path: Assets/Scenes/BossBattle.unity
     guid: d8941e5f0ebd484418e7f4aaa80f0fa8

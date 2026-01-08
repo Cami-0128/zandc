@@ -96,6 +96,25 @@ public class ShopManager : MonoBehaviour
                     item.effect = new SkillUnlockEffect(1);
                     Debug.Log("注入SkillUnlockEffect");
                     break;
+
+                // ========== 新增：彈簧商品（簡單版） ==========
+                case "Bouncer":
+                case "彈簧":
+                case "彈跳器":
+                    // 檢查是否有 BouncerSpawnManager
+                    if (BouncerSpawnManager.Instance != null)
+                    {
+                        item.effect = BouncerSpawnManager.Instance.CreateBouncerEffect();
+                        Debug.Log("注入SimpleBouncerEffect（從 BouncerSpawnManager）");
+                    }
+                    else
+                    {
+                        Debug.LogError("缺少 BouncerSpawnManager！請在場景中創建並設定。");
+                        item.effect = null;
+                    }
+                    break;
+                // =============================================
+
                 default:
                     item.effect = null;
                     Debug.Log("未注入效果");
