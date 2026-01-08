@@ -24,11 +24,6 @@ public class BossEndingManager : MonoBehaviour
     [SerializeField] private CanvasGroup dialogueUICanvasGroup;
     [SerializeField] private CanvasGroup battleUICanvasGroup;
 
-    // 事件系統
-    public delegate void BattleTransitionHandler();
-    public event BattleTransitionHandler OnEnterBattle;
-    public event BattleTransitionHandler OnBattleComplete;
-
     // 劇情數據結構
     [System.Serializable]
     private class StoryLine
@@ -48,10 +43,7 @@ public class BossEndingManager : MonoBehaviour
     {
         BossIntro,
         BeforeBattle,
-        PlayerLose,
-        PeacefulEnding,
-        DeathEnding,
-        UnknownEnding
+        PeacefulEnding
     }
 
     private DialogueStage currentStage = DialogueStage.BossIntro;
@@ -195,25 +187,9 @@ public class BossEndingManager : MonoBehaviour
         choiceContainer.gameObject.SetActive(false);
         isPlaying = false;
 
-        // 隱藏劇情 UI
-        if (dialogueUICanvasGroup != null)
-        {
-            dialogueUICanvasGroup.alpha = 0;
-            dialogueUICanvasGroup.blocksRaycasts = false;
-        }
-
-        // 顯示戰鬥 UI
-        if (battleUICanvasGroup != null)
-        {
-            battleUICanvasGroup.alpha = 1;
-            battleUICanvasGroup.blocksRaycasts = true;
-        }
-
-        // 觸發進入戰鬥事件
-        OnEnterBattle?.Invoke();
-
-        Debug.Log("進入 Boss 戰鬥");
-        // 之後會在這裡呼叫戰鬥系統
+        Debug.Log("進入 Boss 戰鬥場景");
+        // 加載 BossBattle 場景
+        SceneManager.LoadScene("BossBattle");
     }
 
     private void ShowLine(int index)
@@ -237,72 +213,6 @@ public class BossEndingManager : MonoBehaviour
         {
             characterImage.enabled = false;
         }
-    }
-
-    private void OnBattleEnded(bool playerWon)
-    {
-        // 隱藏戰鬥 UI
-        if (battleUICanvasGroup != null)
-        {
-            battleUICanvasGroup.alpha = 0;
-            battleUICanvasGroup.blocksRaycasts = false;
-        }
-
-        // 顯示劇情 UI
-        if (dialogueUICanvasGroup != null)
-        {
-            dialogueUICanvasGroup.alpha = 1;
-            dialogueUICanvasGroup.blocksRaycasts = true;
-        }
-
-        if (playerWon)
-        {
-            PlayPlayerWinEnding();
-        }
-        else
-        {
-            PlayPlayerLoseEnding();
-        }
-
-        OnBattleComplete?.Invoke();
-    }
-
-    private void PlayPlayerWinEnding()
-    {
-        choiceContainer.gameObject.SetActive(false);
-        isPlaying = true;
-        currentLine = 0;
-        currentStage = DialogueStage.UnknownEnding;
-
-        storyLines = new StoryLine[]
-        {
-            new StoryLine { speaker = "旁白", dialogue = "吸血鬼的身體開始崩散。", background = bgCastle, character = charBoss },
-            new StoryLine { speaker = "Boss", dialogue = "……妳做到了。", background = bgCastle, character = charBoss },
-            new StoryLine { speaker = "旁白", dialogue = "一股力量從對方體內湧出，流入主角的血液。", background = bgCastle, character = charMain },
-            new StoryLine { speaker = "旁白", dialogue = "她感到一切都改變了。但她不知道，這是什麼。", background = bgCastle, character = charMain },
-            new StoryLine { speaker = "旁白", dialogue = "【未知結局】下一章，敬請期待……", background = bgCastle, character = null }
-        };
-
-        ShowLine(0);
-    }
-
-    private void PlayPlayerLoseEnding()
-    {
-        choiceContainer.gameObject.SetActive(false);
-        isPlaying = true;
-        currentLine = 0;
-        currentStage = DialogueStage.PlayerLose;
-
-        storyLines = new StoryLine[]
-        {
-            new StoryLine { speaker = "旁白", dialogue = "主角跪在地上，無法再站起來。", background = bgCastle, character = charMain },
-            new StoryLine { speaker = "Boss", dialogue = "這就是妳的力量。還不夠。", background = bgCastle, character = charBoss },
-            new StoryLine { speaker = "旁白", dialogue = "吸血鬼走近她。", background = bgCastle, character = charBoss },
-            new StoryLine { speaker = "Boss", dialogue = "妳想要繼續戰鬥嗎？還是……相信我？", background = bgCastle, character = charBoss },
-            new StoryLine { speaker = "旁白", dialogue = "她看著對方，做出選擇。", background = bgCastle, character = charMain }
-        };
-
-        ShowLine(0);
     }
 
     private void SkipToChoice()
