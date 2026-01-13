@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-public class InventoryUI : MonoBehaviour
+public class InventoryUI : MonoBehaviour //¼o?
 {
     [Header("UI ²Õ¥ó")]
     public GameObject inventoryPanel;

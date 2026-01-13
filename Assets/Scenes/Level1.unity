@@ -290,6 +290,11 @@ MonoBehaviour:
   startPanel: {fileID: 1811003662}
   player: {fileID: 409638860}
   ball: {fileID: 1046616825}
+  boss: {fileID: 0}
+  iceBoss: {fileID: 0}
+  iceBosses: []
+  normalBosses: []
+  debugMode: 1
 --- !u!4 &37084332
 Transform:
   m_ObjectHideFlags: 0
@@ -6110,7 +6115,8 @@ MonoBehaviour:
   toggleButton: {fileID: 994854747}
   closeButton: {fileID: 2057601719}
   infoPanelCanvasGroup: {fileID: 0}
-  toggleKey: 105
+  infoPanelScript: {fileID: 0}
+  keyBindingUI: {fileID: 0}
   useAnimation: 0
   animationDuration: 0.3
   animationType: 0
@@ -10398,6 +10404,10 @@ PrefabInstance:
       propertyPath: completeUI
       value: 
       objectReference: {fileID: 1196550704}
+    - target: {fileID: 5588539608001036344, guid: 26c2233404e2ffe4a919639cc82f1f29, type: 3}
+      propertyPath: shopManager
+      value: 
+      objectReference: {fileID: 180234662}
     - target: {fileID: 5588539608001036345, guid: 26c2233404e2ffe4a919639cc82f1f29, type: 3}
       propertyPath: m_Name
       value: GameManager

@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+ï»¿using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -56,14 +56,14 @@ public class ShopManager : MonoBehaviour
     {
         bool shopKeyPressed = false;
 
-        // Àu¥ı¨Ï¥Î¦Û©w¸q«öÁä
+        // å„ªå…ˆä½¿ç”¨è‡ªå®šç¾©æŒ‰éµ
         if (KeyBindingManager.Instance != null)
         {
             shopKeyPressed = KeyBindingManager.Instance.GetKeyDown(KeyBindingManager.ActionType.OpenShop);
         }
         else
         {
-            // ¦^°h¨ì¶Ç²Î«öÁä
+            // å›é€€åˆ°å‚³çµ±æŒ‰éµ
             shopKeyPressed = Input.GetKeyDown(KeyCode.S);
         }
 
@@ -78,46 +78,55 @@ public class ShopManager : MonoBehaviour
     {
         foreach (var item in items)
         {
-            Debug.Log($"¹Á¸Õª`¤J®ÄªG¡G°Ó«~ = {item.itemName}");
+            Debug.Log($"å˜—è©¦æ³¨å…¥æ•ˆæœï¼šå•†å“ = {item.itemName}");
             switch (item.itemName)
             {
                 case "Health":
-                case "¦^´_ÃÄ¤ô":
+                case "å›å¾©è—¥æ°´":
                     item.effect = new HealEffect(20);
-                    Debug.Log("ª`¤JHealEffect");
+                    Debug.Log("æ³¨å…¥HealEffect");
                     break;
                 case "Mana":
-                case "Å]¤O¦^´_":
+                case "é­”åŠ›å›å¾©":
                     item.effect = new ManaHealEffect(20);
-                    Debug.Log("ª`¤JManaHealEffect");
+                    Debug.Log("æ³¨å…¥ManaHealEffect");
                     break;
                 case "CaptureSkill":
-                case "®·®»§Ş¯à":
+                case "æ•æ‰æŠ€èƒ½":
                     item.effect = new SkillUnlockEffect(1);
-                    Debug.Log("ª`¤JSkillUnlockEffect");
+                    Debug.Log("æ³¨å…¥SkillUnlockEffect");
                     break;
 
-                // ========== ·s¼W¡G¼uÂ®°Ó«~¡]Â²³æª©¡^ ==========
+                // ========== æ–°å¢ï¼šå½ˆç°§å•†å“ï¼ˆç°¡å–®ç‰ˆï¼‰ ==========
                 case "Bouncer":
-                case "¼uÂ®":
-                case "¼u¸õ¾¹":
-                    // ÀË¬d¬O§_¦³ BouncerSpawnManager
+                case "å½ˆç°§":
+                case "å½ˆè·³å™¨":
+                    // æª¢æŸ¥æ˜¯å¦æœ‰ BouncerSpawnManager
                     if (BouncerSpawnManager.Instance != null)
                     {
-                        item.effect = BouncerSpawnManager.Instance.CreateBouncerEffect();
-                        Debug.Log("ª`¤JSimpleBouncerEffect¡]±q BouncerSpawnManager¡^");
+                        SimpleBouncerEffect bouncerEffect = BouncerSpawnManager.Instance.CreateBouncerEffect();
+                        if (bouncerEffect != null)
+                        {
+                            item.effect = bouncerEffect;
+                            Debug.Log("âœ“ æ³¨å…¥ SimpleBouncerEffect æˆåŠŸ");
+                        }
+                        else
+                        {
+                            item.effect = null;
+                            Debug.LogError("âœ— SimpleBouncerEffect å‰µå»ºå¤±æ•—ï¼è«‹æª¢æŸ¥ BouncerSpawnManager çš„è¨­å®šã€‚");
+                        }
                     }
                     else
                     {
-                        Debug.LogError("¯Ê¤Ö BouncerSpawnManager¡I½Ğ¦b³õ´º¤¤³Ğ«Ø¨Ã³]©w¡C");
                         item.effect = null;
+                        Debug.LogError("âœ— ç¼ºå°‘ BouncerSpawnManagerï¼è«‹åœ¨å ´æ™¯ä¸­å‰µå»ºç‰©ä»¶ä¸¦æ›è¼‰ BouncerSpawnManager.cs");
                     }
                     break;
                 // =============================================
 
                 default:
                     item.effect = null;
-                    Debug.Log("¥¼ª`¤J®ÄªG");
+                    Debug.Log("æœªæ³¨å…¥æ•ˆæœ");
                     break;
             }
         }
@@ -184,11 +193,11 @@ public class ShopManager : MonoBehaviour
     {
         if (selectedIndex == -1) return;
         var item = items[selectedIndex];
-        Debug.Log($"[ShopManager] ¶R°Ó«~: {item.itemName} »ù®æ: {item.price} ª÷¿ú: {CoinManager.Instance.MoneyCount}");
+        Debug.Log($"[ShopManager] è²·å•†å“: {item.itemName} åƒ¹æ ¼: {item.price} é‡‘éŒ¢: {CoinManager.Instance.MoneyCount}");
 
         if (CoinManager.Instance == null)
         {
-            Debug.LogError("¯Ê¤ÖCoinManager");
+            Debug.LogError("ç¼ºå°‘CoinManager");
             return;
         }
         int moneyCount = CoinManager.Instance.MoneyCount;
@@ -196,20 +205,20 @@ public class ShopManager : MonoBehaviour
         {
             CoinManager.Instance.AddMoney(-item.price);
             UpdatePlayerMoneyUI();
-            Debug.Log("[ShopManager] ¦©¿ú«áª÷ÃB: " + CoinManager.Instance.MoneyCount);
+            Debug.Log("[ShopManager] æ‰£éŒ¢å¾Œé‡‘é¡: " + CoinManager.Instance.MoneyCount);
             if (player != null && item.effect != null)
             {
-                Debug.Log("[ShopManager] °õ¦æ°Ó«~®ÄªG ApplyEffect");
+                Debug.Log("[ShopManager] åŸ·è¡Œå•†å“æ•ˆæœ ApplyEffect");
                 item.effect.ApplyEffect(player);
             }
             else
             {
-                Debug.LogWarning("player©Îeffect¬°null");
+                Debug.LogWarning("playeræˆ–effectç‚ºnull");
             }
         }
         else
         {
-            Debug.Log("ª±®aª÷¿ú¤£¨¬¡AµLªkÁÊ¶R");
+            Debug.Log("ç©å®¶é‡‘éŒ¢ä¸è¶³ï¼Œç„¡æ³•è³¼è²·");
         }
     }
 

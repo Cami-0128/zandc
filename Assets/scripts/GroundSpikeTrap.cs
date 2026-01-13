@@ -1,46 +1,50 @@
-using System.Collections;
+ï»¿using System.Collections;
 using UnityEngine;
 
 /// <summary>
-/// ¦a­±¦y¨ë³´¨À - ¥­®ÉÁôÂÃ¡AÄ²µo®É¤É°_
-/// ¥¿¦¡ª©¥» - ¥ÑBoss±±¨îÄ²µo
+/// åœ°é¢å°–åˆºé™·é˜± - å¹³æ™‚éš±è—ï¼Œè§¸ç™¼æ™‚å‡èµ·
+/// æ­£å¼ç‰ˆæœ¬ - ç”±Bossæ§åˆ¶è§¸ç™¼
 /// </summary>
 public class GroundSpikeTrap : MonoBehaviour
 {
-    [Header("¦y¨ë³]©w")]
-    [Tooltip("¦y¨ëªºSprite Renderer")]
+    [Header("å°–åˆºè¨­å®š")]
+    [Tooltip("å°–åˆºçš„Sprite Renderer")]
     public SpriteRenderer spikeRenderer;
 
-    [Tooltip("¦y¨ë¶Ë®`")]
+    [Tooltip("å°–åˆºå‚·å®³")]
     public int damage = 30;
 
-    [Header("°Êµe³]©w")]
-    [Tooltip("¤É°_»İ­nªº®É¶¡")]
+    [Header("å‹•ç•«è¨­å®š")]
+    [Tooltip("å‡èµ·éœ€è¦çš„æ™‚é–“")]
     public float riseTime = 0.3f;
 
-    [Tooltip("°±¯d®É¶¡¡]§¹¥ş¤É°_«á¡^")]
+    [Tooltip("åœç•™æ™‚é–“ï¼ˆå®Œå…¨å‡èµ·å¾Œï¼‰")]
     public float stayTime = 2f;
 
-    [Tooltip("¤U­°»İ­nªº®É¶¡")]
+    [Tooltip("ä¸‹é™éœ€è¦çš„æ™‚é–“")]
     public float fallTime = 0.3f;
 
-    [Tooltip("¤É°_°ª«×")]
+    [Tooltip("å‡èµ·é«˜åº¦")]
     public float riseHeight = 1f;
 
-    [Header("µøÄ±®ÄªG")]
-    public Color warningColor = new Color(1f, 0.5f, 0f, 0.5f); // ¾ï¦âÄµ§i
+    [Header("è¦–è¦ºæ•ˆæœ")]
+    public Color warningColor = new Color(1f, 0.5f, 0f, 0.5f);
     public Color activeColor = Color.red;
-    public float warningTime = 0.5f; // Äµ§i°{Ã{®É¶¡
+    public float warningTime = 0.5f;
 
-    [Header("­µ®Ä")]
+    [Header("éŸ³æ•ˆ")]
     public AudioClip riseSound;
     public AudioClip hitSound;
 
-    [Header("¶Ë®`³]©w")]
-    [Tooltip("¬O§_³y¦¨«ùÄò¶Ë®`")]
+    [Header("å‚·å®³è¨­å®š")]
+    [Tooltip("æ˜¯å¦é€ æˆæŒçºŒå‚·å®³")]
     public bool enableContinuousDamage = false;
-    [Tooltip("«ùÄò¶Ë®`¶¡¹j")]
+    [Tooltip("æŒçºŒå‚·å®³é–“éš”")]
     public float damageInterval = 0.5f;
+
+    [Header("Debugè¨­å®š")]
+    public bool showDebugInfo = true;
+    public Color gizmoColor = Color.yellow;
 
     private Vector3 hiddenPosition;
     private Vector3 activePosition;
@@ -52,31 +56,94 @@ public class GroundSpikeTrap : MonoBehaviour
 
     void Awake()
     {
-        // Àò¨ú²Õ¥ó
+        InitializeComponents();
+        SetupPositions();
+        Hide();
+
+        if (showDebugInfo)
+        {
+            Debug.Log($"[Spike:{gameObject.name}] åˆå§‹åŒ–å®Œæˆ - ä½ç½®: {transform.position}");
+        }
+    }
+
+    void InitializeComponents()
+    {
+        // ç²å– Sprite Rendererï¼ˆå˜—è©¦å¤šç¨®æ–¹å¼ï¼‰
         if (spikeRenderer == null)
-            spikeRenderer = GetComponentInChildren<SpriteRenderer>();
+        {
+            // å…ˆæª¢æŸ¥è‡ªå·±
+            spikeRenderer = GetComponent<SpriteRenderer>();
 
+            // å¦‚æœæ²’æœ‰ï¼Œæª¢æŸ¥å­ç‰©ä»¶
+            if (spikeRenderer == null)
+            {
+                spikeRenderer = GetComponentInChildren<SpriteRenderer>();
+            }
+
+            if (spikeRenderer == null)
+            {
+                Debug.LogError($"[Spike:{gameObject.name}] âŒ æ‰¾ä¸åˆ° SpriteRendererï¼");
+            }
+            else if (showDebugInfo)
+            {
+                Debug.Log($"[Spike:{gameObject.name}] âœ… æ‰¾åˆ° SpriteRenderer: {spikeRenderer.gameObject.name}");
+            }
+        }
+
+        // ç²å– Collider
         spikeCollider = GetComponent<Collider2D>();
-        audioSource = GetComponent<AudioSource>();
+        if (spikeCollider == null)
+        {
+            Debug.LogError($"[Spike:{gameObject.name}] âŒ æ‰¾ä¸åˆ° Collider2Dï¼");
+        }
+        else
+        {
+            if (!spikeCollider.isTrigger)
+            {
+                Debug.LogWarning($"[Spike:{gameObject.name}] âš ï¸ Collider çš„ Is Trigger æœªå‹¾é¸ï¼è‡ªå‹•è¨­å®šç‚º Trigger");
+                spikeCollider.isTrigger = true;
+            }
 
-        // ¦pªG¨S¦³AudioSource¡A¦Û°Ê²K¥[
+            if (showDebugInfo)
+            {
+                Debug.Log($"[Spike:{gameObject.name}] âœ… Collider è¨­å®šå®Œæˆ");
+            }
+        }
+
+        // ç²å–æˆ–å‰µå»º AudioSource
+        audioSource = GetComponent<AudioSource>();
         if (audioSource == null && (riseSound != null || hitSound != null))
         {
             audioSource = gameObject.AddComponent<AudioSource>();
             audioSource.playOnAwake = false;
+
+            if (showDebugInfo)
+            {
+                Debug.Log($"[Spike:{gameObject.name}] âœ… è‡ªå‹•æ·»åŠ  AudioSource");
+            }
         }
-
-        // ³]©wªì©l¦ì¸m
-        hiddenPosition = transform.localPosition;
-        activePosition = hiddenPosition + Vector3.up * riseHeight;
-
-        // ªì©lª¬ºA¡GÁôÂÃ
-        Hide();
     }
 
-    /// <summary>
-    /// ÁôÂÃ¦y¨ë
-    /// </summary>
+    void SetupPositions()
+    {
+        // è¨­å®šåˆå§‹å’Œç›®æ¨™ä½ç½®
+        if (spikeRenderer != null)
+        {
+            hiddenPosition = spikeRenderer.transform.localPosition;
+        }
+        else
+        {
+            hiddenPosition = transform.localPosition;
+        }
+
+        activePosition = hiddenPosition + Vector3.up * riseHeight;
+
+        if (showDebugInfo)
+        {
+            Debug.Log($"[Spike:{gameObject.name}] ä½ç½®è¨­å®š - éš±è—: {hiddenPosition}, æ´»å‹•: {activePosition}");
+        }
+    }
+
     public void Hide()
     {
         if (spikeRenderer != null)
@@ -84,60 +151,69 @@ public class GroundSpikeTrap : MonoBehaviour
             Color color = spikeRenderer.color;
             color.a = 0f;
             spikeRenderer.color = color;
+            spikeRenderer.transform.localPosition = hiddenPosition;
         }
 
         if (spikeCollider != null)
             spikeCollider.enabled = false;
 
-        transform.localPosition = hiddenPosition;
         isActive = false;
     }
 
     /// <summary>
-    /// Ä²µo¦y¨ë¤É°_¡]¥ÑBoss½Õ¥Î¡^
+    /// è§¸ç™¼å°–åˆºå‡èµ·ï¼ˆç”±Bossèª¿ç”¨ï¼‰
     /// </summary>
     public void Trigger()
     {
         if (isTriggering)
         {
+            if (showDebugInfo)
+                Debug.Log($"[Spike:{gameObject.name}] å·²åœ¨è§¸ç™¼ä¸­ï¼Œå¿½ç•¥");
             return;
+        }
+
+        if (showDebugInfo)
+        {
+            Debug.Log($"[Spike:{gameObject.name}] ğŸ”¥ é–‹å§‹è§¸ç™¼ï¼");
         }
 
         StartCoroutine(TriggerSequence());
     }
 
-    /// <summary>
-    /// ¦y¨ëÄ²µo§Ç¦C
-    /// </summary>
     IEnumerator TriggerSequence()
     {
         isTriggering = true;
 
-        // 1. Äµ§i¶¥¬q¡]°{Ã{¡^
+        if (showDebugInfo)
+            Debug.Log($"[Spike:{gameObject.name}] === é–‹å§‹åºåˆ— ===");
+
+        // 1. è­¦å‘Šéšæ®µ
         yield return StartCoroutine(WarningPhase());
 
-        // 2. ¤É°_¶¥¬q
+        // 2. å‡èµ·éšæ®µ
         yield return StartCoroutine(RisePhase());
 
-        // 3. °±¯d¶¥¬q¡]³y¦¨¶Ë®`¡^
+        // 3. åœç•™éšæ®µ
         yield return StartCoroutine(ActivePhase());
 
-        // 4. ¤U­°¶¥¬q
+        // 4. ä¸‹é™éšæ®µ
         yield return StartCoroutine(FallPhase());
+
+        if (showDebugInfo)
+            Debug.Log($"[Spike:{gameObject.name}] === åºåˆ—çµæŸ ===");
 
         isTriggering = false;
     }
 
-    /// <summary>
-    /// Äµ§i¶¥¬q
-    /// </summary>
     IEnumerator WarningPhase()
     {
+        if (showDebugInfo)
+            Debug.Log($"[Spike:{gameObject.name}] âš ï¸ è­¦å‘Šéšæ®µ");
+
         float elapsed = 0f;
 
         while (elapsed < warningTime)
         {
-            // °{Ã{®ÄªG
             float alpha = Mathf.PingPong(elapsed * 8f, 1f) * 0.5f;
 
             if (spikeRenderer != null)
@@ -152,12 +228,11 @@ public class GroundSpikeTrap : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// ¤É°_¶¥¬q
-    /// </summary>
     IEnumerator RisePhase()
     {
-        // ¼½©ñ­µ®Ä
+        if (showDebugInfo)
+            Debug.Log($"[Spike:{gameObject.name}] â¬†ï¸ å‡èµ·éšæ®µ");
+
         if (riseSound != null && audioSource != null)
             audioSource.PlayOneShot(riseSound);
 
@@ -166,14 +241,12 @@ public class GroundSpikeTrap : MonoBehaviour
         while (elapsed < riseTime)
         {
             float t = elapsed / riseTime;
-
-            // ¦ì¸m´¡­È¡]½w°Ê®ÄªG¡^
             float easedT = EaseOutBack(t);
-            transform.localPosition = Vector3.Lerp(hiddenPosition, activePosition, easedT);
 
-            // ³z©ú«×´¡­È
             if (spikeRenderer != null)
             {
+                spikeRenderer.transform.localPosition = Vector3.Lerp(hiddenPosition, activePosition, easedT);
+
                 Color color = Color.Lerp(warningColor, activeColor, t);
                 color.a = Mathf.Lerp(0.5f, 1f, t);
                 spikeRenderer.color = color;
@@ -183,36 +256,36 @@ public class GroundSpikeTrap : MonoBehaviour
             yield return null;
         }
 
-        transform.localPosition = activePosition;
-
         if (spikeRenderer != null)
         {
+            spikeRenderer.transform.localPosition = activePosition;
             spikeRenderer.color = activeColor;
         }
     }
 
-    /// <summary>
-    /// ¬¡°Ê¶¥¬q¡]³y¦¨¶Ë®`¡^
-    /// </summary>
     IEnumerator ActivePhase()
     {
+        if (showDebugInfo)
+            Debug.Log($"[Spike:{gameObject.name}] ğŸ’¥ æ´»å‹•éšæ®µï¼ˆå¯é€ æˆå‚·å®³ï¼‰");
+
         isActive = true;
 
-        // ±Ò¥Î¸I¼²Åé
         if (spikeCollider != null)
             spikeCollider.enabled = true;
 
         yield return new WaitForSeconds(stayTime);
 
         isActive = false;
+
+        if (showDebugInfo)
+            Debug.Log($"[Spike:{gameObject.name}] æ´»å‹•éšæ®µçµæŸ");
     }
 
-    /// <summary>
-    /// ¤U­°¶¥¬q
-    /// </summary>
     IEnumerator FallPhase()
     {
-        // ¸T¥Î¸I¼²Åé
+        if (showDebugInfo)
+            Debug.Log($"[Spike:{gameObject.name}] â¬‡ï¸ ä¸‹é™éšæ®µ");
+
         if (spikeCollider != null)
             spikeCollider.enabled = false;
 
@@ -222,12 +295,10 @@ public class GroundSpikeTrap : MonoBehaviour
         {
             float t = elapsed / fallTime;
 
-            // ¦ì¸m´¡­È
-            transform.localPosition = Vector3.Lerp(activePosition, hiddenPosition, t);
-
-            // ³z©ú«×´¡­È
             if (spikeRenderer != null)
             {
+                spikeRenderer.transform.localPosition = Vector3.Lerp(activePosition, hiddenPosition, t);
+
                 Color color = activeColor;
                 color.a = Mathf.Lerp(1f, 0f, t);
                 spikeRenderer.color = color;
@@ -240,9 +311,6 @@ public class GroundSpikeTrap : MonoBehaviour
         Hide();
     }
 
-    /// <summary>
-    /// ½w°Ê¨ç¼Æ - ¦^¼u®ÄªG
-    /// </summary>
     float EaseOutBack(float t)
     {
         float c1 = 1.70158f;
@@ -250,12 +318,12 @@ public class GroundSpikeTrap : MonoBehaviour
         return 1f + c3 * Mathf.Pow(t - 1f, 3f) + c1 * Mathf.Pow(t - 1f, 2f);
     }
 
-    /// <summary>
-    /// ¸I¼²ÀË´ú - ¶i¤J®É³y¦¨¶Ë®`
-    /// </summary>
     void OnTriggerEnter2D(Collider2D other)
     {
         if (!isActive) return;
+
+        if (showDebugInfo)
+            Debug.Log($"[Spike:{gameObject.name}] ç¢°æ’æª¢æ¸¬: {other.gameObject.name} (Tag: {other.tag})");
 
         if (other.CompareTag("Player"))
         {
@@ -263,16 +331,12 @@ public class GroundSpikeTrap : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// «ùÄò¸I¼² - ¦pªG±Ò¥Î«ùÄò¶Ë®`
-    /// </summary>
     void OnTriggerStay2D(Collider2D other)
     {
         if (!isActive || !enableContinuousDamage) return;
 
         if (other.CompareTag("Player"))
         {
-            // ÀË¬d¶Ë®`¶¡¹j
             if (Time.time - lastDamageTime >= damageInterval)
             {
                 DealDamageToPlayer(other.gameObject);
@@ -280,9 +344,6 @@ public class GroundSpikeTrap : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// ¹ïª±®a³y¦¨¶Ë®`
-    /// </summary>
     void DealDamageToPlayer(GameObject playerObject)
     {
         PlayerController2D player = playerObject.GetComponent<PlayerController2D>();
@@ -291,25 +352,36 @@ public class GroundSpikeTrap : MonoBehaviour
             player.TakeDamage(damage);
             lastDamageTime = Time.time;
 
-            // ¼½©ñÀ»¤¤­µ®Ä
+            if (showDebugInfo)
+                Debug.Log($"[Spike:{gameObject.name}] âš”ï¸ å°ç©å®¶é€ æˆ {damage} é»å‚·å®³");
+
             if (hitSound != null && audioSource != null)
                 audioSource.PlayOneShot(hitSound);
         }
     }
 
-    /// <summary>
-    /// ÀË¬d¦y¨ë¬O§_¥¿¦bÄ²µo¤¤
-    /// </summary>
-    public bool IsTriggering()
+    public bool IsTriggering() => isTriggering;
+    public bool IsActive() => isActive;
+
+    // Gizmos ç¹ªè£½
+    void OnDrawGizmos()
     {
-        return isTriggering;
+        Gizmos.color = gizmoColor;
+        Gizmos.DrawWireSphere(transform.position, 0.5f);
+
+        if (Application.isPlaying && isActive)
+        {
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireSphere(transform.position, 0.7f);
+        }
     }
 
-    /// <summary>
-    /// ÀË¬d¦y¨ë¬O§_³B©ó¬¡°Êª¬ºA¡]¥i³y¦¨¶Ë®`¡^
-    /// </summary>
-    public bool IsActive()
+    void OnDrawGizmosSelected()
     {
-        return isActive;
+        // é¡¯ç¤ºå‡èµ·ç¯„åœ
+        Gizmos.color = Color.cyan;
+        Vector3 topPos = transform.position + Vector3.up * riseHeight;
+        Gizmos.DrawLine(transform.position, topPos);
+        Gizmos.DrawWireSphere(topPos, 0.3f);
     }
 }

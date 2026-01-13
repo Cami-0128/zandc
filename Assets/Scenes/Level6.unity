@@ -356,7 +356,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   canMove: 0
-  ignoreTimeScale: 0
   maxHealth: 1000
   healthBar: {fileID: 812321466}
   enablePlayerTracking: 1
@@ -939,6 +938,11 @@ MonoBehaviour:
   startPanel: {fileID: 473261141}
   player: {fileID: 1643476752}
   ball: {fileID: 0}
+  boss: {fileID: 0}
+  iceBoss: {fileID: 71864807}
+  iceBosses: []
+  normalBosses: []
+  debugMode: 1
 --- !u!4 &162506572
 Transform:
   m_ObjectHideFlags: 0

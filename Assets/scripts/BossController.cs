@@ -1,11 +1,11 @@
 ﻿// ========================================
-// BossController.cs - Boss完整控制器（修正版）
+// BossController.cs - Boss完整控制器（添加地形切換功能）
 // ========================================
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class BossController : MonoBehaviour
+public class BossController : MonoBehaviour  //大Boss
 {
     [Header("Boss基本設定")]
     public float maxHealth = 5000f;
@@ -40,6 +40,14 @@ public class BossController : MonoBehaviour
     [Tooltip("是否在瞬移前觸發尖刺")]
     public bool triggerSpikesBeforeTeleport = true;
 
+    // ========== ✅ 新增：地形切換系統 ==========
+    [Header("地形切換系統")]
+    [Tooltip("無限地形系統（會自動尋找）")]
+    public InfiniteTerrainSystem infiniteTerrainSystem;
+
+    [Tooltip("是否啟用地形切換功能")]
+    public bool enableTerrainSwitching = true;
+
     [Header("攻擊系統")]
     public float attackRange = 15f;
     public float attackCooldown = 2f;
@@ -55,8 +63,8 @@ public class BossController : MonoBehaviour
 
     [Header("火球攻擊")]
     public GameObject fireballPrefab;
-    public GameObject iceBulletPrefab; // 冰凍子彈
-    public GameObject poisonBulletPrefab; // 毒彈（可選）
+    public GameObject iceBulletPrefab;
+    public GameObject poisonBulletPrefab;
     public Transform firePoint;
     public float fireballSpeed = 15f;
 
@@ -91,11 +99,6 @@ public class BossController : MonoBehaviour
     public float playerSwordDamage = 30f;
     public float playerMagicBulletDamage = 50f;
     public float playerHeavyBulletDamage = 75f;
-
-    [Header("地面陷阱設定")]
-    public GameObject hazardZonePrefab;
-    public float hazardCooldown = 1.5f;
-    private float lastHazardTime = -999f;
 
     [Header("Debug 設定")]
     public bool debugMode = true;
@@ -144,13 +147,11 @@ public class BossController : MonoBehaviour
         if (spriteRenderer != null)
             spriteRenderer.color = bossColor;
 
-        // 創建特效父物件
         GameObject effectsObj = new GameObject("BossEffects");
         effectsParent = effectsObj.transform;
         effectsParent.SetParent(transform);
         effectsParent.localPosition = Vector3.zero;
 
-        // 自動找玩家
         if (player == null)
         {
             Debug.Log("[Boss] 開始搜尋玩家...");
@@ -172,7 +173,21 @@ public class BossController : MonoBehaviour
             Debug.Log($"[Boss] 玩家已設定: {player.name}");
         }
 
-        // 驗證瞬移點
+        // ========== ✅ 初始化地形切換器 ==========
+        if (infiniteTerrainSystem == null)
+        {
+            infiniteTerrainSystem = FindObjectOfType<InfiniteTerrainSystem>();
+
+            if (infiniteTerrainSystem != null)
+            {
+                Debug.Log("[Boss] ✅ 已找到 InfiniteTerrainSystem");
+            }
+            else if (enableTerrainSwitching)
+            {
+                Debug.LogWarning("[Boss] ⚠️ 找不到 InfiniteTerrainSystem！地形切換功能將無法使用");
+            }
+        }
+
         if (teleportPoints == null || teleportPoints.Length == 0)
         {
             Debug.LogWarning("[Boss] 瞬移點陣列為空，瞬移功能將無法使用");
@@ -182,7 +197,6 @@ public class BossController : MonoBehaviour
             Debug.Log($"[Boss] 已設定 {teleportPoints.Length} 個瞬移點");
         }
 
-        // 驗證火球預製體
         if (fireballPrefab == null)
         {
             Debug.LogError("[Boss] fireballPrefab 未設定！Boss將無法攻擊");
@@ -193,14 +207,12 @@ public class BossController : MonoBehaviour
             Debug.LogError("[Boss] firePoint 未設定！Boss將無法攻擊");
         }
 
-        // 初始化血條
         InitializeHealthBar();
 
         Debug.Log($"[Boss] Boss初始化完成 - 血量: {currentHealth}/{maxHealth}");
         Debug.Log($"[Boss] canMove初始狀態: {canMove}");
         Debug.Log("=== [Boss] 初始化結束 ===");
 
-        // 開始AI
         StartCoroutine(BossAI());
     }
 
@@ -232,7 +244,6 @@ public class BossController : MonoBehaviour
 
         if (!canMove || playerTransform == null) return;
 
-        // 檢測玩家距離
         float distanceToPlayer = Vector2.Distance(transform.position, playerTransform.position);
         playerInRange = distanceToPlayer <= detectionRange;
 
@@ -241,7 +252,6 @@ public class BossController : MonoBehaviour
             Debug.Log($"[Boss Update] 距離玩家: {distanceToPlayer:F2}, playerInRange: {playerInRange}");
         }
 
-        // 面向玩家
         if (playerTransform.position.x < transform.position.x)
         {
             if (spriteRenderer != null)
@@ -258,26 +268,22 @@ public class BossController : MonoBehaviour
     {
         if (isDead || !canMove) return;
 
-        // 即使在攻擊時也允許移動（但速度較慢）
         if (currentState == BossState.Chasing && playerTransform != null)
         {
             MoveTowardsPlayer();
         }
         else if (currentState == BossState.Attacking && playerTransform != null)
         {
-            // 攻擊時緩慢移動
             SlowMoveTowardsPlayer();
         }
     }
 
-    // Boss AI主循環 - 【關鍵修改】
     IEnumerator BossAI()
     {
         Debug.Log("[Boss AI] 協程已啟動");
 
         while (!isDead)
         {
-            // 等待可以移動
             if (!canMove)
             {
                 if (showDetailedDebug && Time.frameCount % 120 == 0)
@@ -302,17 +308,15 @@ public class BossController : MonoBehaviour
                 Debug.Log($"[Boss AI] 距離玩家: {distanceToPlayer:F2}, 攻擊範圍: {attackRange}, playerInRange: {playerInRange}");
             }
 
-            // ===== 【新增】玩家太靠近時自動瞬移到遠處 =====
             if (distanceToPlayer <= playerTooCloseDistance && Time.time - lastTeleportTime >= teleportCooldown * 0.3f)
             {
                 currentState = BossState.Teleporting;
                 Debug.Log($"[Boss AI] 玩家太靠近({distanceToPlayer:F2}m)，觸發尖刺並瞬移！");
 
-                // 觸發附近的尖刺
                 if (triggerSpikesBeforeTeleport)
                 {
                     TriggerNearbySpikes();
-                    yield return new WaitForSeconds(0.5f); // 等待尖刺警告
+                    yield return new WaitForSeconds(0.5f);
                 }
 
                 TeleportAwayFromPlayer();
@@ -320,10 +324,8 @@ public class BossController : MonoBehaviour
                 continue;
             }
 
-            // 狀態機邏輯
             if (!playerInRange)
             {
-                // 玩家不在偵測範圍內
                 currentState = BossState.Idle;
                 if (debugMode)
                     Debug.Log("[Boss AI] 狀態: Idle (玩家太遠)");
@@ -331,7 +333,6 @@ public class BossController : MonoBehaviour
             }
             else if (Time.time - lastAttackTime >= attackCooldown)
             {
-                // 可以攻擊了
                 currentState = BossState.Attacking;
                 if (debugMode)
                     Debug.Log($"[Boss AI] 狀態: Attacking (距離: {distanceToPlayer:F2})");
@@ -339,7 +340,6 @@ public class BossController : MonoBehaviour
             }
             else if (Time.time - lastTeleportTime >= teleportCooldown && Random.value < 0.2f)
             {
-                // 隨機瞬移
                 currentState = BossState.Teleporting;
                 if (debugMode)
                     Debug.Log("[Boss AI] 狀態: Teleporting (隨機)");
@@ -348,7 +348,6 @@ public class BossController : MonoBehaviour
             }
             else
             {
-                // 追蹤玩家
                 currentState = BossState.Chasing;
                 if (showDetailedDebug && Time.frameCount % 60 == 0)
                     Debug.Log("[Boss AI] 狀態: Chasing");
@@ -361,14 +360,12 @@ public class BossController : MonoBehaviour
         Debug.Log("[Boss AI] 協程已結束（Boss已死亡）");
     }
 
-    // 移動向玩家
     void MoveTowardsPlayer()
     {
         if (playerTransform == null || rb == null) return;
 
         float distanceToPlayer = Vector2.Distance(transform.position, playerTransform.position);
 
-        // 如果距離太近就減速
         if (distanceToPlayer <= stoppingDistance)
         {
             rb.velocity = new Vector2(0, rb.velocity.y);
@@ -377,7 +374,6 @@ public class BossController : MonoBehaviour
 
         Vector2 direction = (playerTransform.position - transform.position).normalized;
 
-        // 判斷是否需要跳躍
         if (IsGrounded() && Time.time - lastJumpTime >= jumpCooldown)
         {
             if (playerTransform.position.y > transform.position.y + 1f)
@@ -386,7 +382,6 @@ public class BossController : MonoBehaviour
             }
         }
 
-        // 水平移動
         rb.velocity = new Vector2(direction.x * chaseSpeed, rb.velocity.y);
 
         if (showDetailedDebug && Time.frameCount % 60 == 0)
@@ -395,7 +390,6 @@ public class BossController : MonoBehaviour
         }
     }
 
-    // 攻擊時緩慢移動
     void SlowMoveTowardsPlayer()
     {
         if (playerTransform == null || rb == null) return;
@@ -412,7 +406,6 @@ public class BossController : MonoBehaviour
         rb.velocity = new Vector2(direction.x * (chaseSpeed * 0.5f), rb.velocity.y);
     }
 
-    // 跳躍
     void Jump(Vector2 direction)
     {
         if (rb == null) return;
@@ -426,14 +419,12 @@ public class BossController : MonoBehaviour
         }
     }
 
-    // 檢查是否在地面
     bool IsGrounded()
     {
         Vector2 groundPos = (Vector2)transform.position + groundOffset;
         return Physics2D.OverlapCircle(groundPos, groundCheckRadius, groundLayer) != null;
     }
 
-    // 攻擊序列
     IEnumerator AttackSequence()
     {
         isAttacking = true;
@@ -441,7 +432,6 @@ public class BossController : MonoBehaviour
 
         Debug.Log("[Boss Attack] 開始攻擊序列");
 
-        // 隨機選擇攻擊方式
         int attackType = Random.Range(0, 3);
         Debug.Log($"[Boss Attack] 攻擊類型: {attackType}");
 
@@ -451,13 +441,10 @@ public class BossController : MonoBehaviour
                 FireballAttack();
                 break;
             case 1:
-                if (hazardZonePrefab != null)
-                    SpawnHazardZone();
-                else
-                    FireballAttack();
+                MultipleFireballAttack();
                 break;
             case 2:
-                MultipleFireballAttack();
+                FireballAttack();
                 break;
         }
 
@@ -466,7 +453,6 @@ public class BossController : MonoBehaviour
         Debug.Log("[Boss Attack] 攻擊序列結束");
     }
 
-    // 火球攻擊 - 【新增】隨機子彈類型
     void FireballAttack()
     {
         if (firePoint == null)
@@ -481,7 +467,6 @@ public class BossController : MonoBehaviour
             return;
         }
 
-        // 選擇隨機子彈類型
         GameObject bulletPrefab = GetRandomBulletPrefab();
 
         if (bulletPrefab == null)
@@ -510,12 +495,8 @@ public class BossController : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 根據權重隨機選擇子彈類型
-    /// </summary>
     GameObject GetRandomBulletPrefab()
     {
-        // 計算總權重
         int totalWeight = normalBulletWeight + iceBulletWeight + poisonBulletWeight;
 
         if (totalWeight == 0)
@@ -524,36 +505,31 @@ public class BossController : MonoBehaviour
             return fireballPrefab;
         }
 
-        // 隨機選擇
         int randomValue = Random.Range(0, totalWeight);
 
         if (randomValue < normalBulletWeight && fireballPrefab != null)
         {
-            return fireballPrefab; // 普通火球
+            return fireballPrefab;
         }
 
         randomValue -= normalBulletWeight;
 
         if (randomValue < iceBulletWeight && iceBulletPrefab != null)
         {
-            return iceBulletPrefab; // 冰凍子彈
+            return iceBulletPrefab;
         }
 
         randomValue -= iceBulletWeight;
 
         if (randomValue < poisonBulletWeight && poisonBulletPrefab != null)
         {
-            return poisonBulletPrefab; // 毒彈
+            return poisonBulletPrefab;
         }
 
-        // 預設返回普通火球
         return fireballPrefab != null ? fireballPrefab :
                (iceBulletPrefab != null ? iceBulletPrefab : poisonBulletPrefab);
     }
 
-    /// <summary>
-    /// 獲取子彈類型名稱（用於Debug）
-    /// </summary>
     string GetBulletTypeName(GameObject bulletPrefab)
     {
         if (bulletPrefab == fireballPrefab) return "普通火球";
@@ -562,7 +538,6 @@ public class BossController : MonoBehaviour
         return "未知子彈";
     }
 
-    // 多重火球攻擊 - 【新增】隨機子彈類型
     void MultipleFireballAttack()
     {
         if (firePoint == null)
@@ -577,7 +552,6 @@ public class BossController : MonoBehaviour
 
         foreach (float angle in angles)
         {
-            // 每發子彈隨機選擇類型
             GameObject bulletPrefab = GetRandomBulletPrefab();
 
             if (bulletPrefab == null) continue;
@@ -606,57 +580,55 @@ public class BossController : MonoBehaviour
         Debug.Log($"[Boss] 多重火球發射完成 - 每發傷害: {bossMultipleFireballDamage}");
     }
 
-    // 生成地面陷阱
-    void SpawnHazardZone()
-    {
-        if (hazardZonePrefab == null || playerTransform == null) return;
-        if (Time.time - lastHazardTime < hazardCooldown) return;
-
-        Vector3 spawnPos = playerTransform.position;
-        GameObject hazard = Instantiate(hazardZonePrefab, spawnPos, Quaternion.identity);
-        lastHazardTime = Time.time;
-
-        if (debugMode)
-        {
-            Debug.Log("[Boss] 生成地面陷阱");
-        }
-    }
-
-    // ===== 【新增】觸發附近的尖刺 =====
     void TriggerNearbySpikes()
     {
+        Debug.Log("[Boss] ========== 開始觸發尖刺 ==========");
+
         if (groundSpikes == null || groundSpikes.Length == 0)
         {
-            if (debugMode)
-                Debug.LogWarning("[Boss] 沒有設定地面尖刺");
+            Debug.LogWarning("[Boss] ❌ Ground Spikes 陣列為空！");
             return;
         }
 
-        if (playerTransform == null) return;
+        Debug.Log($"[Boss] Ground Spikes 陣列有 {groundSpikes.Length} 個尖刺");
+
+        if (playerTransform == null)
+        {
+            Debug.LogWarning("[Boss] ❌ playerTransform 為 null");
+            return;
+        }
 
         int triggeredCount = 0;
 
-        // 觸發玩家附近的所有尖刺
-        foreach (GroundSpikeTrap spike in groundSpikes)
+        for (int i = 0; i < groundSpikes.Length; i++)
         {
-            if (spike == null) continue;
+            GroundSpikeTrap spike = groundSpikes[i];
+
+            if (spike == null)
+            {
+                Debug.LogWarning($"[Boss] 尖刺 #{i} 為 null");
+                continue;
+            }
 
             float distanceToPlayer = Vector2.Distance(spike.transform.position, playerTransform.position);
 
+            Debug.Log($"[Boss] 尖刺 #{i} ({spike.name}) 距離玩家: {distanceToPlayer:F2}m (觸發範圍: {spikeTriggerDistance}m)");
+
             if (distanceToPlayer <= spikeTriggerDistance)
             {
+                Debug.Log($"[Boss] ✅ 觸發尖刺 #{i}: {spike.name}");
                 spike.Trigger();
                 triggeredCount++;
             }
+            else
+            {
+                Debug.Log($"[Boss] ⏭️ 尖刺 #{i} 太遠，不觸發");
+            }
         }
 
-        if (debugMode)
-        {
-            Debug.Log($"[Boss] 觸發了 {triggeredCount} 個尖刺陷阱（玩家附近{spikeTriggerDistance}m範圍內）");
-        }
+        Debug.Log($"[Boss] ========== 共觸發了 {triggeredCount} 個尖刺 ==========");
     }
 
-    // ===== 【✅ 保留】瞬移到離玩家最遠的點 =====
     void TeleportAwayFromPlayer()
     {
         if (teleportPoints == null || teleportPoints.Length == 0)
@@ -672,14 +644,12 @@ public class BossController : MonoBehaviour
             return;
         }
 
-        // 瞬移前特效
         if (teleportEffectPrefab != null)
         {
             GameObject effect = Instantiate(teleportEffectPrefab, transform.position, Quaternion.identity);
             effect.transform.SetParent(effectsParent);
         }
 
-        // 找到離玩家最遠的瞬移點
         Transform farthestPoint = null;
         float maxDistance = 0f;
 
@@ -689,7 +659,6 @@ public class BossController : MonoBehaviour
 
             float distanceToPlayer = Vector2.Distance(point.position, playerTransform.position);
 
-            // 確保瞬移點距離玩家足夠遠
             if (distanceToPlayer > maxDistance && distanceToPlayer >= minSafeTeleportDistance)
             {
                 maxDistance = distanceToPlayer;
@@ -697,7 +666,6 @@ public class BossController : MonoBehaviour
             }
         }
 
-        // 如果沒找到足夠遠的點，就選最遠的那個
         if (farthestPoint == null)
         {
             foreach (Transform point in teleportPoints)
@@ -717,7 +685,6 @@ public class BossController : MonoBehaviour
             transform.position = farthestPoint.position;
             lastTeleportTime = Time.time;
 
-            // 瞬移後特效
             if (teleportEffectPrefab != null)
             {
                 GameObject effect = Instantiate(teleportEffectPrefab, transform.position, Quaternion.identity);
@@ -735,7 +702,6 @@ public class BossController : MonoBehaviour
         }
     }
 
-    // ===== 【✅ 保留】隨機瞬移功能 =====
     void TeleportRandomly()
     {
         if (teleportPoints == null || teleportPoints.Length == 0)
@@ -744,14 +710,12 @@ public class BossController : MonoBehaviour
             return;
         }
 
-        // 瞬移前特效
         if (teleportEffectPrefab != null)
         {
             GameObject effect = Instantiate(teleportEffectPrefab, transform.position, Quaternion.identity);
             effect.transform.SetParent(effectsParent);
         }
 
-        // 選擇隨機瞬移點
         int randomIndex = Random.Range(0, teleportPoints.Length);
         Transform targetPoint = teleportPoints[randomIndex];
 
@@ -760,7 +724,6 @@ public class BossController : MonoBehaviour
             transform.position = targetPoint.position;
             lastTeleportTime = Time.time;
 
-            // 瞬移後特效
             if (teleportEffectPrefab != null)
             {
                 GameObject effect = Instantiate(teleportEffectPrefab, transform.position, Quaternion.identity);
@@ -774,7 +737,7 @@ public class BossController : MonoBehaviour
         }
     }
 
-    // 受到傷害
+    // ========== ✅ 修改：通知地形切換器 ==========
     public void TakeDamage(float damage, string damageSource = "Unknown")
     {
         if (isDead) return;
@@ -803,6 +766,9 @@ public class BossController : MonoBehaviour
 
         StartCoroutine(DamageFlash());
 
+        // ========== 注意：地形切換改由 InfiniteTerrainSystem 自動監控血量觸發 ==========
+        // 不需要在這裡手動觸發，系統會自動檢測血量變化
+
         if (Random.value < teleportChanceOnHit && Time.time - lastTeleportTime >= teleportCooldown * 0.5f)
         {
             TeleportRandomly();
@@ -814,7 +780,6 @@ public class BossController : MonoBehaviour
         }
     }
 
-    // 傷害閃爍效果
     IEnumerator DamageFlash()
     {
         if (spriteRenderer == null) yield break;
@@ -837,7 +802,6 @@ public class BossController : MonoBehaviour
         }
     }
 
-    // 死亡
     void Die()
     {
         if (isDead) return;
@@ -869,6 +833,18 @@ public class BossController : MonoBehaviour
         foreach (Collider2D col in colliders)
         {
             col.enabled = false;
+        }
+
+        // ========== 新增：通知戰鬥管理器 ==========
+        BattleManager battleManager = FindObjectOfType<BattleManager>();
+        if (battleManager != null)
+        {
+            Debug.Log("[Boss] 通知 BattleManager：玩家獲勝");
+            battleManager.PlayerWon();
+        }
+        else
+        {
+            Debug.LogWarning("[Boss] 找不到 BattleManager！");
         }
 
         Destroy(gameObject, 2f);
@@ -944,28 +920,22 @@ public class BossController : MonoBehaviour
 
     void OnDrawGizmosSelected()
     {
-        // 偵測範圍（黃色）
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, detectionRange);
 
-        // 攻擊範圍（紅色）
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, attackRange);
 
-        // 停止距離（藍色）
         Gizmos.color = Color.blue;
         Gizmos.DrawWireSphere(transform.position, stoppingDistance);
 
-        // 【新增】玩家太靠近距離（橘色）
         Gizmos.color = new Color(1f, 0.5f, 0f);
         Gizmos.DrawWireSphere(transform.position, playerTooCloseDistance);
 
-        // 地面檢測（綠色）
         Gizmos.color = Color.green;
         Vector2 groundPos = (Vector2)transform.position + groundOffset;
         Gizmos.DrawWireSphere(groundPos, groundCheckRadius);
 
-        // 瞬移點（青色）
         if (teleportPoints != null && teleportPoints.Length > 0)
         {
             Gizmos.color = Color.cyan;
@@ -979,7 +949,6 @@ public class BossController : MonoBehaviour
             }
         }
 
-        // 尖刺觸發範圍（紫色）
         if (groundSpikes != null && groundSpikes.Length > 0)
         {
             Gizmos.color = new Color(1f, 0f, 1f, 0.3f);

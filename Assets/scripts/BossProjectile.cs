@@ -45,7 +45,7 @@ public class BossProjectile : MonoBehaviour
             Destroy(gameObject);
         }
         // 擊中地面或牆壁
-        else if (collision.CompareTag("Ground") || collision.CompareTag("Wall"))
+        else if (collision.CompareTag("Ground") || collision.CompareTag("Untagged"))
         {
             Destroy(gameObject);
         }

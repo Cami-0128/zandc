@@ -946,7 +946,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   speakerText: {fileID: 242955276}
   dialogueText: {fileID: 1027414593}
-  backgroundImage: {fileID: 1500918352}
+  backgroundImage: {fileID: 214908854}
   characterImage: {fileID: 1500918352}
   bgCastle: {fileID: 21300000, guid: 6b2cc7f152b785f48bd267366146b429, type: 3}
   charMain: {fileID: 21300000, guid: bac347b2090c71b4ca992ce11f8f1096, type: 3}

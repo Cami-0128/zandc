@@ -151,6 +151,12 @@ public class SwordSlashSkill : MonoBehaviour
         return isUnlocked;
     }
 
+    // ✅ 新增:供 PlayerController 檢查是否正在衝刺
+    public bool IsDashing()
+    {
+        return isDashing;
+    }
+
     // ✅ 新增:供PlayerController調用的速度加成
     public float GetSpeedMultiplier()
     {
@@ -203,6 +209,25 @@ public class SwordSlashSkill : MonoBehaviour
         swordSpriteRenderer = swordObject.GetComponentInChildren<SpriteRenderer>();
 
         Debug.Log("[SwordSlashSkill] 劍已初始化(E蓄力/揮劍, E+F收劍)");
+
+        // ✅ 新增:安全檢查協程
+        StartCoroutine(DashingSafetyCheck());
+    }
+
+    // ✅ 新增:衝刺安全檢查(防止卡住)
+    IEnumerator DashingSafetyCheck()
+    {
+        while (true)
+        {
+            yield return new WaitForSeconds(0.5f);
+
+            // 如果衝刺超過3秒還沒結束,強制停止
+            if (isDashing && Time.time - lastDashSlashTime > 3f)
+            {
+                Debug.LogWarning("[SwordSlashSkill] ⚠️ 衝刺斬超時,強制停止!");
+                ForceStopDashing();
+            }
+        }
     }
 
     void Update()
@@ -382,45 +407,96 @@ public class SwordSlashSkill : MonoBehaviour
         Debug.Log("[SwordSlashSkill] ⬆️ 上挑!");
     }
 
-    // ✅ 新增:開始衝刺斬
+    // ✅ 修正:開始衝刺斬
     void StartDashSlash()
     {
-        isDashing = true;
-        lastDashSlashTime = Time.time;
+        if (playerController == null)
+        {
+            Debug.LogError("[衝刺斬] PlayerController 為空,無法衝刺!");
+            return;
+        }
+
+        Rigidbody2D rb = playerController.GetComponent<Rigidbody2D>();
+        if (rb == null)
+        {
+            Debug.LogError("[衝刺斬] Rigidbody2D 為空,無法衝刺!");
+            return;
+        }
+
+        // ✅ 關鍵:使用 rb.position 記錄起始位置
+        dashStartPos = rb.position;
 
         // 計算衝刺目標位置
-        int direction = playerController ? playerController.LastHorizontalDirection : 1;
-        dashStartPos = transform.position;
+        int direction = playerController.LastHorizontalDirection;
         dashTargetPos = dashStartPos + new Vector2(direction * dashDistance, 0);
+
+        // 標記為衝刺中
+        isDashing = true;
+        lastDashSlashTime = Time.time;
 
         // 開始揮劍動作
         StartSlash(0f, SlashType.DashSlash);
 
-        Debug.Log($"[SwordSlashSkill] 💨 衝刺斬! 目標距離: {dashDistance}");
+        Debug.Log($"[SwordSlashSkill] 💨 衝刺斬開始! 方向: {direction} 從 {dashStartPos} 到 {dashTargetPos}");
     }
 
-    // ✅ 新增:更新衝刺斬移動
+    // ✅ 修正:更新衝刺斬移動
     void UpdateDashing()
     {
-        if (playerController == null) return;
-
-        // 衝刺移動
-        Vector2 currentPos = transform.position;
-        float dashProgress = (currentPos - dashStartPos).magnitude / dashDistance;
-
-        if (dashProgress < 1f)
+        if (playerController == null)
         {
-            // 繼續衝刺
-            Vector2 direction = (dashTargetPos - currentPos).normalized;
-            playerController.GetComponent<Rigidbody2D>().velocity = direction * dashSpeed;
+            isDashing = false;
+            Debug.LogError("[衝刺斬] PlayerController 為空!");
+            return;
+        }
+
+        Rigidbody2D rb = playerController.GetComponent<Rigidbody2D>();
+        if (rb == null)
+        {
+            isDashing = false;
+            Debug.LogError("[衝刺斬] Rigidbody2D 為空!");
+            return;
+        }
+
+        // ✅ 關鍵修正:使用 rb.position 而非 transform.position
+        Vector2 currentPos = rb.position;
+        float distanceMoved = Vector2.Distance(dashStartPos, currentPos);
+
+        if (distanceMoved < dashDistance)
+        {
+            // ✅ 修正:直接計算方向,不用normalized
+            int direction = playerController.LastHorizontalDirection;
+            Vector2 dashVelocity = new Vector2(direction * dashSpeed, rb.velocity.y);
+            rb.velocity = dashVelocity;
+
+            if (showDetailedDebug)
+            {
+                Debug.Log($"[衝刺斬] 移動中: {distanceMoved:F2}/{dashDistance} 速度: {dashVelocity} 方向: {direction}");
+            }
         }
         else
         {
             // 衝刺結束
             isDashing = false;
-            playerController.GetComponent<Rigidbody2D>().velocity = Vector2.zero;
-            Debug.Log("[SwordSlashSkill] 衝刺斬結束");
+            rb.velocity = new Vector2(0, rb.velocity.y);
+
+            Debug.Log($"[SwordSlashSkill] 💨 衝刺斬結束! 實際移動: {distanceMoved:F2}");
         }
+    }
+
+    // ✅ 修正:添加強制結束衝刺的方法
+    void ForceStopDashing()
+    {
+        if (!isDashing) return;
+
+        isDashing = false;
+        Rigidbody2D rb = playerController?.GetComponent<Rigidbody2D>();
+        if (rb != null)
+        {
+            rb.velocity = new Vector2(0, rb.velocity.y);
+        }
+
+        Debug.Log("[SwordSlashSkill] 🛑 強制停止衝刺");
     }
 
     // ✅ 新增:檢查是否可以衝刺斬
@@ -581,7 +657,20 @@ public class SwordSlashSkill : MonoBehaviour
             isSlashing = false;
             currentPhase = SlashPhase.None;
             slashTimer = 0f;
-            currentChargeProgress = 0f; // 重置蓄力
+            currentChargeProgress = 0f;
+
+            // ✅ 修正:如果是衝刺斬結束,也要重置衝刺狀態
+            if (currentSlashType == SlashType.DashSlash && isDashing)
+            {
+                isDashing = false;
+                Rigidbody2D rb = playerController?.GetComponent<Rigidbody2D>();
+                if (rb != null)
+                {
+                    rb.velocity = new Vector2(0, rb.velocity.y);
+                }
+                Debug.Log("[SwordSlashSkill] 衝刺斬動作結束,停止衝刺");
+            }
+
             UpdateSwordPosition();
 
             Debug.Log("[SwordSlashSkill] 揮劍結束!");

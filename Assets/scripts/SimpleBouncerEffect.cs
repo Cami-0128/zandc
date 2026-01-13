@@ -2,6 +2,7 @@ using UnityEngine;
 
 /// <summary>
 /// 簡單彈簧效果 - 購買後直接生成在玩家右方
+/// 這個類別實作 IShopItemEffect 介面，類似 HealEffect
 /// </summary>
 public class SimpleBouncerEffect : IShopItemEffect
 {
@@ -18,8 +19,8 @@ public class SimpleBouncerEffect : IShopItemEffect
     {
         this.bouncerPrefab = prefab;
         this.spawnDistance = distance;
-        // 設定地面圖層（可根據你的專案調整）
-        this.groundLayer = LayerMask.GetMask("Ground", "Default");
+        // 設定地面圖層 - 包含 Wall 和 Default
+        this.groundLayer = LayerMask.GetMask("Wall", "Default");
     }
 
     public void ApplyEffect(PlayerController2D player)
@@ -56,19 +57,19 @@ public class SimpleBouncerEffect : IShopItemEffect
         // 1. 基礎位置：玩家右方
         Vector3 basePosition = playerPos + Vector3.right * spawnDistance;
 
-        // 2. 檢測地面高度
+        // 2. 檢測地面高度（從上方往下射線）
         RaycastHit2D groundHit = Physics2D.Raycast(
-            basePosition + Vector3.up * 5f,  // 從上方開始射線
+            basePosition + Vector3.up * 5f,  // 從上方 5 單位開始
             Vector2.down,
-            10f,
+            10f,  // 往下檢測 10 單位
             groundLayer
         );
 
         if (groundHit.collider != null)
         {
-            // 有檢測到地面，放在地面上
-            basePosition.y = groundHit.point.y + 0.5f; // 稍微高於地面
-            Debug.Log($"[SimpleBouncerEffect] 檢測到地面高度: {groundHit.point.y}");
+            // 有檢測到地面，放在地面上方
+            basePosition.y = groundHit.point.y + 0.5f; // 稍微高於地面 0.5 單位
+            Debug.Log($"[SimpleBouncerEffect] 檢測到地面: {groundHit.collider.name}, 高度: {groundHit.point.y}");
         }
         else
         {
@@ -79,71 +80,47 @@ public class SimpleBouncerEffect : IShopItemEffect
 
         // 3. 檢查是否有重疊（避免生成在其他彈簧上）
         Collider2D[] overlaps = Physics2D.OverlapCircleAll(basePosition, 0.5f);
-        if (overlaps.Length > 0)
+        bool hasOverlap = false;
+
+        foreach (var col in overlaps)
+        {
+            // 忽略地面碰撞器
+            if (col.gameObject.layer != LayerMask.NameToLayer("Wall") &&
+                col.gameObject.layer != LayerMask.NameToLayer("Default"))
+            {
+                hasOverlap = true;
+                break;
+            }
+        }
+
+        if (hasOverlap)
         {
             // 有重疊，嘗試往右偏移
             for (int i = 1; i <= 5; i++)
             {
-                Vector3 offsetPosition = basePosition + Vector3.right * i;
+                Vector3 offsetPosition = basePosition + Vector3.right * i * 0.5f;
                 overlaps = Physics2D.OverlapCircleAll(offsetPosition, 0.5f);
-                if (overlaps.Length == 0)
+
+                bool stillOverlap = false;
+                foreach (var col in overlaps)
+                {
+                    if (col.gameObject.layer != LayerMask.NameToLayer("Wall") &&
+                        col.gameObject.layer != LayerMask.NameToLayer("Default"))
+                    {
+                        stillOverlap = true;
+                        break;
+                    }
+                }
+
+                if (!stillOverlap)
                 {
                     basePosition = offsetPosition;
-                    Debug.Log($"[SimpleBouncerEffect] 位置有重疊，偏移 {i} 單位");
+                    Debug.Log($"[SimpleBouncerEffect] 位置有重疊，偏移 {i * 0.5f} 單位");
                     break;
                 }
             }
         }
 
         return basePosition;
-    }
-}
-
-/// <summary>
-/// 彈簧生成管理器 - 用於集中管理彈簧預製體
-/// 掛載在場景中的空物件上
-/// </summary>
-public class BouncerSpawnManager : MonoBehaviour
-{
-    [Header("=== 彈簧預製體 ===")]
-    public GameObject bouncerPrefab;
-
-    [Header("=== 生成設定 ===")]
-    public float spawnDistance = 2f; // 生成距離
-
-    // Singleton 模式
-    public static BouncerSpawnManager Instance { get; private set; }
-
-    void Awake()
-    {
-        if (Instance == null)
-        {
-            Instance = this;
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
-    }
-
-    /// <summary>
-    /// 創建彈簧效果
-    /// </summary>
-    public SimpleBouncerEffect CreateBouncerEffect()
-    {
-        if (bouncerPrefab == null)
-        {
-            Debug.LogError("[BouncerSpawnManager] Bouncer Prefab 未設定！");
-            return null;
-        }
-        return new SimpleBouncerEffect(bouncerPrefab, spawnDistance);
-    }
-
-    /// <summary>
-    /// 獲取彈簧預製體
-    /// </summary>
-    public GameObject GetBouncerPrefab()
-    {
-        return bouncerPrefab;
     }
 }

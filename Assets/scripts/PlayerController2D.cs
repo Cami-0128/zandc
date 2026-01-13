@@ -206,9 +206,17 @@ public class PlayerController2D : MonoBehaviour
         }
     }
 
-    // ✅ 修改:整合收劍速度加成
+    // ✅ 修改:整合收劍速度加成 + 衝刺斬時不覆蓋速度
     void Move()
     {
+        // ✅ 檢查是否正在衝刺斬
+        SwordSlashSkill swordSkill = GetComponent<SwordSlashSkill>();
+        if (swordSkill != null && swordSkill.IsDashing())
+        {
+            // 衝刺斬中,不處理移動輸入
+            return;
+        }
+
         float moveX = 0f;
 
         if (keyManager != null)
@@ -239,10 +247,10 @@ public class PlayerController2D : MonoBehaviour
             LastHorizontalDirection = (int)Mathf.Sign(moveX);
         }
 
-        // ✅ 計算最終移動速度(水中減速 + 收劍加速)
+        // 計算最終移動速度(水中減速 + 收劍加速)
         float effectiveMoveSpeed = isInWater ? moveSpeed * waterDragMultiplier : moveSpeed;
 
-        // ✅ 套用收劍速度加成
+        // 套用收劍速度加成
         if (swordSkill != null)
         {
             effectiveMoveSpeed *= swordSkill.GetSpeedMultiplier();

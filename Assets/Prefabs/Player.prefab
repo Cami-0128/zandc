@@ -263,7 +263,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &870451725
 Transform:
   m_ObjectHideFlags: 0
@@ -272,8 +272,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 870451724}
   m_LocalRotation: {x: 0, y: 0, z: 0.7071068, w: 0.7071068}
-  m_LocalPosition: {x: 1.0281, y: 0.08, z: 0}
-  m_LocalScale: {x: 0.26838002, y: 3.0256197, z: 1.5}
+  m_LocalPosition: {x: 0.509, y: 0.22, z: 0}
+  m_LocalScale: {x: 0.89950246, y: 0.8197682, z: 1.5}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 2792378958021979183}
@@ -320,7 +320,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: 7482667652216324306, guid: 311925a002f4447b3a28927169b83ea6, type: 3}
+  m_Sprite: {fileID: 21300000, guid: fb3bacdc932730d438a4b22e21d9ccca, type: 3}
   m_Color: {r: 0.6698113, g: 0.6698113, b: 0.6698113, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -344,18 +344,18 @@ BoxCollider2D:
   m_IsTrigger: 1
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: 0, y: 0}
+  m_Offset: {x: -0.0032279417, y: 0.0034852624}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
-    oldSize: {x: 1, y: 1}
+    oldSize: {x: 0.6311111, y: 1.9533334}
     newSize: {x: 1, y: 1}
     adaptiveTilingThreshold: 0.5
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
   serializedVersion: 2
-  m_Size: {x: 1, y: 1}
+  m_Size: {x: 0.25755876, y: 1.9409672}
   m_EdgeRadius: 0
 --- !u!1 &1670458040
 GameObject:
@@ -524,7 +524,7 @@ Transform:
   m_GameObject: {fileID: 2792378958021979155}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -7.49, y: -1.08, z: 0}
-  m_LocalScale: {x: 0.9663709, y: 0.9662651, z: 1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2792378958746216702}
@@ -649,6 +649,12 @@ MonoBehaviour:
   wallJumpHangTime: 0.2
   hourglassTimer: {fileID: 306923411}
   hasReachedEnd: 0
+  isInWater: 0
+  waterSwimForce: 5
+  waterDragMultiplier: 0.6
+  sinkKey1: 274
+  sinkKey2: 99
+  sinkForce: 3
 --- !u!50 &2792378958021979181
 Rigidbody2D:
   serializedVersion: 4
@@ -746,7 +752,77 @@ MonoBehaviour:
   holdDuration: 0.2
   returnDuration: 0.1
   cooldown: 0.5
-  slashKey: 119
+  slashKey: 101
+  upSlashKey: 119
+  dashSlashKey: 304
+  sheatheKey1: 101
+  sheatheKey2: 102
+  isSwordSheathed: 0
+  sheathedSpeedBonus: 0.1
+  unsheatheSound: {fileID: 0}
+  sheatheSound: {fileID: 0}
+  enableChargeSystem: 1
+  fullChargeTime: 1.5
+  chargeDamageMultiplier:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 2
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 3
+      inSlope: 2
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  chargeRangeMultiplier:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0.5
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1.5
+      inSlope: 0.5
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  chargeEffectColor: {r: 0.015686274, g: 0.9809183, b: 1, a: 1}
+  chargeReadySound: {fileID: 0}
+  chargeReleaseSound: {fileID: 0}
+  upSlashDamageMultiplier: 1.2
+  upSlashRangeMultiplier: 1.3
+  upSlashSound: {fileID: 0}
+  dashDistance: 3
+  dashSpeed: 20
+  dashSlashDamageMultiplier: 1.5
+  dashSlashRangeMultiplier: 1
+  dashSlashCooldown: 2
+  dashSlashSound: {fileID: 0}
   normalEnemyDamage: 30
   bossDamage: 50
   slashDetectionRadius: 1
@@ -760,6 +836,8 @@ MonoBehaviour:
   slashSound: {fileID: 0}
   hitSound: {fileID: 0}
   pivotOffsetRatio: 0.95
+  showAttackRadius: 1
+  showDetailedDebug: 1
 --- !u!114 &1320464347
 MonoBehaviour:
   m_ObjectHideFlags: 0

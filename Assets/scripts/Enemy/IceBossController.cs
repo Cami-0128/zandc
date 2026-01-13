@@ -8,11 +8,8 @@ using System.Collections;
 public class IceBossController : MonoBehaviour
 {
     [Header("遊戲開始控制")]
-    [Tooltip("Boss是否能夠行動（由StartManager控制）")]
-    public bool canMove = false;
-
-    [Tooltip("是否忽略 Time.timeScale（通常不需要勾選）")]
-    public bool ignoreTimeScale = false;
+    [Tooltip("Boss是否能夠行動（由StartManager控制或自動響應timeScale）")]
+    public bool canMove = true;
 
     [Header("基本屬性")]
     [Tooltip("Boss最大血量")]
@@ -183,6 +180,9 @@ public class IceBossController : MonoBehaviour
 
     void Update()
     {
+        // ========== 檢查遊戲是否暫停或Boss被禁用 ==========
+        if (Time.timeScale <= 0 || !canMove) return;
+
         if (isDying || playerTransform == null) return;
 
         // 更新朝向
@@ -194,6 +194,9 @@ public class IceBossController : MonoBehaviour
 
     void FixedUpdate()
     {
+        // ========== 檢查遊戲是否暫停或Boss被禁用 ==========
+        if (Time.timeScale <= 0 || !canMove) return;
+
         if (isDying) return;
 
         // 地面檢測
