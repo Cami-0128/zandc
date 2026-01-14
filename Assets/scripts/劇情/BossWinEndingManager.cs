@@ -85,14 +85,14 @@ public class BossWinEndingManager : MonoBehaviour
     {
         storyLines = new StoryLine[]
         {
-            new StoryLine { speaker = "旁白", dialogue = "吸血鬼的身體開始崩散。", background = bgCastle, character = charBoss },
-            new StoryLine { speaker = "Boss", dialogue = "……妳做到了。", background = bgCastle, character = charBoss },
-            new StoryLine { speaker = "旁白", dialogue = "一股力量從對方體內湧出，流入主角的血液。", background = bgCastle, character = charMain },
-            new StoryLine { speaker = "旁白", dialogue = "她感到一切都改變了。她的血液沸騰，力量充滿全身。", background = bgCastle, character = charMain },
-            new StoryLine { speaker = "主角", dialogue = "我……變成了什麼？", background = bgCastle, character = charMain },
-            new StoryLine { speaker = "旁白", dialogue = "窗外，天色已明。黎明來臨。", background = bgCastle, character = null },
-            new StoryLine { speaker = "旁白", dialogue = "而她，永遠改變了。", background = bgCastle, character = null },
-            new StoryLine { speaker = "旁白", dialogue = "【未知結局】下一章，敬請期待……", background = bgCastle, character = null }
+            new StoryLine { speaker = "旁白", dialogue = "吸血鬼的身體開始崩散", background = bgCastle, character = charBoss },
+            new StoryLine { speaker = "Boss", dialogue = "……妳做到了", background = bgCastle, character = charBoss },
+            new StoryLine { speaker = "旁白", dialogue = "一股力量從吸血鬼體內湧出,流入妳的血液裡", background = bgCastle, character = charMain },
+            new StoryLine { speaker = "旁白", dialogue = "妳感到一切都改變了,血液沸騰,力量充滿全身", background = bgCastle, character = charMain },
+            new StoryLine { speaker = "主角", dialogue = "我......變成了什麼?", background = bgCastle, character = charMain },
+            new StoryLine { speaker = "旁白", dialogue = "窗外,天已漸明,黎明即將來臨", background = bgCastle, character = null },
+            new StoryLine { speaker = "旁白", dialogue = "而妳將永遠改變......", background = bgCastle, character = null },
+            new StoryLine { speaker = "旁白", dialogue = "{未知結局}全新的故事即將展開......", background = bgCastle, character = null }
         };
     }
 

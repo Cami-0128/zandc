@@ -628,8 +628,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 0.5}
   m_AnchorMax: {x: 1, y: 0.5}
-  m_AnchoredPosition: {x: -234, y: 0}
-  m_SizeDelta: {x: 100, y: 100}
+  m_AnchoredPosition: {x: -124.196045, y: -21.980194}
+  m_SizeDelta: {x: 104.392, y: 192.2337}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1088792696
 MonoBehaviour:
@@ -1105,8 +1105,8 @@ MonoBehaviour:
   backgroundImage: {fileID: 1162916731}
   characterImage: {fileID: 1088792696}
   bgCastle: {fileID: 21300000, guid: dba5cf26bdd8d4d43a0d92eb1bbe2af0, type: 3}
-  charMain: {fileID: 21300000, guid: bac347b2090c71b4ca992ce11f8f1096, type: 3}
-  charBoss: {fileID: 21300000, guid: 6568100a2322b7e46848fa24d2c9b966, type: 3}
+  charMain: {fileID: 21300000, guid: c5923d15d5e53f541bdfc035afd0819f, type: 3}
+  charBoss: {fileID: 21300000, guid: 6de0356cf576dba43965735ccdb71065, type: 3}
   choiceButtonPrefab: {fileID: 9201367492742896095, guid: 739c40cd0adfeb543afe1d60a8c5a484, type: 3}
   choiceContainer: {fileID: 1256344854}
   skipButton: {fileID: 157566789}

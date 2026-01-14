@@ -39,13 +39,38 @@ public class SimpleStoryManager : MonoBehaviour
 
     private void Start()
     {
+        Debug.Log("[SimpleStoryManager] Start 開始");
+
+        // 確保 dialogueText GameObject 是啟用的
+        dialogueText.gameObject.SetActive(true);
+
+        // 先清空 dialogueText 的內容
+        dialogueText.text = "";
+
+        // 先獲取或添加 TypewriterEffect
         typewriter = dialogueText.GetComponent<TypewriterEffect>();
         if (typewriter == null)
         {
+            Debug.Log("[SimpleStoryManager] 未找到 TypewriterEffect，正在添加...");
             typewriter = dialogueText.gameObject.AddComponent<TypewriterEffect>();
+            Debug.Log("[SimpleStoryManager] 添加了 TypewriterEffect 組件");
+        }
+        else
+        {
+            Debug.Log("[SimpleStoryManager] 找到現有的 TypewriterEffect");
         }
 
-        choiceContainer.gameObject.SetActive(false);
+        // 確保 TypewriterEffect 被啟用
+        typewriter.enabled = true;
+
+        // 手動初始化 TypewriterEffect，確保它有正確的 TextMeshProUGUI 引用
+        typewriter.Initialize(dialogueText);
+
+        // 確保 choiceContainer 被隱藏
+        if (choiceContainer != null)
+        {
+            choiceContainer.gameObject.SetActive(false);
+        }
 
         // 綁定 Skip 按鈕
         if (skipButton != null)
@@ -55,6 +80,8 @@ public class SimpleStoryManager : MonoBehaviour
 
         InitializeStory();
         ShowLine(0);
+
+        Debug.Log("[SimpleStoryManager] Start 完成");
     }
 
     private void Update()
@@ -65,10 +92,12 @@ public class SimpleStoryManager : MonoBehaviour
         {
             if (typewriter.IsTyping())
             {
+                // 點擊時顯示全部文字
                 typewriter.ShowAll();
             }
             else
             {
+                // 顯示下一行
                 currentLine++;
                 if (currentLine < storyLines.Length)
                 {
@@ -76,6 +105,7 @@ public class SimpleStoryManager : MonoBehaviour
                 }
                 else
                 {
+                    // 所有對話結束，顯示選項
                     isPlaying = false;
                     ShowChoice();
                 }
@@ -83,40 +113,63 @@ public class SimpleStoryManager : MonoBehaviour
         }
     }
 
+    private void OnDestroy()
+    {
+        // 場景卸載前清理
+        if (typewriter != null)
+        {
+            typewriter.Stop();
+            typewriter.Clear();
+        }
+
+        // 移除按鈕監聽
+        if (skipButton != null)
+        {
+            skipButton.onClick.RemoveAllListeners();
+        }
+    }
+
     private void InitializeStory()
     {
         storyLines = new StoryLine[]
         {
-            new StoryLine { speaker = "旁白", dialogue = "那天晚上，風很冷。", background = bgBlack, character = null },
-            new StoryLine { speaker = "旁白", dialogue = "她只是被叫去隔壁村送藥，回來時，夜色已經吞沒了一切。", background = bgBlack, character = null },
-            new StoryLine { speaker = "旁白", dialogue = "空氣裡瀰漫著不對勁的氣味。不是夜晚該有的味道。", background = bgVillage, character = null },
-            new StoryLine { speaker = "旁白", dialogue = "火正在燃燒。不是一間，而是整個村子。", background = bgVillage, character = null },
-            new StoryLine { speaker = "旁白", dialogue = "她站在原地，直到看見倒在路中央的身影。", background = bgVillage, character = null },
-            new StoryLine { speaker = "主角", dialogue = "「……不可能。」", background = bgVillage, character = charMain },
-            new StoryLine { speaker = "旁白", dialogue = "她開始奔跑。", background = bgVillage, character = null },
-            new StoryLine { speaker = "旁白", dialogue = "街道上滿是倒下的人，世界安靜得不正常。高處掠過一道黑影，還有一瞬間對上她的——紅色目光。", background = bgVillage, character = null },
-            new StoryLine { speaker = "旁白", dialogue = "她的家，在村子最裡面。", background = bgVillage, character = null },
-            new StoryLine { speaker = "旁白", dialogue = "門半開著。父親倒在門口，勉強睜著眼。", background = bgHome, character = null },
-            new StoryLine { speaker = "主角", dialogue = "「爸……？」", background = bgHome, character = charMain },
-            new StoryLine { speaker = "父親(虛弱)", dialogue = "「別哭……聽我說。」", background = bgHome, character = charFather },
-            new StoryLine { speaker = "旁白", dialogue = "他顫抖地將一枚黑紅色的徽印塞進她手中。", background = bgHome, character = charFather },
-            new StoryLine { speaker = "父親", dialogue = "「等妳十六歲……去那座城堡……」", background = bgHome, character = charFather },
-            new StoryLine { speaker = "父親", dialogue = "「不要……急著恨吸血鬼……」", background = bgHome, character = charFather },
-            new StoryLine { speaker = "父親", dialogue = "「真相……在那裡……」", background = bgHome, character = charFather },
-            new StoryLine { speaker = "旁白", dialogue = "他的手垂下。", background = bgHome, character = null },
-            new StoryLine { speaker = "旁白", dialogue = "那一夜，她失去了父親。也失去了回頭的路。", background = bgBlack, character = null },
+            new StoryLine { speaker = "旁白", dialogue = "那天晚上,風很冷", background = bgBlack, character = null },
+            new StoryLine { speaker = "旁白", dialogue = "妳只是被叫去隔壁村送藥,回來時,夜色已經吞沒了一切", background = bgBlack, character = null },
+            new StoryLine { speaker = "旁白", dialogue = "空氣裡瀰漫著不對勁的氣味,一股不屬於夜晚的味道", background = bgVillage, character = null },
+            new StoryLine { speaker = "旁白", dialogue = "火正在燃燒,不是一間,而是整個村子......", background = bgVillage, character = null },
+            new StoryLine { speaker = "旁白", dialogue = "妳站在原地,直到看見倒在路中央的身影", background = bgVillage, character = null },
+            new StoryLine { speaker = "主角", dialogue = "......不可能", background = bgVillage, character = charMain },
+            new StoryLine { speaker = "旁白", dialogue = "妳開始奔跑", background = bgVillage, character = null },
+            new StoryLine { speaker = "旁白", dialogue = "街道上滿是倒下的人,世界安靜得不正常......高處掠過一道黑影,還有一瞬間對上她的——紅色目光", background = bgVillage, character = null },
+            new StoryLine { speaker = "旁白", dialogue = "妳的家,在村子最裡面", background = bgVillage, character = null },
+            new StoryLine { speaker = "旁白", dialogue = "門半開著,父親倒在門口,勉強睜著眼", background = bgHome, character = null },
+            new StoryLine { speaker = "主角", dialogue = "爸……?", background = bgHome, character = charMain },
+            new StoryLine { speaker = "父親(虛弱)", dialogue = "別哭......聽我說", background = bgHome, character = charFather },
+            new StoryLine { speaker = "旁白", dialogue = "他顫抖地將一枚黑紅色的徽印塞進妳手中", background = bgHome, character = charFather },
+            new StoryLine { speaker = "父親", dialogue = "等妳十六歲......去那座城堡......", background = bgHome, character = charFather },
+            new StoryLine { speaker = "父親", dialogue = "不要......急著恨吸血鬼......", background = bgHome, character = charFather },
+            new StoryLine { speaker = "父親", dialogue = "真相......在那裡......", background = bgHome, character = charFather },
+            new StoryLine { speaker = "旁白", dialogue = "他的手垂下", background = bgHome, character = null },
+            new StoryLine { speaker = "旁白", dialogue = "那一夜,妳失去了父親,也失去了回頭的路", background = bgBlack, character = null },
             new StoryLine { speaker = "", dialogue = ".", background = bgBlack, character = null },
             new StoryLine { speaker = "", dialogue = ".", background = bgBlack, character = null },
-            new StoryLine { speaker = "旁白", dialogue = "五年後……", background = bgBlack, character = null },
-            new StoryLine { speaker = "旁白", dialogue = "你，十六歲了。", background = bgBlack, character = null }
+            new StoryLine { speaker = "旁白", dialogue = "五年後......", background = bgBlack, character = null },
+            new StoryLine { speaker = "旁白", dialogue = "妳,十六歲了", background = bgBlack, character = null }
         };
     }
 
     private void ShowLine(int index)
     {
+        if (index < 0 || index >= storyLines.Length)
+        {
+            Debug.LogWarning("[SimpleStoryManager] ShowLine 索引超出範圍: " + index);
+            return;
+        }
+
         StoryLine line = storyLines[index];
 
         speakerText.text = line.speaker;
+        Debug.Log("[SimpleStoryManager] 顯示第 " + index + " 行: " + line.dialogue);
         typewriter.StartTyping(line.dialogue, 0.05f);
 
         if (line.background != null)
@@ -175,8 +228,8 @@ public class SimpleStoryManager : MonoBehaviour
 
         storyLines = new StoryLine[]
         {
-            new StoryLine { speaker = "旁白", dialogue = "你選擇遠離那一夜，度過平凡的一生。", background = bgVillage, character = charMain },
-            new StoryLine { speaker = "旁白", dialogue = "遊戲結束。", background = bgBlack, character = null }
+            new StoryLine { speaker = "旁白", dialogue = "妳選擇遠離那一夜,度過平凡的一生", background = bgVillage, character = null },
+            new StoryLine { speaker = "旁白", dialogue = "遊戲結束", background = bgBlack, character = null }
         };
 
         ShowLine(0);

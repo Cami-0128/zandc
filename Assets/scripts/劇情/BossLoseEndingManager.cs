@@ -93,13 +93,13 @@ public class BossLoseEndingManager : MonoBehaviour
     {
         storyLines = new StoryLine[]
         {
-            new StoryLine { speaker = "旁白", dialogue = "主角跪在地上，無法再站起來。", background = bgCastle, character = charMain },
-            new StoryLine { speaker = "Boss", dialogue = "這就是妳的力量。還不夠。", background = bgCastle, character = charBoss },
-            new StoryLine { speaker = "旁白", dialogue = "吸血鬼走近她，眼神中沒有殺意，只有遺憾。", background = bgCastle, character = charBoss },
-            new StoryLine { speaker = "Boss", dialogue = "但妳的血，告訴了我——妳是特別的。", background = bgCastle, character = charBoss },
-            new StoryLine { speaker = "Boss", dialogue = "妳想聽我說真相嗎？", background = bgCastle, character = charBoss },
-            new StoryLine { speaker = "旁白", dialogue = "主角抬起頭，看著對方。", background = bgCastle, character = charMain },
-            new StoryLine { speaker = "旁白", dialogue = "她需要做出選擇。", background = bgCastle, character = charMain }
+            new StoryLine { speaker = "旁白", dialogue = "主角跪在地上,無法再站起來", background = bgCastle, character = null },
+            new StoryLine { speaker = "Boss", dialogue = "你看這就是妳的力量,遠遠還不夠", background = bgCastle, character = charBoss },
+            new StoryLine { speaker = "旁白", dialogue = "吸血鬼走近她,眼神中沒有殺意,只有遺憾", background = bgCastle, character = charBoss },
+            new StoryLine { speaker = "Boss", dialogue = "但妳的血,告訴了我——妳是特別的", background = bgCastle, character = charBoss },
+            new StoryLine { speaker = "Boss", dialogue = "妳想聽我說真相嗎?", background = bgCastle, character = charBoss },
+            new StoryLine { speaker = "旁白", dialogue = "妳抬起頭,看著對方", background = bgCastle, character = null },
+            new StoryLine { speaker = "旁白", dialogue = "妳需要做出選擇", background = bgCastle, character = null }
         };
     }
 
@@ -136,13 +136,13 @@ public class BossLoseEndingManager : MonoBehaviour
 
         storyLines = new StoryLine[]
         {
-            new StoryLine { speaker = "旁白", dialogue = "主角停止了掙扎。", background = bgCastle, character = charMain },
-            new StoryLine { speaker = "Boss", dialogue = "很好的選擇。", background = bgCastle, character = charBoss },
-            new StoryLine { speaker = "旁白", dialogue = "吸血鬼將真相娓娓道來。", background = bgCastle, character = charBoss },
-            new StoryLine { speaker = "Boss", dialogue = "妳的父親，死於人類獵人之手。而我，試圖拯救他。", background = bgCastle, character = charBoss },
-            new StoryLine { speaker = "Boss", dialogue = "但我來得太晚了。", background = bgCastle, character = charBoss },
-            new StoryLine { speaker = "旁白", dialogue = "她的眼淚流下。這一次，不是因為憤怒。", background = bgCastle, character = charMain },
-            new StoryLine { speaker = "旁白", dialogue = "【平和結局】故事未完，待續……", background = bgCastle, character = null }
+            new StoryLine { speaker = "旁白", dialogue = "妳停止了掙扎", background = bgCastle, character = null },
+            new StoryLine { speaker = "Boss", dialogue = "乖孩子", background = bgCastle, character = charBoss },
+            new StoryLine { speaker = "旁白", dialogue = "吸血鬼將真相娓娓道來", background = bgCastle, character = charBoss },
+            new StoryLine { speaker = "Boss", dialogue = "妳的父親,死於人類獵人之手,而我,曾試圖拯救他", background = bgCastle, character = charBoss },
+            new StoryLine { speaker = "Boss", dialogue = "但我來得太晚了", background = bgCastle, character = charBoss },
+            new StoryLine { speaker = "旁白", dialogue = "妳的眼淚流下.但這一次不是因為憤怒,而是滿滿的悲傷......", background = bgCastle, character = null },
+            new StoryLine { speaker = "旁白", dialogue = "{和平結局}未完待續......", background = bgCastle, character = null }
         };
 
         ShowLine(0);
@@ -156,12 +156,12 @@ public class BossLoseEndingManager : MonoBehaviour
 
         storyLines = new StoryLine[]
         {
-            new StoryLine { speaker = "旁白", dialogue = "主角的身體開始發光。血液燃燒著。", background = bgCastle, character = charMain },
-            new StoryLine { speaker = "主角", dialogue = "我不相信任何謊言。", background = bgCastle, character = charMain },
-            new StoryLine { speaker = "旁白", dialogue = "她引爆了所有的力量。", background = bgCastle, character = charMain },
-            new StoryLine { speaker = "旁白", dialogue = "城堡在爆炸中崩塌。吸血鬼和主角，一起消失在黑暗中。", background = bgCastle, character = null },
-            new StoryLine { speaker = "旁白", dialogue = "沒有人活著離開。", background = bgCastle, character = null },
-            new StoryLine { speaker = "旁白", dialogue = "【死亡結局】故事結束。", background = bgCastle, character = null }
+            new StoryLine { speaker = "旁白", dialogue = "妳的身體開始發光,血液正在燃燒", background = bgCastle, character = null },
+            new StoryLine { speaker = "主角", dialogue = "我絕對不相信任何謊言", background = bgCastle, character = charMain },
+            new StoryLine { speaker = "旁白", dialogue = "妳引爆了所有的力量", background = bgCastle, character = null },
+            new StoryLine { speaker = "旁白", dialogue = "城堡在爆炸中崩塌,一切全消失在黑暗中", background = bgCastle, character = null },
+            new StoryLine { speaker = "旁白", dialogue = "沒有人活著離開", background = bgCastle, character = null },
+            new StoryLine { speaker = "旁白", dialogue = "{死亡結局}故事到這暫時畫下了句號", background = bgCastle, character = null }
         };
 
         ShowLine(0);
