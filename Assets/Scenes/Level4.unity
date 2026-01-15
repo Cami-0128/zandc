@@ -2155,6 +2155,10 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 306923408, guid: ab37e94afdfafb945983830d1ada8425, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 1320464341, guid: ab37e94afdfafb945983830d1ada8425, type: 3}
       propertyPath: closeButton
       value: 
@@ -9135,7 +9139,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Level 1
+  m_text: Level 2
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -10767,6 +10771,10 @@ PrefabInstance:
       propertyPath: completeUI
       value: 
       objectReference: {fileID: 1440437340}
+    - target: {fileID: 5588539608001036344, guid: 26c2233404e2ffe4a919639cc82f1f29, type: 3}
+      propertyPath: shopManager
+      value: 
+      objectReference: {fileID: 1774694245}
     - target: {fileID: 5588539608001036345, guid: 26c2233404e2ffe4a919639cc82f1f29, type: 3}
       propertyPath: m_Name
       value: GameManager

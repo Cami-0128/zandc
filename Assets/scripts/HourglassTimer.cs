@@ -16,7 +16,7 @@ public class HourglassTimer : MonoBehaviour
     public Sprite midHourglass;    // 4
     public Sprite emptyHourglass;    // 5
 
-    public float totalTime = 10f;
+    public float totalTime = 1000f;
     private float currentTime;
     private bool isCounting = false;
     private bool hasStarted = false;

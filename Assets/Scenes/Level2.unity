@@ -3081,6 +3081,10 @@ PrefabInstance:
       propertyPath: completeUI
       value: 
       objectReference: {fileID: 1955800842}
+    - target: {fileID: 5588539608001036344, guid: 26c2233404e2ffe4a919639cc82f1f29, type: 3}
+      propertyPath: shopManager
+      value: 
+      objectReference: {fileID: 1672293673}
     - target: {fileID: 5588539608001036345, guid: 26c2233404e2ffe4a919639cc82f1f29, type: 3}
       propertyPath: m_Name
       value: GameManager
@@ -9592,6 +9596,10 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 306923408, guid: ab37e94afdfafb945983830d1ada8425, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 1320464341, guid: ab37e94afdfafb945983830d1ada8425, type: 3}
       propertyPath: closeButton
       value: 

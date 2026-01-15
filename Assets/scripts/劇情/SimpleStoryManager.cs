@@ -41,9 +41,6 @@ public class SimpleStoryManager : MonoBehaviour
     {
         Debug.Log("[SimpleStoryManager] Start 開始");
 
-        // 確保 dialogueText GameObject 是啟用的
-        dialogueText.gameObject.SetActive(true);
-
         // 先清空 dialogueText 的內容
         dialogueText.text = "";
 
@@ -51,17 +48,9 @@ public class SimpleStoryManager : MonoBehaviour
         typewriter = dialogueText.GetComponent<TypewriterEffect>();
         if (typewriter == null)
         {
-            Debug.Log("[SimpleStoryManager] 未找到 TypewriterEffect，正在添加...");
             typewriter = dialogueText.gameObject.AddComponent<TypewriterEffect>();
             Debug.Log("[SimpleStoryManager] 添加了 TypewriterEffect 組件");
         }
-        else
-        {
-            Debug.Log("[SimpleStoryManager] 找到現有的 TypewriterEffect");
-        }
-
-        // 確保 TypewriterEffect 被啟用
-        typewriter.enabled = true;
 
         // 手動初始化 TypewriterEffect，確保它有正確的 TextMeshProUGUI 引用
         typewriter.Initialize(dialogueText);

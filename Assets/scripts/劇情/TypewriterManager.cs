@@ -10,13 +10,6 @@ public class TypewriterEffect : MonoBehaviour
     private bool isTyping = false;
     private Coroutine typingCoroutine;
 
-    private void Awake()
-    {
-        // 確保 GameObject 和 Script 都是啟用的
-        gameObject.SetActive(true);
-        enabled = true;
-    }
-
     public void Initialize(TextMeshProUGUI tmpText)
     {
         textDisplay = tmpText;
@@ -27,14 +20,27 @@ public class TypewriterEffect : MonoBehaviour
         else
         {
             Debug.Log("[TypewriterEffect] 初始化成功，TextMeshProUGUI: " + tmpText.gameObject.name);
+            // 清空初始文字
             textDisplay.text = "";
+        }
+    }
+
+    private void Awake()
+    {
+        if (textDisplay == null)
+        {
+            textDisplay = GetComponent<TextMeshProUGUI>();
+            if (textDisplay != null)
+            {
+                Debug.Log("[TypewriterEffect] Awake 中自動獲取 TextMeshProUGUI 成功");
+                textDisplay.text = "";
+            }
         }
     }
 
     public void StartTyping(string text, float speed = 0.05f)
     {
         Debug.Log("[TypewriterEffect] StartTyping 被調用，文字: " + text);
-        Debug.Log("[TypewriterEffect] GameObject Active: " + gameObject.activeInHierarchy + ", Script Enabled: " + enabled);
 
         // 停止之前的協程
         if (typingCoroutine != null)
@@ -53,26 +59,13 @@ public class TypewriterEffect : MonoBehaviour
         charDelay = speed;
         textDisplay.text = "";
 
-        // 確保在啟動協程前，GameObject 是啟用的
-        if (!gameObject.activeInHierarchy)
-        {
-            Debug.LogError("[TypewriterEffect] GameObject 未啟用，無法啟動協程！");
-            gameObject.SetActive(true);
-        }
-
-        if (!enabled)
-        {
-            Debug.LogError("[TypewriterEffect] Script 未啟用，無法啟動協程！");
-            enabled = true;
-        }
-
+        // 立即啟動協程
         typingCoroutine = StartCoroutine(TypeText());
-        Debug.Log("[TypewriterEffect] 協程已啟動");
     }
 
     private IEnumerator TypeText()
     {
-        Debug.Log("[TypewriterEffect] 協程開始執行");
+        Debug.Log("[TypewriterEffect] 協程開始");
         isTyping = true;
 
         for (int i = 0; i < fullText.Length; i++)
@@ -84,13 +77,15 @@ public class TypewriterEffect : MonoBehaviour
                 yield break;
             }
 
+            char c = fullText[i];
             textDisplay.text = fullText.Substring(0, i + 1);
+
             yield return new WaitForSeconds(charDelay);
         }
 
         isTyping = false;
         typingCoroutine = null;
-        Debug.Log("[TypewriterEffect] 協程執行完成");
+        Debug.Log("[TypewriterEffect] 協程結束");
     }
 
     public void ShowAll()
@@ -120,7 +115,6 @@ public class TypewriterEffect : MonoBehaviour
             typingCoroutine = null;
         }
         isTyping = false;
-        Debug.Log("[TypewriterEffect] Stop 已執行");
     }
 
     public void Clear()
